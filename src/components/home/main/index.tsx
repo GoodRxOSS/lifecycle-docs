@@ -38,7 +38,7 @@ export const Main = () => {
           <div className="my-6 flex justify-center md:mb-0 md:justify-end">
             <Link
               className={`${buttonVariants()} col-span-1 col-end-3`}
-              href="/docs/getting-started"
+              href="/docs/getting-started/create-environment"
             >
               Get Started
             </Link>
