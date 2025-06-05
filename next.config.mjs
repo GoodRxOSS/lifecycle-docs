@@ -16,6 +16,8 @@
 
 import nextra from "nextra";
 import { remarkCodeHike, recmaCodeHike } from "codehike/mdx";
+// eslint-disable-next-line no-undef
+const isLocal = process.env?.NEXT_PUBLIC_DEV_ENV === 'local';
 
 /** @type {import('codehike/mdx').CodeHikeConfig} */
 export const chConfig = {
@@ -45,8 +47,8 @@ const nextConfig = {
   output: 'export',
   pageExtensions: ["ts", "tsx", "js", "jsx", "md", "mdx", "css"],
   reactStrictMode: true,
-  assetPrefix: '/lifecycle-docs',
-  basePath: '/lifecycle-docs',
+  assetPrefix:  !isLocal ? '/lifecycle-docs' : '',
+  basePath: !isLocal ? '/lifecycle-docs' : '',
   eslint: {
     dirs: ["src"],
     ignoreDuringBuilds: true,

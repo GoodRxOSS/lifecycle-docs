@@ -51,10 +51,12 @@ export const DefinedImage = ({
   alt = "",
   width = 800,
   height = 500,
-}: DefinedImageProps) =>
-  width && height ? (
+}: DefinedImageProps) => {
+  const isLocal = process.env.NEXT_PUBLIC_DEV_ENV === "local";
+  const currentSrc = !isLocal ? `/lifecycle-docs${src}` : src;
+  return width && height ? (
     <Image
-      src={`/lifecycle-docs${src}`}
+      src={currentSrc}
       className="absolute inset-0 h-full w-full"
       alt={alt}
       width={width}
@@ -63,6 +65,7 @@ export const DefinedImage = ({
   ) : (
     <img src={src} className="absolute inset-0 h-full w-full" alt={alt} />
   );
+};
 
 export default dynamic(() => Promise.resolve(LifecycleDocsImg), {
   loading: () => <Loader />,

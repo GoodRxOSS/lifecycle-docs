@@ -35,7 +35,7 @@ const octokit = new Octokit({ auth });
 export const fetchFileFromRepo = async ({
   owner = "goodrxoss",
   repo = "lifecycle",
-  path = "docs/schema/yaml/2.3.0.yaml",
+  path = "docs/schema/yaml/1.0.0.yaml",
   branch = "main",
   debug = false,
 }: FetchFileOptions): Promise<string> => {
@@ -87,7 +87,7 @@ export const syncYamlFile = async (options: SyncOptions) => {
     owner = "goodrxoss",
     repo = "lifecycle",
     // docs/schema/yaml/2.3.0.yaml
-    path = "docs/schema/yaml/2.3.0.yaml",
+    path = "docs/schema/yaml/1.0.0.yaml",
     dest = "src/lib/data/lifecycle-schema",
     name = "lifecycle",
     debug = false,
