@@ -1,0 +1,9 @@
+.next/*
+node_modules/*
+helm/*
+pnpm-lock.yaml
+next.config.mjs
+tsconfig.json
+README.md
+public/*
+_meta.ts

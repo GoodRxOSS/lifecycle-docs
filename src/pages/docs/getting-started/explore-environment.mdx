@@ -1,0 +1,79 @@
+---
+title: Explore environment
+tags:
+  - lifecycle
+  - tutorial
+  - explore
+---
+
+import { Callout } from "nextra/components";
+import { Info } from "lucide-react";
+import { Image } from "@lifecycle-docs/components";
+
+Now that we've deployed our first Lifecycle environment, let’s take a tour of the PR comments to understand how to interact with our ephemeral environment.
+
+## Test Your Application
+
+Let's navigate to the deployed `frontend` app from the PR comment.
+
+1. Click on the `frontend` link in the PR comment to navigate to your deployed application.
+2. Add a task and complete few tasks to update data in backend.
+3. Navigate to the `variables` page and checkout the variables in your application's container.
+4. Thats it! You have successfully deployed and tested the best todo app in the world! 🎉
+
+## Mission Control Comment
+
+The **Lifecycle PR comment** in your pull request serves as the **mission control** for your ephemeral environment.
+
+<Image
+  src="/getting-started/pr-comment.png"
+  width={2106}
+  height={2278}
+  ratio={2106 / 2278}
+/>
+
+### What You Can Do in the PR Comment
+
+- **Editable Checkboxes**: Select or deselect services to include in your environment.
+- **Redeploy Checkbox**: Triggers a redeploy (useful for transient issues).
+- **Deployment Section**: Provides URLs to your **deployed services**.
+
+<Callout type="info" emoji={<Info />}>
+  Read more about [Mission Control comment
+  here](/docs/tips/using-mission-control.mdx)
+</Callout>
+
+## Status Comment
+
+When we add the `lifecycle-status-comments!` label to our pull request, Lifecycle will automatically add a **status comment** to the PR.
+
+This comment provides real-time updates on the status, links to your deployments including the build progress and service statuses.
+
+<Image
+  src="/getting-started/status-comment.png"
+  width={1902}
+  height={894}
+  ratio={1902 / 894}
+/>
+
+Notice the following while the environment is being built:
+
+- The status comment is **updated in real-time**.
+- The **status** of each service is displayed.
+- The **build logs** are available for each service.
+
+<Image
+  src="/getting-started/status-comment-building.png"
+  width={1894}
+  height={1222}
+  ratio={1894 / 1222}
+/>
+
+### Next Steps
+
+In the next section, we will:
+
+⚙️ Customize our configuration<br />
+☑️ Enable and build an optional service(`cache`) support your application<br />
+
+**Ready to level up your ephemeral environment? Let\'s go!** 🏃‍➡️

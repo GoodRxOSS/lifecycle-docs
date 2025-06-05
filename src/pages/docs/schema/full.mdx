@@ -1,0 +1,349 @@
+---
+title: Lifecycle Full Schema
+description: Lifecycle Schema documentation; this page contains the full schema as defined in lifecycle core—all at once.
+navtext: All at once
+tags:
+  - schema
+  - lifecycle
+date: "2025-05-31"
+---
+
+## Full Lifecycle Schema
+
+Below is the full Lifecycle schema as defined in the `lifecycle.yaml` file with basic comments for each item.
+
+```yaml
+# @section environment
+environment:
+  # @param environment.autoDeploy
+  autoDeploy: false
+  # @param environment.useGithubStatusComment
+  useGithubStatusComment: false
+  # @param environment.defaultServices
+  defaultServices:
+    # @param environment.defaultServices[]
+    - # @param environment.defaultServices.name (required)
+      name: ""
+      # @param environment.defaultServices.repository
+      repository: ""
+      # @param environment.defaultServices.branch
+      branch: ""
+  # @param environment.optionalServices
+  optionalServices:
+    # @param environment.optionalServices[]
+    - # @param environment.optionalServices.name (required)
+      name: ""
+      # @param environment.optionalServices.repository
+      repository: ""
+      # @param environment.optionalServices.branch
+      branch: ""
+
+# @section services
+services:
+  # @param services[]
+  - # @param services.name (required)
+    name: ""
+    # @param services.appShort
+    appShort: ""
+    # @param services.defaultUUID
+    defaultUUID: ""
+    # @param services.github
+    github:
+      # @param services.github.repository (required)
+      repository: ""
+      # @param services.github.branchName (required)
+      branchName: ""
+      # @param services.github.docker (required)
+      docker:
+        # @param services.github.docker.defaultTag (required)
+        defaultTag: ""
+        # @param services.github.docker.pipelineId
+        pipelineId: ""
+        # @param services.github.docker.ecr
+        ecr: ""
+        # @param services.github.docker.app (required)
+        app:
+          # @param services.github.docker.app.afterBuildPipelineConfig
+          afterBuildPipelineConfig:
+            # @param services.github.docker.app.afterBuildPipelineConfig.afterBuildPipelineId
+            afterBuildPipelineId: ""
+            # @param services.github.docker.app.afterBuildPipelineConfig.detatchAfterBuildPipeline
+            detatchAfterBuildPipeline: false
+            # @param services.github.docker.app.afterBuildPipelineConfig.description
+            description: ""
+          # @param services.github.docker.app.dockerfilePath (required)
+          dockerfilePath: ""
+          # @param services.github.docker.app.command
+          command: ""
+          # @param services.github.docker.app.arguments
+          arguments: ""
+          # @param services.github.docker.app.env
+          env:
+
+          # @param services.github.docker.app.ports
+          ports:
+            # @param services.github.docker.app.ports[]
+            - ""
+        # @param services.github.docker.init
+        init:
+          # @param services.github.docker.init.dockerfilePath (required)
+          dockerfilePath: ""
+          # @param services.github.docker.init.command
+          command: ""
+          # @param services.github.docker.init.arguments
+          arguments: ""
+          # @param services.github.docker.init.env
+          env:
+
+        # @param services.github.docker.builder
+        builder:
+          # @param services.github.docker.builder.engine
+          engine: ""
+      # @param services.github.deployment
+      deployment:
+        # @param services.github.deployment.helm
+        helm:
+          # @param services.github.deployment.helm.enabled
+          enabled: false
+          # @param services.github.deployment.helm.chartName
+          chartName: ""
+          # @param services.github.deployment.helm.chartRepoUrl
+          chartRepoUrl: ""
+          # @param services.github.deployment.helm.chartVersion
+          chartVersion: ""
+          # @param services.github.deployment.helm.cmdPs
+          cmdPs: ""
+          # @param services.github.deployment.helm.action
+          action: ""
+          # @param services.github.deployment.helm.customValues
+          customValues:
+            # @param services.github.deployment.helm.customValues[]
+            - ""
+          # @param services.github.deployment.helm.customValueFiles
+          customValueFiles:
+            # @param services.github.deployment.helm.customValueFiles[]
+            - ""
+          # @param services.github.deployment.helm.helmVersion
+          helmVersion: ""
+          # @param services.github.deployment.helm.attachPvc
+          attachPvc:
+            # @param services.github.deployment.helm.attachPvc.enabled
+            enabled: false
+            # @param services.github.deployment.helm.attachPvc.mountPath
+            mountPath: ""
+        # @param services.github.deployment.public
+        public: false
+        # @param services.github.deployment.capacityType
+        capacityType: ""
+        # @param services.github.deployment.resource
+        resource:
+          # @param services.github.deployment.resource.cpu
+          cpu:
+            # @param services.github.deployment.resource.cpu.request
+            request: ""
+            # @param services.github.deployment.resource.cpu.limit
+            limit: ""
+          # @param services.github.deployment.resource.memory
+          memory:
+            # @param services.github.deployment.resource.memory.request
+            request: ""
+            # @param services.github.deployment.resource.memory.limit
+            limit: ""
+        # @param services.github.deployment.readiness
+        readiness:
+          # @param services.github.deployment.readiness.disabled
+          disabled: false
+          # @param services.github.deployment.readiness.tcpSocketPort
+          tcpSocketPort: 0
+          # @param services.github.deployment.readiness.httpGet
+          httpGet:
+            # @param services.github.deployment.readiness.httpGet.path
+            path: ""
+            # @param services.github.deployment.readiness.httpGet.port
+            port: 0
+          # @param services.github.deployment.readiness.initialDelaySeconds
+          initialDelaySeconds: 0
+          # @param services.github.deployment.readiness.periodSeconds
+          periodSeconds: 0
+          # @param services.github.deployment.readiness.timeoutSeconds
+          timeoutSeconds: 0
+          # @param services.github.deployment.readiness.successThreshold
+          successThreshold: 0
+          # @param services.github.deployment.readiness.failureThreshold
+          failureThreshold: 0
+        # @param services.github.deployment.hostnames
+        hostnames:
+          # @param services.github.deployment.hostnames.host
+          host: ""
+          # @param services.github.deployment.hostnames.acmARN
+          acmARN: ""
+          # @param services.github.deployment.hostnames.defaultInternalHostname
+          defaultInternalHostname: ""
+          # @param services.github.deployment.hostnames.defaultPublicUrl
+          defaultPublicUrl: ""
+        # @param services.github.deployment.network
+        network:
+          # @param services.github.deployment.network.ipWhitelist
+          ipWhitelist:
+            # @param services.github.deployment.network.ipWhitelist[]
+            - ""
+          # @param services.github.deployment.network.pathPortMapping
+          pathPortMapping:
+
+          # @param services.github.deployment.network.hostPortMapping
+          hostPortMapping:
+
+          # @param services.github.deployment.network.grpc
+          grpc:
+            # @param services.github.deployment.network.grpc.enable
+            enable: false
+            # @param services.github.deployment.network.grpc.host
+            host: ""
+            # @param services.github.deployment.network.grpc.defaultHost
+            defaultHost: ""
+        # @param services.github.deployment.serviceDisks
+        serviceDisks:
+          # @param services.github.deployment.serviceDisks[]
+          - # @param services.github.deployment.serviceDisks.name (required)
+            name: ""
+            # @param services.github.deployment.serviceDisks.mountPath (required)
+            mountPath: ""
+            # @param services.github.deployment.serviceDisks.accessModes
+            accessModes: ""
+            # @param services.github.deployment.serviceDisks.storageSize (required)
+            storageSize: ""
+            # @param services.github.deployment.serviceDisks.medium
+            medium: ""
+    # @param services.docker
+    docker:
+      # @param services.docker.dockerImage (required)
+      dockerImage: ""
+      # @param services.docker.defaultTag (required)
+      defaultTag: ""
+      # @param services.docker.command
+      command: ""
+      # @param services.docker.arguments
+      arguments: ""
+      # @param services.docker.env
+      env:
+
+      # @param services.docker.ports
+      ports:
+        # @param services.docker.ports[]
+        - ""
+      # @param services.docker.deployment
+      deployment:
+        # @param services.docker.deployment.helm
+        helm:
+          # @param services.docker.deployment.helm.enabled
+          enabled: false
+          # @param services.docker.deployment.helm.chartName
+          chartName: ""
+          # @param services.docker.deployment.helm.chartRepoUrl
+          chartRepoUrl: ""
+          # @param services.docker.deployment.helm.chartVersion
+          chartVersion: ""
+          # @param services.docker.deployment.helm.cmdPs
+          cmdPs: ""
+          # @param services.docker.deployment.helm.action
+          action: ""
+          # @param services.docker.deployment.helm.customValues
+          customValues:
+            # @param services.docker.deployment.helm.customValues[]
+            - ""
+          # @param services.docker.deployment.helm.customValueFiles
+          customValueFiles:
+            # @param services.docker.deployment.helm.customValueFiles[]
+            - ""
+          # @param services.docker.deployment.helm.helmVersion
+          helmVersion: ""
+          # @param services.docker.deployment.helm.attachPvc
+          attachPvc:
+            # @param services.docker.deployment.helm.attachPvc.enabled
+            enabled: false
+            # @param services.docker.deployment.helm.attachPvc.mountPath
+            mountPath: ""
+        # @param services.docker.deployment.public
+        public: false
+        # @param services.docker.deployment.capacityType
+        capacityType: ""
+        # @param services.docker.deployment.resource
+        resource:
+          # @param services.docker.deployment.resource.cpu
+          cpu:
+            # @param services.docker.deployment.resource.cpu.request
+            request: ""
+            # @param services.docker.deployment.resource.cpu.limit
+            limit: ""
+          # @param services.docker.deployment.resource.memory
+          memory:
+            # @param services.docker.deployment.resource.memory.request
+            request: ""
+            # @param services.docker.deployment.resource.memory.limit
+            limit: ""
+        # @param services.docker.deployment.readiness
+        readiness:
+          # @param services.docker.deployment.readiness.disabled
+          disabled: false
+          # @param services.docker.deployment.readiness.tcpSocketPort
+          tcpSocketPort: 0
+          # @param services.docker.deployment.readiness.httpGet
+          httpGet:
+            # @param services.docker.deployment.readiness.httpGet.path
+            path: ""
+            # @param services.docker.deployment.readiness.httpGet.port
+            port: 0
+          # @param services.docker.deployment.readiness.initialDelaySeconds
+          initialDelaySeconds: 0
+          # @param services.docker.deployment.readiness.periodSeconds
+          periodSeconds: 0
+          # @param services.docker.deployment.readiness.timeoutSeconds
+          timeoutSeconds: 0
+          # @param services.docker.deployment.readiness.successThreshold
+          successThreshold: 0
+          # @param services.docker.deployment.readiness.failureThreshold
+          failureThreshold: 0
+        # @param services.docker.deployment.hostnames
+        hostnames:
+          # @param services.docker.deployment.hostnames.host
+          host: ""
+          # @param services.docker.deployment.hostnames.acmARN
+          acmARN: ""
+          # @param services.docker.deployment.hostnames.defaultInternalHostname
+          defaultInternalHostname: ""
+          # @param services.docker.deployment.hostnames.defaultPublicUrl
+          defaultPublicUrl: ""
+        # @param services.docker.deployment.network
+        network:
+          # @param services.docker.deployment.network.ipWhitelist
+          ipWhitelist:
+            # @param services.docker.deployment.network.ipWhitelist[]
+            - ""
+          # @param services.docker.deployment.network.pathPortMapping
+          pathPortMapping:
+
+          # @param services.docker.deployment.network.hostPortMapping
+          hostPortMapping:
+
+          # @param services.docker.deployment.network.grpc
+          grpc:
+            # @param services.docker.deployment.network.grpc.enable
+            enable: false
+            # @param services.docker.deployment.network.grpc.host
+            host: ""
+            # @param services.docker.deployment.network.grpc.defaultHost
+            defaultHost: ""
+        # @param services.docker.deployment.serviceDisks
+        serviceDisks:
+          # @param services.docker.deployment.serviceDisks[]
+          - # @param services.docker.deployment.serviceDisks.name (required)
+            name: ""
+            # @param services.docker.deployment.serviceDisks.mountPath (required)
+            mountPath: ""
+            # @param services.docker.deployment.serviceDisks.accessModes
+            accessModes: ""
+            # @param services.docker.deployment.serviceDisks.storageSize (required)
+            storageSize: ""
+            # @param services.docker.deployment.serviceDisks.medium
+            medium: ""
+```

@@ -1,0 +1,43 @@
+---
+title: Telemetry
+tags:
+  - logs
+  - metrics
+  - telemetry
+  - datadog
+  - observability
+---
+
+Lifecycle comes with built-in support for Datadog telemetry. To collect logs and metrics from your cluster and deployed applications, install the Datadog Agent and Cluster Agent in your cluster.
+
+The deployed applications are already configured with the necessary Datadog labels and environment variables for seamless integration:
+
+**Pod labels:**
+
+```yaml
+tags.datadoghq.com/env: lifecycle-binlab-zero-101010
+tags.datadoghq.com/service: frontend
+tags.datadoghq.com/version: binlab-zero-101010
+```
+
+**Environment variables:**
+
+```yaml
+- name: DD_ENV
+  valueFrom:
+    fieldRef:
+      apiVersion: v1
+      fieldPath: metadata.labels['tags.datadoghq.com/env']
+- name: DD_SERVICE
+  valueFrom:
+    fieldRef:
+      apiVersion: v1
+      fieldPath: metadata.labels['tags.datadoghq.com/service']
+- name: DD_VERSION
+  valueFrom:
+    fieldRef:
+      apiVersion: v1
+      fieldPath: metadata.labels['tags.datadoghq.com/version']
+```
+
+This setup ensures that Datadog automatically detects the environment, service, and version for each application, enabling rich observability and correlation of logs and metrics in the Datadog platform.

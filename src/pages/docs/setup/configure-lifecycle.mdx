@@ -1,0 +1,71 @@
+---
+title: Additional Configuration
+tags:
+  - configure
+  - lifecycle
+  - install
+  - setup
+---
+
+import { Callout } from "nextra/components";
+
+We are in the final step of the setup process.
+
+**This step is Optional but highly recommended to ensure the default IP Whitelist is set for the environments created by the Lifecycle app.** This will help in securing the environments and restricting access to only the specified IPs or CIDR blocks.
+
+## Set Default IP Whitelist
+
+- Connect to the `postgres` database using the `psql` command line tool or any other database client.
+
+  <Callout type="info">
+
+  Database password was auto generated during the infra setup and can be found
+  retrieved from the `app-postgres` secret in the `lifecycle-app`
+  namespace.
+
+  </Callout>
+
+- Retrieve the database password:
+
+```sh
+   kubectl get secret app-postgres --namespace lifecycle-app \
+      -o jsonpath='{.data}' | jq 'with_entries(.value |= @base64d)'
+```
+
+- Run the following SQL commands to update the configuration:
+
+```sql
+-- provide a default IP whitelist for the environments, default is open to all IPs
+UPDATE public.global_config
+SET
+    config = (
+        config::jsonb ||
+        '{
+            "defaultIPWhiteList": "{ 0.0.0.0/0 }"
+         }'::jsonb
+    )::json,
+    "updatedAt" = NOW()
+WHERE "key" = 'serviceDefaults';
+```
+
+<Callout type="error" emoji="⚠️">
+  Note that the infra setup with the OpenTofu modules below will **open your
+  cluster to the world.** <br />
+  🛡️ Make sure to **<a href="https://translate.google.com/details?sl=auto&tl=hy&text=shield&op=translate">shield</a>** your cluster by implementing appropriate network policies
+  and access controls after the initial setup.
+
+Replace the `defaultIPWhiteList` under `global_config.serviceDefaults` with your actual IP whitelist or CIDR block to restrict access to the deployed environments.
+
+</Callout>
+
+---
+
+## Refresh config cache
+
+```sh
+curl -X PUT https://app.<your_domain>/api/v1/config/cache
+```
+
+This will refresh the configuration cache and apply the changes you made to the database for the Lifecycle app.
+
+We are all set! 🎉 And ready to create our first PR based ephemeral environment.

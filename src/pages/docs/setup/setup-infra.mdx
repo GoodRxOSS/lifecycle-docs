@@ -1,0 +1,186 @@
+---
+title: Setup your cluster
+tags:
+  - cluster
+  - setup
+  - gke
+  - aws
+---
+
+import { Callout } from "nextra/components";
+import { Info, Cog } from "lucide-react";
+import { Cards } from "nextra/components";
+
+Based on the prerequisites you've set up, you're now ready to configure your Kubernetes cluster for Lifecycle. This setup will ensure that your cluster is properly configured to run Lifecycle and manage your application environments effectively.
+
+<Callout type="error" emoji="⚠️">
+  Note that the infra setup with the OpenTofu modules below will **open your
+  cluster to the world.** <br />
+  🛡️ Make sure to **<a href="https://translate.google.com/details?sl=auto&tl=hy&text=shield&op=translate">shield</a>** your cluster by implementing appropriate network policies
+  and access controls after the initial setup.
+
+</Callout>
+
+Click on the cloud provider you are using to set up your cluster:
+
+- [Google Cloud Platform (GCP)](#google-cloud-platform)
+- [Amazon Web Services (AWS)](#amazon-web-services)
+
+## Google Cloud Platform
+
+### Setup application credentials
+
+```sh
+# setup current project
+gcloud config set project <PROJECT_ID>
+# creates the application default credentials
+gcloud auth application-default login
+```
+
+Enable Kubernetes Engine and Cloud DNS APIs:
+
+```sh
+gcloud services enable container.googleapis.com --project=<PROJECT_ID>
+gcloud services enable dns.googleapis.com --project=<PROJECT_ID>
+```
+
+<Callout type="info" icon={Info}>
+  Note that you need to replace `<PROJECT_ID>` with your actual Google Cloud project ID not the project name.
+</Callout>
+
+### Bootstrap infrastructure
+
+- Clone the infrastructure repository:
+
+```sh
+git clone https://github.com/GoodRxOSS/lifecycle-opentofu/
+cd lifecycle-opentofu
+```
+
+- Follow steps in the [infrastructure repository](https://github.com/GoodRxOSS/lifecycle-opentofu/?tab=readme-ov-file#%EF%B8%8F-quick-start) to set up the necessary infrastructure components.
+
+```sh
+cp example.auto.tfvars secrets.auto.tfvars
+```
+
+Example `secrets.auto.tfvars` file:
+
+```hcl secrets.auto.tfvars
+gcp_project          = "<PROJECT_ID>"
+gcp_region           = "<REGION_TO_DEPLOY>"
+# this is the default credentials file created by gcloud cli
+gcp_credentials_file = "~/.config/gcloud/application_default_credentials.json"
+cluster_provider     = "gke"
+dns_provider         = "cloud-dns"     # [cloudflare|route53|cloud-dns]
+app_domain           = "<YOUR_DOMAIN>" # e.g. 0env.com
+
+cluster_name         = "lifecycle-gke" # change this to your preferred cluster name
+app_namespace        = "lifecycle-app" # use default namespace
+```
+
+- Initialize and apply the Terraform configuration:
+
+```sh
+tofu init
+tofu plan
+tofu apply
+```
+
+This will create the necessary infrastructure components, including the Kubernetes cluster, DNS records, database, redis and other resources required for Lifecycle to function properly.
+
+After the Terraform apply completes, you should have a fully functional Kubernetes cluster with the necessary resources set up.
+
+Let's test the public DNS setup by accessing the test application deployed called `kuard` and follow the rest of the setup instructions from the `tofu apply` output.
+
+```sh
+curl -v https://kuard.0env.com  # replace with your domain
+```
+
+Refer example output [here](https://github.com/GoodRxOSS/lifecycle-opentofu/?tab=readme-ov-file#4-initialize--apply) to setup kubeconfig and access the cluster using `kubectl`.
+
+Now that your cluster is set up, you can proceed to installing Lifecycle application to your cluster.
+
+<br />
+<Cards.Card
+  icon={<Cog />}
+  title="Install Lifecycle"
+  href="/docs/setup/install-lifecycle"
+  arrow
+/>
+
+---
+
+## Amazon Web Services
+
+```sh
+# setup current project
+aws configure --profile lifecycle-oss-eks
+AWS Access Key ID [***]: <key id, or enter>
+AWS AWS Secret Access Key [***]: <secret key, or enter>
+Default Region name: <region, or enter>
+Default output format: <format, or enter>
+```
+
+\*This profile needs to have access a user with `AdministratorAccess` access.
+
+---
+
+### Bootstrap infrastructure
+
+- Clone the infrastructure repository:
+
+```sh
+git clone https://github.com/GoodRxOSS/lifecycle-opentofu/
+cd lifecycle-opentofu
+```
+
+- Follow steps in the [infrastructure repository](https://github.com/GoodRxOSS/lifecycle-opentofu/?tab=readme-ov-file#%EF%B8%8F-quick-start) to set up the necessary infrastructure components.
+
+```sh
+cp example.auto.tfvars secrets.auto.tfvars
+```
+
+Example `secrets.auto.tfvars` file:
+
+```hcl secrets.auto.tfvars
+# gcp_project          = "<PROJECT_ID>"
+$ gcp_region           = "<REGION_TO_DEPLOY>"
+# this is the default credentials file created by gcloud cli
+# gcp_credentials_file = "~/.config/gcloud/application_default_credentials.json"
+cluster_provider     = "aws"
+dns_provider         = "route53"     # [cloudflare|route53|cloud-dns]
+app_domain           = "example.com" # e.g. 0env.com
+
+cluster_name         = "lifecycle-eks" # change this to your preferred cluster name
+app_namespace        = "lifecycle-app" # use default namespace
+```
+
+- Initialize and apply the Terraform configuration:
+
+```sh
+tofu init
+tofu plan
+tofu apply
+```
+
+This will create the necessary infrastructure components, including the Kubernetes cluster, DNS records, database, redis and other resources required for Lifecycle to function properly.
+
+After the Terraform apply completes, you should have a fully functional Kubernetes cluster with the necessary resources set up.
+
+Let's test the public DNS setup by accessing the test application deployed called `kuard` and follow the rest of the setup instructions from the `tofu apply` output.
+
+```sh
+curl -v https://kuard.0env.com  # replace with your domain
+```
+
+Refer example output [here](https://github.com/GoodRxOSS/lifecycle-opentofu/?tab=readme-ov-file#4-initialize--apply) to setup kubeconfig and access the cluster using `kubectl`.
+
+Now that your cluster is set up, you can proceed to installing Lifecycle application to your cluster.
+
+<br />
+<Cards.Card
+  icon={<Cog />}
+  title="Install Lifecycle"
+  href="/docs/setup/install-lifecycle"
+  arrow
+/>

@@ -1,0 +1,54 @@
+---
+title: Configure Application
+tags:
+  - github
+  - app
+  - install
+  - setup
+---
+
+import { Callout } from "nextra/components";
+import { Image } from "@lifecycle-docs/components";
+
+To create a Github app that will send events to the Lifecycle with necessary permissions, follow these steps:
+
+<Callout type="info">
+  Make sure you have admin access to the Github organization or account where
+  you want to create the app.
+</Callout>
+
+- Navigate to your installed Lifecycle app at `https://app.<your_domain>/setup` (replace `<your_domain>` with your actual domain. e.g. `https://app.0env.com/setup`).
+  <Image src="/setup/github-app-setup.png" width={1872} height={1068} />
+- Select `Personal` or `Organization` based on your needs.
+- Fill in the required fields:
+
+  - **Github App Name**: A name for your app. (should be unique, use a prefix with your name or organization. Refer Github app naming convention [here](https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/)
+  - **Organization Name**: Github organization name where the app will be created. Required if you selected `Organization`.
+
+- Click `Create App`
+- On the Github app creation page, confirm the app name and click `Create`
+- Once the app is created, you will be redirected to the app installation page where you can choose one or more repositories to install the the newly minted app.
+
+  <Callout type="info">
+    Make sure to select the repositories you want the app to have access to. You
+    can always change this later in the app settings but **adding atleast one
+    repository is required to proceed with the setup**.
+  </Callout>
+
+  <br />
+
+- Voila! 🎉 Your Github app is now created and installed.
+
+<Image src="/setup/github-app-installed.png" width={1902} height={1088} />
+
+- Click `Configure and Restart` to apply the changes and start using the app.
+
+<Callout type="info">
+  The step above, sets up the global config values that Lifecycle app will use
+  creating ephemeral environments and processing pull requests. And restarts the
+  `deployment` for the github app secrets to take effect.
+</Callout>
+
+---
+
+Let's move on the final step where we will configure the Lifecycle app config for processing pull requests and creating ephemeral environments.

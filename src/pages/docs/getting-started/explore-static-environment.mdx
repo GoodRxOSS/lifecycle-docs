@@ -1,0 +1,81 @@
+---
+title: Explore static environment
+description: Create the first and default static environment
+tags:
+  - tutorial
+  - dev-0
+  - static
+  - onboard
+---
+
+import { Callout } from "nextra/components";
+
+A **static environment** in Lifecycle is a persistent environment that serves as a fallback when dependent services do not need to be rebuilt.
+
+Unlike ephemeral environments that are built on short lived pull requests, static environments are built on top of long lived pull requests. These environments exist continuously and update automatically as changes are merged into the default branch of configured services.
+
+## What is `dev-0`
+
+The **default static environment** is `dev-0`. This environment ensures that there is always a **stable and up-to-date version** of services available without needing to build every dependency manually.
+
+<Callout type="warning">
+
+The `dev-0` environment should be created for your installation.
+
+During the initial bootstrapping of Lifecycle, the `dev-0` build record is created automatically but this itself does not have any services built.
+
+</Callout>
+
+## Create `dev-0`
+
+- Delete the dummy `dev-0` build record from `builds` table in the database
+
+```sql
+DELETE FROM builds WHERE uuid = 'dev-0';
+```
+
+- Create a repository named `lifecycle-static-env` in your GitHub account
+- Install the Lifecycle GitHub App in this repository
+- Create a pull request in this repository with branch `dev-0`
+- Add `lifecycle.yaml` file to the root of the repository with all the services you want to include in the `dev-0` environment
+
+  **Example:**
+
+```yaml
+environment:
+  defaultServices:
+    - name: "frontend"
+      repository: "account/frontend-repo"
+      branch: "main"
+    - name: "grpc"
+      repository: "account/backend-grpc"
+      branch: "main"
+```
+
+- Deploy the `dev-0` environment by adding `lifecycle-deploy!` label to the pull request
+- Update `uuid` for the environment to `dev-0` in the [mission control comment](/docs/tips/using-mission-control#override-uuid)
+- Finally, execute this query to track default branches of the services in the `dev-0` environment:
+
+```sql
+UPDATE builds
+SET
+    "trackDefaultBranches" = true,
+    "isStatic" = true
+WHERE
+    uuid = 'dev-0';
+```
+
+## Key Features
+
+**🏗️ Fallback for Optional Services**
+
+- When optional services are not explicitly built in an ephemeral environment, Lifecycle defaults to using the latest build from `dev-0`.
+
+**💪 Based on a Persistent PR**
+
+- Similar to ephemeral environments, `dev-0` is based on a PR, but it remains open and continuously updates.
+
+**👣 Tracks Changes on Default Branch Merges**
+
+- Whenever a service has a new change merged to its `main` branch, `dev-0` will **automatically pull, build, and redeploy** the latest changes.
+- This ensures `dev-0` always contains **the freshest version** of all services.

@@ -1,0 +1,212 @@
+/**
+ * Copyright 2025 GoodRx, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* CodeHike custom styles */
+
+/* Base styles for code blocks */
+.ch-codeblock {
+  margin: 1.5rem 0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+/* Code group tabs */
+.ch-codegroup {
+  margin: 1.5rem 0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid hsl(var(--border));
+}
+
+.ch-codegroup .ch-editor-tab {
+  background-color: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.ch-codegroup .ch-editor-tab[data-active="true"] {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  border-bottom: 2px solid hsl(var(--primary));
+}
+
+/* Spotlight styles */
+.ch-spotlight {
+  margin: 1.5rem 0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid hsl(var(--border));
+}
+
+.ch-spotlight-sticker {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Scrollycoding styles */
+.ch-scrollycoding {
+  margin: 2rem 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.ch-scrollycoding-content {
+  padding: 1rem;
+  background-color: hsl(var(--muted));
+  border-radius: 0.5rem;
+  position: sticky;
+  top: 4rem;
+}
+
+.ch-scrollycoding-step {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.5rem;
+}
+
+.ch-scrollycoding-step[data-selected="true"] {
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 1px hsl(var(--primary));
+}
+
+/* Code annotations */
+.ch-code-line-annotation {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  margin-left: 0.5rem;
+}
+
+.ch-code-line-annotation-bubble {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  margin-top: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Code links */
+.ch-code-link {
+  color: hsl(var(--primary));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.ch-code-link:hover {
+  color: hsl(var(--primary));
+  opacity: 0.8;
+}
+
+/* Dark mode adjustments */
+.dark .ch-codegroup .ch-editor-tab {
+  background-color: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+}
+
+.dark .ch-codegroup .ch-editor-tab[data-active="true"] {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+.dark .ch-scrollycoding-content {
+  background-color: hsl(var(--muted));
+}
+
+.dark .ch-scrollycoding-step {
+  background-color: hsl(var(--card));
+}
+
+/* Line highlighting */
+.ch-codeblock .ch-code-line-highlighted {
+  background-color: rgba(var(--nextra-primary-hue), 100%, 50%, 0.1);
+  border-left: 2px solid hsl(var(--primary));
+}
+
+/* Focus ranges */
+.ch-codeblock .ch-code-line-focused {
+  filter: brightness(1.1);
+}
+
+/**
+  * @TODO I feel this is needed but we need to be more opinionated
+  */
+/* .ch-codeblock .ch-code-line-not-focused {
+  filter: brightness(0.5);
+  opacity: 0.7;
+} */
+
+/* Copy button */
+.ch-code-button {
+  background-color: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+  border: none;
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.ch-code-button:hover {
+  background-color: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+
+/**
+  * @TODO I feel this is needed but we need to be more opinionated
+  */
+/* Line numbers */
+/* .ch-code-line-number {
+  color: hsl(var(--muted-foreground));
+  opacity: 0.5;
+  user-select: none;
+} */
+.ch-code-line-number {
+  color: hsl(var(--muted-foreground));
+  user-select: none;
+}
+
+/* Theme selector */
+.codehike-theme-selector {
+  margin-bottom: 1rem;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .ch-scrollycoding {
+    grid-template-columns: 1fr;
+  }
+
+  .ch-scrollycoding-content {
+    position: relative;
+    top: 0;
+  }
+}

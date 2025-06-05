@@ -1,0 +1,126 @@
+---
+title: Create environment
+tags:
+  - lifecycle
+  - tutorial
+  - ephemeral-env
+  - start
+  - first environment
+---
+
+import { Callout } from "nextra/components";
+import { Info, Settings } from "lucide-react";
+
+In this walk through, we will make a simple change to an example frontend repository and create our first ephemeral environment using Lifecycle.
+
+## 1. Fork the Repository
+
+Fork the [`lifecycle-examples`](https://github.com/GoodRxOSS/lifecycle-examples) repository to your org or personal account and install your newly minted GitHub App to the forked repository.
+
+- Navigate to `https://github.com/settings/apps` (for personal accounts) or `https://github.com/organizations/<org>/settings/apps` (for org accounts).
+- Find the **Lifecycle GitHub App** and click on **Edit**.
+- Choose `Install App` from sidebar and click the Settings <Settings className="inline" /> icon.
+- Select the forked repository from the list and select **Save**.
+
+## 2. Create a New Branch
+
+Clone the repo and create a branch named `lfc-config`:
+
+```sh
+git checkout -b lfc-config
+```
+
+or if you are using GitHub Desktop, you can create a new branch from the UI.
+
+## 3. Update Lifecycle Configuration
+
+Open the `lifecycle.yaml` file in the root of the repository and update the `frontend` service's repository to your github username or org.
+
+**Before:**
+
+```yaml filename="lifecycle.yaml"
+github:
+  repository: "GoodRxOSS/lifecycle-examples"
+```
+
+**After:**
+
+```yaml filename="lifecycle.yaml"
+github:
+  repository: "<your-github-username>/lifecycle-examples"
+```
+
+## 4. Commit & Push Your Changes
+
+```sh
+git add .
+git commit -m "update config"
+git push origin lfc-config
+```
+
+## 5. Create a Pull Request
+
+1. Open a **Pull Request (PR)** from `lfc-config` to `main` in the forked repository.
+2. Submit the PR.
+
+## 6. Lifecycle PR Comment
+
+After submitting the PR, you’ll see a **GitHub comment from Lifecycle** on your pull request.
+
+🔹 This PR comment is the **mission control** for your ephemeral environment. It provides:
+
+- A **status update** of the build and deploy process.
+- A **list of services** configured for the environment.
+- A **link to the Lifecycle UI** where you can view logs, deployments, and environment details.
+
+<Callout type="error">
+  If there is no comment from Lifecycle, it means the app is not configured
+  correctly or the GitHub App is not installed in the repository. Please refer
+  to the [Missing Comment](/docs/troubleshooting/github-app-webhooks) page for
+  more information.
+</Callout>
+
+## 7. Add `lifecycle-status-comments!` label
+
+The additional label `lifecycle-status-comments!` provides more detailed information about the environment status and links to access the running application.
+
+🔹 The comments provides insights into:
+
+- **Build & Deploy Status**: Track when your environment is ready.
+- **Environment URLs**: Access the running frontend app.
+- **Telemetry Links**: Links to telemetry, build and deploy logs. (if enabled)
+
+## 8. Wait for Deployment
+
+Wait for the **builds & deploys** to complete. Once the status updates to **`deployed`**, your environment is live! 🚀
+
+When a new commit is pushed to your pull request Lifecycle automatically builds and deploys again so you always have the latest version of the application.
+
+<Callout type="info" icon={Info}>
+  If there are any errors during the build or deploy process, the environment
+  will not be created, and you will see an error message in the Lifecycle
+  comment.
+  <br />
+  <div>
+    You can check the logs from `lifecycle-worker` pods in your cluster to debug
+    the issue: <br /> `kubectl logs deploy/lifecycle-worker -n lifecycle-app -f
+    `
+  </div>
+</Callout>
+
+## 9. Checkout the deployed application
+
+Once the deployment is complete, you can access your environment at the URL provided in the Lifecycle comment on your pull request. Click on the `frontend` link to open your application in a new tab.
+
+The application has two simple pages:
+
+- **`/tasks`** – A simple to-do list.
+- **`/variables`** – Displays all environment variables from the container.
+
+## Next Steps
+
+Now that your first ephemeral environment is ready, move on to the next section where we:
+
+🧪 Test the environment.<br />
+🧭 Explore the comments and logs.<br />
+⚙️ Customize the configuration.

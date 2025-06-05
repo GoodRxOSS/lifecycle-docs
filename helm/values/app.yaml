@@ -1,0 +1,103 @@
+# Copyright 2025 GoodRx, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+
+env: lfc
+component: app
+componentType: server
+
+serviceAccount:
+  create: false
+  name: "default"
+
+ports:
+  - name: http
+    protocol: TCP
+    servicePort: 80
+
+    containerPort: 80
+
+service:
+  enabled: true
+
+ingress:
+  enabled: true
+  port: 80
+
+deployment:
+  customNodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: eks.amazonaws.com/capacityType
+              operator: In
+              values:
+                - ON_DEMAND
+
+  replicaCount: 3
+
+  terminationGracePeriodSeconds: 300
+  # Resource limits can be tuned according to particular application requirements
+  # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#resource-units-in-kubernetes
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1000Mi
+    limits:
+      memory: 5000Mi
+  # Probe values can be tuned according to particular application requirements
+  # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes
+  startupProbe:
+    periodSeconds: 5
+    failureThreshold: 60
+    httpGet:
+      scheme: HTTP
+      path: /
+      port: 80
+
+  readinessProbe:
+    periodSeconds: 10
+    failureThreshold: 3
+    httpGet:
+      scheme: HTTP
+      path: /
+      port: 80
+
+  livenessProbe:
+    periodSeconds: 60
+    timeoutSeconds: 59
+    failureThreshold: 5
+    httpGet:
+      scheme: HTTP
+      path: /
+      port: 80
+
+  # Slowly rollout new pods during a deployment to
+  # prevent too many being unavailable at any given time
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 100%
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 90
+
+podDisruptionBudget:
+  enabled: true
+  maxUnavailable: 25%

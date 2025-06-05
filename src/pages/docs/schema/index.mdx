@@ -1,0 +1,928 @@
+---
+title: Lifecycle Schema
+description: Lifecycle Schema documentation; a section by section breakdown of the Lifecycle schema.
+navtext: Section by section
+tags:
+  - schema
+  - lifecycle
+date: "2025-03-28"
+---
+
+import Link from "next/link";
+import { Callout } from "nextra/components";
+import { Info, TriangleAlert, Notebook } from "lucide-react";
+
+The Following document covers the Lifecycle schema and how to use it.
+
+> Our goal is to take all of the information about the Lifecycle schema and put it here so that you can find and share everything you need easily.
+> Feedback is appreciated if this is not the case.
+
+## Lifecycle Schema Breakdown
+
+The Lifecycle schema is defined via the `lifecycle.yaml` file, which is used to define the environment and services that will be deployed in the Lifecycle environment.
+In this section, we will break down the schema into sections and provide examples of how to use each section.
+
+---
+
+### `environment`
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 mb-12">
+<div className="relative">
+<div className="sticky top-20">
+
+The environment object is the most important object within the `lifecycle.yaml` schema.
+It contains a few key values pairs and, currently, 2 main objects, [`defaultServices`](#defaultServices) and [`optionalServices`](#optionalServices).
+
+</div>
+</div>
+<div className="flex items-center justify-center *:w-full">
+
+```yaml filename=lifecycle.yaml
+---
+
+environment:
+  autoDeploy: false
+  defaultServices:
+    - name: "defined-in-lifecycle"
+    - name: "define-outside-lifecycle"
+      repository: "org/repo"
+      branchName: "main"
+  optionalServices:
+    - name: "optional-service-1"
+    - name: "optional-service-2"
+      repository: "org/repo"
+      branchName: "main"
+  ...
+```
+
+</div>
+</div>
+
+---
+
+#### `environmentTypes`
+
+Each service object within the services array defines a service that can deployed in the Lifecycle environment.
+
+---
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+<div className="flex items-center justify-center">
+
+If the service is defined within the `lifecycle.yaml`, it does not require all object properties to be defined; only its name.
+
+</div>
+<div className="flex items-center justify-center *:w-full">
+
+```yaml
+---
+
+environment:
+  defaultServices:
+    - name: "string"
+  ...
+```
+
+</div>
+</div>
+
+---
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+<div className="flex items-center justify-center">
+
+If the service is defined outside of the `lifecycle.yaml`, it requires all properties to be defined.
+
+</div>
+<div className="flex items-center justify-center *:w-full">
+
+```yaml
+---
+
+environment:
+  defaultServices:
+    - name: "string"
+  ...
+```
+
+</div>
+</div>
+
+---
+
+##### `defaultServices`
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 mb-12">
+<div className="relative">
+<div className="sticky top-20">
+
+The `environment.defaultServices` array defines services that are always deployed by default when the Lifecycle environment is deployed.
+
+</div>
+</div>
+<div className="flex items-center justify-center *:w-full">
+
+```yaml
+---
+
+environment:
+  defaultServices:
+    - name: "always-deployed-1"
+    - name: "always-deployed-2"
+    - name: "define-outside-lifecycle-always-deployed"
+      repository: "org/repo"
+      branchName: "main"
+  ...
+```
+
+</div>
+</div>
+
+---
+
+##### `optionalServices`
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 mb-12">
+<div className="relative">
+<div className="sticky top-20">
+
+`environment.optionalServices` services is an array of services objects that contains all services that may be deployed in the Lifecycle environment.
+
+</div>
+</div>
+<div className="flex items-center justify-center *:w-full">
+
+```yaml
+---
+
+environment:
+  defaultServices:
+    - name: "always-deployed-1"
+    - name: "always-deployed-2"
+  optionalServices:
+    - name: "optional-service-1"
+    - name: "optional-service-2"
+      repository: "org/repo"
+      branchName: "main"
+  ...
+```
+
+</div>
+</div>
+
+---
+
+### `services`
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 mb-12">
+<div className="relative">
+<div className="sticky top-20">
+
+The `services` object is an array of objects with child objects and properties describing the services created from this Lifecycle project.
+As of right now, OSS Lifecycle supports 2 types of services, `github` and `docker`.
+
+</div>
+</div>
+<div className="flex items-center justify-center *:w-full">
+
+```yaml
+---
+
+environment:
+  ...
+services:
+  - name: 'my-service'
+    appShort: 'mysvc'
+    defaultUUID: 'my-service-uuid'
+    ...
+```
+
+</div>
+</div>
+
+---
+
+#### `docker`
+
+The `docker` service type is used to define a Docker service that can be deployed in the Lifecycle environment.
+
+---
+
+##### properties
+
+This section describes properties and \*simple objects, eg `env`, that are used to define a Lifecycle Docker service.<br />
+**\*Simple Objects: more complex objects are described in their own sections below.**
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 mb-12">
+<div className="relative">
+<div className="sticky top-20">
+
+- `dockerImage`: The Docker image to use for the service.
+- `defaultTag`: The default tag to use for the Docker image.
+- `command`: The command to run in the Docker container.
+- `arguments`: Stringified arguments to pass to the command.
+- `env`: An key value pair object containing environment variables to set in the Docker container.
+- `ports`: A list of ports to expose in the Docker container.
+
+</div>
+</div>
+<div>
+<div className="flex-col">
+
+```yaml
+---
+
+environment:
+  ...
+services:
+  - name: 'my-service'
+    appShort: 'mysvc'
+    defaultUUID: 'my-service-uuid'
+    docker:
+      dockerImage: "redis"
+      defaultTag: "latest"
+      command: "cmd"
+      arguments: "-config%%SPLIT%%/config/config.toml"
+      env:
+        ENV_VAR: "value"
+      ports:
+        - "6379"
+      ...
+```
+
+</div>
+</div>
+</div>
+
+---
+
+##### `deployment`
+
+<br />
+<div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+<div className="relative">
+<div className="flex-col">
+
+- `docker.deployment`: The deployment configuration for the Docker service.
+- `deployment.public`: If true, the service will be publicly accessible.
+- `deployment.capacityType`: The capacity type to use for the service.
+- `deployment.resource`: The resource requirements for the service.
+- `deployment.resource.cpu.request`: The CPU request for the service.
+- `deployment.resource.cpu.limit`: The CPU limit for the service.
+- `deployment.resource.memory.request`: The memory request for the service.
+- `deployment.resource.memory.limit`: The memory limit for the service.
+- `deployment.hostnames`: The hostnames for the service.
+- `deployment.hostnames.host`: The hostname for the service.
+- `deployment.hostnames.acmARN`: The ACM ARN for the service.
+- `deployment.hostnames.defaultInternalHostname`: The default internal hostname for the service.
+- `deployment.hostnames.defaultPublicUrl`: The default public URL for the service.
+
+</div>
+</div>
+<div>
+<div className="sticky top-20">
+
+```yaml
+---
+
+environment:
+  ...
+services:
+  - name: 'my-service'
+    appShort: 'mysvc'
+    defaultUUID: 'my-service-uuid'
+    docker:
+      ...
+      deployment:
+        public: false
+        capacityType: 'FARGATE'
+        resource:
+          cpu:
+            request: '256'
+            limit: '512'
+          memory:
+            request: '512Mi'
+            limit: '1Gi'
+        hostnames:
+          host: 'my-service.example.com'
+          acmARN: 'arn:aws:acm:us-east-1:123456789012:certificate/abcd1234-5678-90ab-cdef-EXAMPLE'
+          defaultInternalHostname: 'my-service.example.com'
+          defaultPublicUrl: 'https://my-service.example.com'
+        ...
+```
+
+</div>
+</div>
+</div>
+
+---
+
+###### `helm`
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 mb-12">
+<div className="relative">
+
+<div className="flex-col">
+
+- `deployment.helm`: The Helm configuration for the Docker service.
+- `deployment.helm.enabled`: If true, Helm will be used to deploy the service.
+- `deployment.helm.chartName`: The name of the Helm chart to use for the service.
+- `deployment.helm.chartRepoUrl`: The URL of the Helm chart repository to use for the service.
+- `deployment.helm.chartVersion`: The version of the Helm chart to use for the service.
+- `deployment.helm.cmdPs`: The command to run to get the status of the service.
+- `deployment.helm.action`: The action to perform on the service.
+- `deployment.helm.customValues`: A list of custom values to pass to the Helm chart.
+- `deployment.helm.customValueFiles`: A list of custom value files to pass to the Helm chart.
+- `deployment.helm.helmVersion`: The version of Helm to use for the service.
+- `deployment.helm.attachPvc`: The PVC configuration for the service.
+- `deployment.helm.attachPvc.enabled`: If true, a PVC will be attached to the service.
+- `deployment.helm.attachPvc.mountPath`: The path to mount the PVC to.
+
+</div>
+</div>
+<div>
+<div className="sticky top-20">
+
+```yaml
+---
+
+environment:
+  ...
+services:
+  - name: 'my-service'
+    appShort: 'mysvc'
+    defaultUUID: 'my-service-uuid'
+    docker:
+      ...
+      deployment:
+        ...
+        helm:
+          enabled: false
+          chartName: 'my-chart'
+          chartRepoUrl: 'https://charts.example.com'
+          chartVersion: '1.0.0'
+          cmdPs: 'helm list'
+          action: 'install'
+          customValues:
+            - 'key=value'
+          customValueFiles:
+            - 'values.yaml'
+          helmVersion: '3.5.0'
+          attachPvc:
+            enabled: false
+            mountPath: '/data'
+        ...
+```
+
+</div>
+</div>
+</div>
+
+---
+
+###### `readiness`
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 mb-12">
+<div className="relative">
+
+<div className="flex-col">
+
+- `deployment.readiness`: The readiness configuration for the Docker service.
+- `deployment.readiness.disabled`: If true, the service will not be ready.
+- `deployment.readiness.tcpSocketPort`: The port to use for the TCP socket.
+- `deployment.readiness.httpGet`: The network configuration for the Docker service.
+- `deployment.readiness.httpGet.path`: The path to use for the HTTP GET request.
+- `deployment.readiness.httpGet.port`: The port to use for the HTTP GET request.
+- `deployment.readiness.initialDelaySeconds`: The number of seconds to wait before starting the readiness check.
+- `deployment.readiness.periodSeconds`: The number of seconds between each readiness check.
+- `deployment.readiness.timeoutSeconds`: The number of seconds to wait for a readiness check to complete.
+- `deployment.readiness.successThreshold`: The number of consecutive successful readiness checks before considering the service ready.
+- `deployment.readiness.failureThreshold`: The number of consecutive failed readiness checks before considering the service not ready.
+
+</div>
+</div>
+<div>
+<div className="sticky top-20">
+
+```yaml
+---
+
+environment:
+  ...
+services:
+  - name: 'my-service'
+    appShort: 'mysvc'
+    defaultUUID: 'my-service-uuid'
+    docker:
+    ...
+    deployment:
+      ...
+      readiness:
+        disabled: false
+        tcpSocketPort: 8080
+        httpGet:
+          path: '/'
+          port: 80
+        initialDelaySeconds: 5
+        periodSeconds: 10
+        timeoutSeconds: 1
+        successThreshold: 1
+        failureThreshold: 3
+```
+
+</div>
+</div>
+</div>
+
+---
+
+###### `network`
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 mb-12">
+<div className="relative">
+<div className="sticky top-20">
+
+- `deployment.network`: The network configuration for the Docker service.
+- `deployment.network.ipWhitelist`: A list of IP addresses to whitelist for the service.
+- `deployment.network.pathPortMapping`: A mapping of paths to ports for the service.
+- `deployment.network.hostPortMapping`: A mapping of host ports to container ports for the service.
+- `deployment.network.grpc`: The gRPC configuration for the service.
+- `deployment.network.grpc.enable`: If true, gRPC will be enabled for the service.
+- `deployment.network.grpc.host`: The host to use for gRPC.
+- `deployment.network.grpc.defaultHost`: The default host to use for gRPC.
+
+</div>
+</div>
+<div>
+<div className='flex-col'>
+
+```yaml
+---
+
+environment:
+  ...
+services:
+  - name: 'my-service'
+    appShort: 'mysvc'
+    defaultUUID: 'my-service-uuid'
+    docker:
+    ...
+    deployment:
+      ...
+      network:
+        ipWhitelist:
+          - '192.168.0.0/16'
+        pathPortMapping:
+          '/api': 8080
+        hostPortMapping:
+          '80': 8080
+        grpc:
+          enable: true
+          host: ' my-service-grpc.example.com'
+          defaultHost: 'my-service-grpc.example.com'
+```
+
+</div>
+</div>
+</div>
+
+---
+
+###### `serviceDisks`
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 mb-12">
+<div className="relative">
+<div className="sticky top-20">
+
+- `deployment.serviceDisks`: A list of service disks to attach to the Docker service.
+- `deployment.serviceDisks.name`: The name of the service disk.
+- `deployment.serviceDisks.mountPath`: The path to mount the service disk to.
+- `deployment.serviceDisks.accessModes`: The access modes for the service disk.
+- `deployment.serviceDisks.storageSize`: The size of the service disk.
+- `deployment.serviceDisks.medium`: The medium to use for the service disk.
+
+</div>
+</div>
+<div>
+<div className="flex-col">
+
+```yaml
+---
+
+environment:
+  ...
+services:
+  - name: 'my-service'
+    appShort: 'mysvc'
+    defaultUUID: 'my-service-uuid'
+    docker:
+    ...
+    deployment:
+      ...
+      serviceDisks:
+        - name: 'my-service-disk'
+          mountPath: '/data'
+          accessModes: 'ReadWriteOnce'
+          storageSize: '10Gi'
+          medium: 'gp2'
+```
+
+</div>
+</div>
+</div>
+
+---
+
+#### `github`
+
+The `github` service type is used to define a Github service that can be deployed in the Lifecycle environment.
+
+---
+
+##### properties
+
+This section describes properties and \*simple objects, eg `env`, that are used to define a Lifecycle Docker service.<br />
+**\*Simple Objects: more complex objects are described in their own sections below.**
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 mb-12">
+<div className="relative">
+<div className="sticky top-20">
+
+- `repository`: The repository to use for the service.
+- `branchName`: The branch name to use for the service.
+
+</div>
+</div>
+<div>
+<div className="flex-col">
+
+```yaml
+---
+
+environment:
+  ...
+services:
+  - name: 'my-service'
+    appShort: 'mysvc'
+    defaultUUID: 'my-service-uuid'
+    github:
+      repository: "org/repo"
+      branchName: "main"
+      ...
+```
+
+</div>
+</div>
+</div>
+
+---
+
+##### `docker`
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 mb-12">
+<div>
+<div className="flex-col">
+
+- `github.docker`: The Docker configuration for the Github service.
+- `github.docker.defaultTag`: The default tag to use for the Docker image.
+- `github.docker.builder`: The builder to use for the Docker image.
+- `github.docker.builder.engine`: The engine to use for the Docker image.
+- `github.docker.app`: The application to use for the Docker image.
+- `github.docker.app.dockerfilePath`: The path to the Dockerfile to use for the application.
+- `github.docker.app.command`: The command to run in the Docker container.
+- `github.docker.app.arguments`: Stringified arguments to pass to the command.
+- `github.docker.app.env`: An key value pair object containing environment variables to set in the Docker container.
+- `github.docker.app.ports`: A list of ports to expose in the Docker container.
+- `github.docker.init`: The init configuration for the Docker service.
+- `github.docker.init.dockerfilePath`: The path to the Dockerfile to use for the init container.
+- `github.docker.init.command`: The command to run in the init container.
+- `github.docker.init.arguments`: Stringified arguments to pass to the command.
+- `github.docker.init.env`: An key value pair object containing environment variables to set in the init container.
+
+</div>
+</div>
+<div className="relative">
+<div className="sticky top-20">
+
+```yaml
+---
+
+environment: ...
+services:
+  - name: "my-service"
+    appShort: "mysvc"
+    defaultUUID: "my-service-uuid"
+    github:
+      repository: "org/repo"
+      branchName: "main"
+      docker:
+        defaultTag: "latest"
+        builder:
+          engine: "buildkit"
+        app:
+          dockerfilePath: "Dockerfile"
+          command: "cmd"
+          arguments: "-config%%SPLIT%%/config/config.toml"
+          env:
+            ENV_VAR: "value"
+          ports:
+            - "6379"
+        init:
+          dockerfilePath: "Dockerfile.init"
+          command: "init-cmd"
+          arguments: "-config%%SPLIT%%/config/init.toml"
+          env:
+            INIT_ENV_VAR: "value"
+```
+
+</div>
+</div>
+</div>
+
+---
+
+##### `deployment`
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 mb-12">
+<div className="relative">
+<div className="sticky top-20">
+
+- `github.deployment`: The deployment configuration for the Github service.
+- `github.deployment.public`: If true, the service will be publicly accessible.
+- `github.deployment.capacityType`: The capacity type to use for the service.
+- `github.deployment.resource`: The resource requirements for the service.
+- `github.deployment.resource.cpu.request`: The CPU request for the service.
+- `github.deployment.resource.cpu.limit`: The CPU limit for the service.
+- `github.deployment.resource.memory.request`: The memory request for the service.
+- `github.deployment.resource.memory.limit`: The memory limit for the service.
+- `github.deployment.hostnames`: The hostnames for the service.
+- `github.deployment.hostnames.host`: The hostname for the service.
+- `github.deployment.hostnames.acmARN`: The ACM ARN for the service.
+- `github.deployment.hostnames.defaultInternalHostname`: The default internal hostname for the service.
+- `github.deployment.hostnames.defaultPublicUrl`: The default public URL for the service.
+
+</div>
+</div>
+<div>
+<div className="sticky top-20">
+
+```yaml
+---
+environment: ...
+services:
+  - name: "my-service"
+    appShort: "mysvc"
+    defaultUUID: "my-service-uuid"
+    github:
+      repository: "org/repo"
+      branchName: "main"
+      deployment:
+        public: false
+        capacityType: "FARGATE"
+        resource:
+          cpu:
+            request: "256"
+            limit: "512"
+          memory:
+            request: "512Mi"
+            limit: "1Gi"
+        hostnames:
+          host: "my-service.example.com"
+          acmARN: "arn:aws:acm:us-east-1:123456789012:certificate/abcd1234-5678-90ab-cdef-EXAMPLE"
+          defaultInternalHostname: "my-service.example.com"
+          defaultPublicUrl: "https://my-service.example.com"
+        ...
+        network:
+          ipWhitelist:
+            - "192.168.0.0/16"
+          pathPortMapping:
+            "/api": 8080
+          hostPortMapping:
+            "80": 8080
+          grpc:
+            enable: true
+            host: " my-service-grpc.example.com"
+            defaultHost: "my-service-grpc.example.com"
+        serviceDisks:
+          - name: "my-service-disk"
+            mountPath: "/data"
+            accessModes: "ReadWriteOnce"
+            storageSize: "10Gi"
+            medium: "gp2"
+```
+
+</div>
+</div>
+</div>
+
+---
+
+###### `helm`
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 mb-12">
+<div className="relative">
+<div className="sticky top-20">
+
+- `github.deployment.helm`: The Helm configuration for the Github service.
+- `github.deployment.helm.enabled`: If true, Helm will be used to deploy the service.
+- `github.deployment.helm.chartName`: The name of the Helm chart to use for the service.
+- `github.deployment.helm.chartRepoUrl`: The URL of the Helm chart repository to use for the service.
+- `github.deployment.helm.chartVersion`: The version of the Helm chart to use for the service.
+- `github.deployment.helm.cmdPs`: The command to run to get the status of the service.
+- `github.deployment.helm.action`: The action to perform on the service.
+- `github.deployment.helm.customValues`: A list of custom values to pass to the Helm
+- `github.deployment.helm.customValueFiles`: A list of custom value files to pass to the Helm chart.
+- `github.deployment.helm.helmVersion`: The version of Helm to use for the service.
+- `github.deployment.helm.attachPvc`: The PVC configuration for the service.
+- `github.deployment.helm.attachPvc.enabled`: If true, a PVC will be attached to the service.
+- `github.deployment.helm.attachPvc.mountPath`: The path to mount the PVC to.
+
+</div>
+</div>
+<div>
+<div className="flex-col">
+
+```yaml
+---
+environment: ...
+services:
+  - name: "my-service"
+    appShort: "mysvc"
+    defaultUUID: "my-service-uuid"
+    github:
+      repository: "org/repo"
+      branchName: "main"
+      deployment:
+        ...
+        helm:
+          enabled: false
+          chartName: "my-chart"
+          chartRepoUrl: "https://charts.example.com"
+          chartVersion: "1.0.0"
+          cmdPs: "helm list"
+          action: "install"
+          customValues:
+            - "key=value"
+          customValueFiles:
+            - "values.yaml"
+          helmVersion: "3.5.0"
+          attachPvc:
+            enabled: false
+            mountPath: "/data"
+          ...
+```
+
+</div>
+</div>
+</div>
+
+---
+
+###### `readiness`
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 mb-12">
+<div className="relative">
+<div className="sticky top-20">
+
+- `github.deployment.readiness`: The readiness configuration for the Github service.
+- `github.deployment.readiness.disabled`: If true, the service will not be ready.
+- `github.deployment.readiness.tcpSocketPort`: The port to use for the TCP socket.
+- `github.deployment.readiness.httpGet`: The network configuration for the Github service.
+- `github.deployment.readiness.httpGet.path`: The path to use for the HTTP GET request.
+- `github.deployment.readiness.httpGet.port`: The port to use for the HTTP GET request.
+- `github.deployment.readiness.initialDelaySeconds`: The number of seconds to wait before starting the readiness check.
+- `github.deployment.readiness.periodSeconds`: The number of seconds between each readiness check.
+- `github.deployment.readiness.timeoutSeconds`: The number of seconds to wait for a readiness check to complete.
+- `github.deployment.readiness.successThreshold`: The number of consecutive successful readiness checks before considering the service ready.
+- `github.deployment.readiness.failureThreshold`: The number of consecutive failed readiness checks before considering the service not ready.
+
+</div>
+</div>
+<div>
+<div className="flex-col">
+
+```yaml
+---
+environment: ...
+services:
+  - name: "my-service"
+    appShort: "mysvc"
+    defaultUUID: "my-service-uuid"
+    github:
+      repository: "org/repo"
+      branchName: "main"
+      deployment:
+        ...
+        readiness:
+          disabled: false
+          tcpSocketPort: 8080
+          httpGet:
+            path: "/"
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 3
+```
+
+</div>
+</div>
+</div>
+
+---
+
+###### `network`
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 mb-12">
+<div className="relative">
+<div className="sticky top-20">
+
+- `github.deployment.network`: The network configuration for the Github service.
+- `github.deployment.network.ipWhitelist`: A list of IP addresses to whitelist for the service.
+- `github.deployment.network.pathPortMapping`: A mapping of paths to ports for the service.
+- `github.deployment.network.hostPortMapping`: A mapping of host ports to container ports for the service.
+- `github.deployment.network.grpc`: The gRPC configuration for the service.
+- `github.deployment.network.grpc.enable`: If true, gRPC will be enabled for the service.
+- `github.deployment.network.grpc.host`: The host to use for gRPC.
+- `github.deployment.network.grpc.defaultHost`: The default host to use for gRPC.
+
+</div>
+</div>
+<div>
+<div className="flex-col">
+
+```yaml
+---
+environment: ...
+services:
+  - name: "my-service"
+    appShort: "mysvc"
+    defaultUUID: "my-service-uuid"
+    github:
+      repository: "org/repo"
+      branchName: "main"
+      deployment:
+        ...
+        network:
+          ipWhitelist:
+            - "192.168.0.0/16"
+          pathPortMapping:
+            "/api": 8080
+          hostPortMapping:
+            "80": 8080
+          grpc:
+            enable: true
+            host: " my-service-grpc.example.com"
+            defaultHost: "my-service-grpc.example.com"
+```
+
+</div>
+</div>
+</div>
+
+---
+
+###### `serviceDisks`
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 mb-12">
+<div className="relative">
+<div className="sticky top-20">
+
+- `github.deployment.serviceDisks`: A list of service disks to attach to the Github service.
+- `github.deployment.serviceDisks.name`: The name of the service disk.
+- `github.deployment.serviceDisks.mountPath`: The path to mount the service disk to.
+- `github.deployment.serviceDisks.accessModes`: The access modes for the service disk.
+- `github.deployment.serviceDisks.storageSize`: The size of the service disk.
+- `github.deployment.serviceDisks.medium`: The medium to use for the service disk.
+
+</div>
+</div>
+<div>
+<div className="flex-col">
+
+```yaml
+---
+environment: ...
+services:
+  - name: "my-service"
+    appShort: "mysvc"
+    defaultUUID: "my-service-uuid"
+    github:
+      repository: "org/repo"
+      branchName: "main"
+      deployment:
+        ...
+        serviceDisks:
+          - name: "my-service-disk"
+            mountPath: "/data"
+            accessModes: "ReadWriteOnce"
+            storageSize: "10Gi"
+            medium: "gp2"
+```
+
+</div>
+</div>
+</div>
+
+---

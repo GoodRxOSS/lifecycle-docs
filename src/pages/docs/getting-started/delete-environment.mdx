@@ -1,0 +1,37 @@
+---
+title: Delete environment
+tags:
+  - lifecycle
+  - tutorial
+  - delete
+  - tear down
+  - cleanup
+  - lifecycle-disabled
+  - close
+---
+
+import { Callout } from "nextra/components";
+
+To **tear down** an environment, you can do one of the following:
+
+1. **Merge or close the pull request**: This will automatically clean up the environment.
+2. **Apply the `lifecycle-disabled!` label**: This will immediately trigger the environment deletion process.
+
+---
+
+The **`lifecycle-disabled!`** label is useful in scenarios where:
+
+- The environment infrastructure is **experiencing issues**.
+- The data within the environment is **corrupt**.
+- You need to **restart or rebuild** the environment from scratch without waiting for a PR to be merged or closed.
+
+Simply apply the label to the **PR associated with the environment**, and Lifecycle will automatically tear it down.
+
+<Callout type="info">
+  Read more about how pull request labels control auto deploy in repositories
+  [here](/docs/features/auto-deployment)
+</Callout>
+
+---
+
+Using these methods, you can efficiently manage and clean up environments to ensure smooth development and testing workflows. 🧹

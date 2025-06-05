@@ -1,0 +1,86 @@
+---
+title: Webhooks
+tags:
+  - webhook
+  - automation
+  - codefresh
+  - deployment
+  - lifecycle
+date: "2025-02-16"
+---
+
+import { Image } from "@lifecycle-docs/components";
+
+Lifecycle can invoke **third-party services** when a build state changes. Currently, only **Codefresh pipeline triggers** are supported. Webhooks allow users to automate external processes such as running tests or performing cleanup tasks based on environment build states.
+
+## Common Use Cases
+
+- When a build status is `deployed`, trigger **end-to-end tests**.
+- When a build status is `error`, trigger **infrastructure cleanup** or alert the team.
+
+## Webhook Configuration
+
+Webhooks are defined in the `lifecycle.yaml` under the `environment.webhooks` section.
+
+Below is an example configuration for triggering end-to-end tests when the `deployed` state is reached.
+
+### **Examples**
+
+```yaml
+# Trigger End-to-End Tests on Deployment
+environment:
+  # ...
+  defaultServices:
+    - name: "frontend"
+  optionalServices:
+    - name: "backend"
+      repository: "lifecycle/backend"
+      branch: "main"
+  webhooks:
+    - state: deployed
+      type: codefresh
+      name: "End to End Tests"
+      pipelineId: 64598362453cc650c0c9cd4d
+      trigger: tests
+      env:
+        branch: "{{frontend_branchName}}"
+        TEST_URL: "https://{{frontend_publicUrl}}"
+  # ...
+```
+
+- **`state: deployed`** → Triggers the webhook when the build reaches the `deployed` state.
+- **`type: codefresh`** → Specifies that this webhook triggers a **Codefresh pipeline**.
+- **`name`** → A human-readable name for the webhook.
+- **`pipelineId`** → The unique Codefresh pipeline ID.
+- **`trigger`** → Codefresh pipeline's trigger to execute.
+- **`env`** → Passes relevant environment variables (e.g., `branch` and `TEST_URL`).
+
+---
+
+```yaml
+# Trigger Cleanup on Build Error
+environment:
+  # ...
+  webhooks:
+    - state: error
+      type: codefresh
+      name: "Cleanup Failed Deployment"
+      pipelineId: 74283905723ff650c0d9ab7e
+      trigger: cleanup
+      env:
+        branch: "{{frontend_branchName}}"
+        CLEANUP_TARGET: "frontend"
+  # ...
+```
+
+- **`state: error`** → Triggers the webhook when the build fails.
+- **`type: codefresh`** → Invokes a Codefresh cleanup pipeline.
+- **`trigger: cleanup`** → Codefresh pipeline's trigger to execute.
+- **`env`** → Includes necessary variables, such as `branch` and `CLEANUP_TARGET`.
+
+## Limitations
+
+- **Currently, Lifecycle only supports Codefresh pipeline triggers.**
+- In need of support for other webhook types? please **submit a pull request or an issue**.
+
+By leveraging webhooks, teams can **automate workflows, run tests, and clean up failed deployments** seamlessly within Lifecycle.

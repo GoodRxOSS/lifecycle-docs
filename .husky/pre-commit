@@ -1,0 +1,13 @@
+#!/bin/bash
+echo "Running pre-commit hooks..." && \
+echo "Running build:prep..."
+bun run build:prep
+echo "Staging changes from build:prep..."
+# add all page changes after build:prep
+git add src/pages/articles/*.mdx src/pages/docs/*.mdx
+# add all static changes after build:prep
+git add src/lib/static
+echo "Running lint-staged..."
+lint-staged
+echo "Pre-commit hooks completed successfully. ✨"
+exit 0

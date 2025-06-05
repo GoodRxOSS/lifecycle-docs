@@ -1,0 +1,66 @@
+---
+title: Auto Deploy & Labels
+description: How to setup auto deploy for pull requests and control envionment with labels
+tags:
+  - deploy
+  - auto
+  - labels
+  - lifecycle-deploy
+  - lifecycle-disabled
+date: "2025-01-29"
+---
+
+## Auto-Deploy Configuration
+
+To enable **automatic deployment** when a PR is created, set the `autoDeploy` attribute in your repository's `lifecycle.yaml` file:
+
+```yaml {2} filename="lifecycle.yaml"
+environment:
+  autoDeploy: true
+  defaultServices:
+```
+
+- Lifecycle will **automatically create** the environment as soon as a PR is opened.
+- A `lifecycle-deploy!` label will be added to the PR to indicate that the environment has been deployed.
+
+---
+
+## Managing Deployments with Labels
+
+If **auto-deploy is not enabled**, you can manually control the environment using PR labels.
+
+### Deploy an Environment
+
+To create an ephemeral environment for a PR, **add** the `lifecycle-deploy!` label.
+
+### Tear Down an Environment
+
+To **delete** an active environment, use either of these labels:
+
+- **Remove** `lifecycle-deploy!`
+- **Add** `lifecycle-disabled!`
+
+---
+
+## Automatic Cleanup on PR Closure
+
+When a PR is **closed**, Lifecycle will:
+
+1. **Tear down** the active environment.
+2. **Remove** the `lifecycle-deploy!` label from the PR.
+
+This ensures that unused environments do not persist after the PR lifecycle is complete.
+
+---
+
+## Summary
+
+| Feature                      | Behavior                                        |
+| ---------------------------- | ----------------------------------------------- |
+| `autoDeploy: true` in config | PR environments are **automatically** deployed. |
+| `lifecycle-deploy!`          | **Manually deploy** an environment.             |
+| Remove `lifecycle-deploy!`   | **Tear down** the environment.                  |
+| Add `lifecycle-disabled!`    | **Tear down** the environment manually.         |
+| PR closed                    | **Environment is deleted automatically**.       |
+
+Using these configurations and labels, teams can efficiently manage **ephemeral environments** in their development workflow.

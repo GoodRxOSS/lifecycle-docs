@@ -1,0 +1,91 @@
+---
+title: Mission Control comment
+description: >-
+  Use the Mission Control PR Comment to modify and customize your environment
+  directly from the pull request comment.
+tags:
+  - pull request
+  - comment
+  - mission control
+  - environment
+  - pr
+---
+
+import { Callout } from "nextra/components";
+
+Lifecycle uses **Mission Control PR Comments** to allow users to modify and customize their environments directly from the pull request comment. This enables easy **service selection**, **branch customization**, and **environment variable overrides** without modifying `lifecycle.yaml`.
+
+---
+
+## Selecting and Deselecting Services
+
+Each pull request environment includes **default services** and optional additional services. You can enable or disable services using the checkboxes.
+
+- **Enabled Services** are marked with `[x]`.
+- **Disabled Services** are marked with `[ ]`.
+
+**Example:**
+
+```md
+// Default Services
+
+- [x] frontend: dev-default
+- [x] fastly: main
+
+// Optional Additional Services
+
+- [ ] backend-service: main
+- [ ] backend-db: main
+- [ ] backend-cache: main
+```
+
+To **enable** a service, change `[ ]` to `[x]`. To **disable** a service, change `[x]` to `[ ]`. As simple as that!
+
+<Callout type="warning">
+  If you need to make multiple selections or deselections at once, use the
+  **Edit Comment** option instead of clicking checkboxes individually. This
+  prevents multiple back-to-back builds, as each selection triggers an event in
+  Lifecycle without deduplication.
+</Callout>
+
+## Choosing a Branch
+
+To deploy a specific branch for a service, modify the branch name after the service name.
+
+**Example:**
+
+```md
+- [x] frontend: feature-branch
+- [x] fastly: main
+```
+
+This will deploy `frontend` using the `feature-branch` instead of the default branch.
+
+## Overriding Environment Variables
+
+To set additional environment variables, use the **Override Environment Variables** section in the PR comment.
+
+**Example:**
+
+```md
+// **Override Environment Variables:** _ENV:[KEY]:[VALUE]_
+ENV:API_URL:https://api.custom.dev.0env.com
+ENV:CHIEF_INTERN:ICEYCAKE
+```
+
+This sets `API_URL` and `CHIEF_INTERN` in the environment without modifying the service configuration.
+
+## Override UUID
+
+To set a custom UUID (subdomain) for the environment, use the **Override UUID** section in the PR comment.
+
+```md
+// UUID (Pick your own custom subdomain)
+url: quiet-breeze-882712
+```
+
+Replace `quiet-breeze-882712` with your desired subdomain. This allows you to customize the environment URL without changing the underlying service configuration.
+
+---
+
+Using the **Mission Control PR Comment**, you can easily customize your environment **without modifying code**, making it a flexible way to test and deploy changes dynamically.

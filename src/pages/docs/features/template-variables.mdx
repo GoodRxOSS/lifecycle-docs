@@ -1,0 +1,69 @@
+---
+title: Template Variables
+tags:
+  - template
+  - variables
+  - buildUUID
+  - publicUrl
+  - sha
+  - branchName
+  - UUID
+  - internalHostname
+  - review
+---
+
+import { Callout } from "nextra/components";
+
+## Overview
+
+Lifecycle uses [Mustache](https://github.com/janl/mustache.js) as the template rendering engine.
+
+## Available Template Variables
+
+The following template variables are available for use within your configuration. Variables related to specific services should use the service name as a prefix.
+
+### General Variables
+
+- **`{{{ buildUUID }}}`** - The unique identifier for the Lifecycle environment, e.g., `lively-down-881123`.
+- **`{{{ namespace }}}`** - Namespace for the deployments, e.g., `env-lively-down-881123`.
+- **`{{{ pullRequestNumber }}}`** - The GitHub pull request number associated with the environment.
+
+### Service-Specific Variables
+
+For service-specific variables, replace `<service_name>` with the actual service name.
+
+- **`{{{ <service_name>_internalHostname }}}`** - The internal hostname of the deployed service. If the service is optional and not deployed, it falls back to `defaultInternalHostname`.
+
+  <Callout type="info">
+    `service_internalHostname` will be substituted with local cluster full
+    domain name like `service.namespace.svc.cluster.local` to be able to work
+    with deployments across namespaces.
+  </Callout>
+
+- **`{{{ <service_name>_publicUrl }}}`** - The public URL of the deployed service. If optional and not deployed, it defaults to `defaultPublicUrl` under the `services` table.
+- **`{{{ <service_name>_sha }}}`** - The GitHub SHA that triggered the Lifecycle build.
+- **`{{{ <service_name>_branchName }}}`** - The branch name of the pull request that deployed the environment.
+- **`{{{ <service_name>_UUID }}}`** - The build UUID of the service. If listed under `optionalServices` or `defaultServices`, its value depends on whether the service is selected:
+  - If selected, it is equal to `buildUUID`.
+  - If not selected (or if service not part of deploys created), it defaults to **`dev-0`**.
+
+## Usage Example
+
+```yaml
+services:
+  frontend:
+    # ...
+    env:
+      API_URL: "{{{ backend_publicUrl }}}"
+      UUID: "{{{ buildUUID }}}"
+```
+
+This ensures the `PUBLIC_URL` and `INTERNAL_HOST` variables are dynamically assigned based on the ephemeral environment deployment.
+
+ <Callout >
+- Undefined variables will result in an empty string unless handled explicitly.
+- Use triple curly braces (`{{{ }}}`) to prevent unwanted HTML escaping.
+- Ensure service names are correctly referenced in the template.
+</Callout>
+
+For more details, refer to the [Mustache.js documentation](https://github.com/janl/mustache.js).

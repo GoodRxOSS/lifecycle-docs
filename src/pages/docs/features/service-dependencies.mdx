@@ -1,0 +1,184 @@
+---
+title: Service Dependencies
+description: Understand service dependencies, their impact, and configuration.
+tags:
+  - lifecycle
+  - service-dependencies
+  - configuration
+  - defaultServices
+  - optionalServices
+date: "2025-02-16"
+---
+
+import { Callout } from "nextra/components";
+
+This document will cover `environment.{defaultServices,optionalServices}` and `service.requires`, their differences, impact scope, and usage.
+
+## `environment.{defaultServices,optionalServices}`
+
+### Impact scope
+
+| Scope                     | Impact |
+| ------------------------- | ------ |
+| Service repo<sup>\*</sup> | ✅     |
+| Outside repo<sup>\*</sup> | ❌     |
+| dev-0<sup>\*</sup>        | ❌     |
+
+This represents the default environment that will be created by lifecycle when a pull request is opened in the service repo<sup>\*</sup> and does not have any impact on outside repos, dev-0, or any other static environments that use this service.
+
+## `services.requires`
+
+### Impact scope
+
+| Scope                     | Impact |
+| ------------------------- | ------ |
+| Service repo<sup>\*</sup> | ✅     |
+| Outside repo<sup>\*</sup> | ✅     |
+| dev-0<sup>\*</sup>        | ✅     |
+
+`services.requires` has an impact across the board; hence, it is important to understand how it works and when we should use them.
+
+**Please read the info blocks below carefully.**
+
+You can think of `services.requires` as a hard dependency definition. For example, if you have an API service and a database, the API service will have a hard dependency on the database.
+In this scenario, the database should not be defined as the default service. Instead, we should make the dependency explicitly clear by adding the database to the API’s `requires` block.
+By doing this, we ensure that any outside repo that wants to use our API service will get the database along with it but only needs to specify the API service in their `defaultServices` or `optionalServices`.
+
+<Callout type="warning">
+  Only services defined in `lifecycle.yaml` should be used in the `requires`
+  array. If a service is defined in an outside repo, use
+  `environment.defaultServices` instead.
+</Callout>
+
+Do not use services in the `services.requires` if the service itself is not
+defined in the same lifecycle.yaml.
+
+<Callout type="warning">
+  Services defined in the `requires` block will only be resolved 1 level down.
+</Callout>
+
+**This is a very important nuance, which we get tripped by regularly.**
+
+---
+
+## Examples
+
+To better illustrate the above statement, consider this example.
+
+Repository A `r-A` has 3 services `s-A`, `s-B`, and `s-C`.
+
+- `s-A` requires `s-B`.
+- `s-B` requires `s-C`.
+
+As you can see, `s-A` has an indirect dependency on `s-C` through `s-B`.
+
+### Scenario 1: Pull Request in Service repo<sup>\*</sup> ✅
+
+When we open a pull request in `r-A` repo, lifecycle will deploy 3 services: `s-A`, `s-B`, and `s-C`.
+
+#### Breakdown
+
+- Lifecycle deploys `s-A` and `s-B` because they are defined in `defaultServices`.
+- Services defined in the `requires` block will only be resolved **one level down**.
+- Only services defined in `lifecycle.yaml` should be used in the `requires` array. If a service is defined in an outside repo, use `environment.defaultServices` instead.
+
+```yaml
+# `r-A.lifecycle.yaml`
+environment:
+  defaultServices:
+    - name: "s-A"
+    - name: "s-B"
+
+services:
+  - name: "s-A"
+    requires:
+      - name: "s-B"
+    helm: ...
+
+  - name: "s-B"
+    requires:
+      - name: "s-C"
+    helm: ...
+
+  - name: "s-C"
+    helm: ...
+```
+
+### Scenario 2: ❌
+
+Repository B `r-B` has service `s-X` and also defines an outside repo `r-A` service `s-A` as `environment.defaultServices`.
+
+```yaml
+#  `r-B.lifecycle.yaml`
+environment:
+  defaultServices:
+    - name: "s-X"
+    - name: "s-A"
+      repository: "lifecycle/r-A"
+      branch: "main"
+
+services:
+  - name: "s-X"
+    helm: ...
+```
+
+#### Breakdown
+
+1. Lifecycle deploys `s-X` and `s-A` because they are defined in `defaultServices`.
+2. Lifecycle deploys `s-B` because it is a 1st level dependency of a service (`s-A`) listed in `defaultServices`.
+3. Lifecycle **does not** deploy `s-C` since it is **not** a 1st level dependency of any service listed in `defaultServices` or `optionalServices`.
+
+The way this scenario manifests is lifecycle will deploy `s-X`, `s-A`, and `s-B`, but the build will likely **fail** because `s-B` is missing a required dependency `s-C`.
+
+### Solutions
+
+There are 2 ways to address this depending on your use case.
+
+#### Solution 1
+
+Add `s-B` to `r-B`’s `environment.defaultServices` block in `r-B.lifecycle.yaml`. In effect, this will make `s-C` a first-level dependency.
+
+```yaml
+environment:
+  defaultServices:
+    - name: "s-X"
+    - name: "s-A"
+      repository: "lifecycle/r-A"
+      branch: "main"
+    - name: "s-B"
+      repository: "lifecycle/r-A"
+      branch: "main"
+```
+
+#### Solution 2
+
+Add `s-C` to the `services.requires` block of `r-A` in `r-A.lifecycle.yaml`. This will also make `s-C` a first-level dependency.
+
+```yaml
+environment:
+  defaultServices:
+    - name: "s-A"
+    - name: "s-B"
+
+services:
+  - name: "s-A"
+    requires:
+      - name: "s-B"
+      - name: "s-C"
+    helm: ...
+```
+
+### Choosing the Right Solution
+
+In summary, the solution you should use depends on how you want your service to be consumed in an outside repo<sup>\*</sup>.
+
+- If you want outside repos to explicitly include `s-A` and `s-B`, use **Solution 1**.
+- If you want outside repos to only include `s-A` and let dependencies resolve automatically, use **Solution 2**.
+
+---
+
+### Terminology
+
+- **Service repo**: The repository where `lifecycle.yaml` is defined.
+- **Outside repo**: Another repository referencing it.
+- **dev-0**: Default static environment.

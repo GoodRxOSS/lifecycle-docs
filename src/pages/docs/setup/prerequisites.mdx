@@ -1,0 +1,126 @@
+---
+title: Prerequisites
+tags:
+  - requirements
+  - prerequisites
+  - setup
+---
+
+import { Callout } from "nextra/components";
+import { Tabs } from "nextra/components";
+import { Info } from "lucide-react";
+
+Before we start with the setup, let's make sure the following prerequisites are in place:
+
+- **GitHub Account**: You'll need either a personal or an organization GitHub account. [Sign up for GitHub](https://github.com/join)
+
+- **Cloud Provider Account**: A Google Kubernetes Engine (GKE) or Amazon Web Services (AWS) Account. You'll need an active account with either platform to proceed.
+  - [Sign up for Google Cloud](https://cloud.google.com) and create a project
+  - [Sign up for AWS](https://aws.amazon.com/)
+
+<Callout icon={Info}>
+  We recommend using an isolated project or account in your cloud provider
+  specifically for this setup to begin with. This helps to keep your resources
+  organized and manageable as you experiment with Lifecycle.
+</Callout>
+
+- **CLI Tools**
+
+  - **[OpenTofu](https://opentofu.org/docs/intro/install/)** — Infrastructure as code tool (OpenTofu is a community-driven fork of Terraform).
+  - **[kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl)** — Command-line tool for interacting with Kubernetes clusters.
+  - **[gcloud](https://formulae.brew.sh/cask/google-cloud-sdk)** or **[aws-cli](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)** — Command-line tools for managing Google Cloud or AWS resources, respectively.
+
+- **Custom Domain**: You will need a custom domain (e.g., `0env.com`) to route traffic to your application environments. This is particularly important for setting up:
+
+  - Public callback and webhook URLs for the GitHub App
+  - Ingress routing within the Kubernetes cluster
+  - Secure (HTTPS) access via TLS certificates
+
+- **DNS Provider with Wildcard Support**: The domain must be managed by a DNS provider that supports wildcard DNS records (e.g., \*.0env.com). This is necessary to dynamically route traffic from GitHub to the Lifecycle app and to ephemeral environments.
+
+  Supported DNS providers that support wildcard for infrastructure setup include:
+
+<Tabs items={["Google Cloud DNS", "AWS Route 53", "Cloudflare"]}>
+
+  <Tabs.Tab>
+  **Manual Setup**:
+        Setup a [public DNS zone in Google Cloud](https://cloud.google.com/dns) to manage your domain's DNS records.
+
+      - Follow steps [here](https://cloud.google.com/dns/docs/zones#create-pub-zone) to setup a
+      public DNS zone.
+
+      - Wildcard DNS records will be created by the OpenTofu modules in the next steps.
+
+**CLI Setup**:
+Use the `gcloud` CLI to create a public DNS zone for your domain:
+
+```sh
+gcloud config set project <PROJECT_ID>
+gcloud auth application-default login
+gcloud services enable dns.googleapis.com --project=<PROJECT_ID>
+gcloud dns --project=<PROJECT_ID> managed-zones create <DNS_ZONE_NAME> --description="Lifecycle OSS starter DNS public zone" --dns-name="<YOUR_DOMAIN>." --visibility="public" --dnssec-state="off"
+```
+
+_Update your domain's DNS records with NS records provided by Google Cloud DNS. You can find these in the Google Cloud Console under the DNS zone you created._
+
+  </Tabs.Tab>
+
+<Tabs.Tab>
+  **[AWS Route 53](https://aws.amazon.com/route53/)**: Amazon's scalable DNS web
+  service designed to route end users to Internet applications.
+
+  **Manual Setup**:
+
+  - Authenticate with AWS CLI using the role/usr you desire.
+  - Ensure you have [your domain provisioned to accept wildcards](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingNewSubdomain.html); eg `*.lifecycle.<your-domain>.com`
+
+  **CLI Setup**:
+
+  ```sh
+  aws configure
+  ```
+
+  ```sh
+  aws route53 change-resource-record-sets --hosted-zone-id <hosted-zone> --change-batch '{
+    "Comment": "CREATE wildcard for <your-domain>",
+    "Changes": [
+      {
+        "Action": "CREATE",
+        "ResourceRecordSet": {
+          "Name": "<subdomain>.<your-domain>.com",
+          "Type": "A",
+          "TTL": 300,
+          "ResourceRecords": [
+            {
+              "Value": "*********"
+            }
+          ]
+        }
+      }
+    ]
+  }'
+  ```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+  If you want to use Cloudflare as your primary DNS provider and manage your DNS records on Cloudflare, your domain should be using a full setup.
+  This means that you are using Cloudflare for your authoritative DNS nameservers.
+  Follow the steps [here](https://developers.cloudflare.com/dns/zone-setups/full-setup/setup/) to setup a public DNS zone in Cloudflare.
+</Tabs.Tab>
+
+</Tabs>
+
+---
+
+<Callout type="info">
+  Ensure that your domain’s nameservers are pointing to your chosen DNS provider
+  at your registrar, and that you have permission to create and manage DNS
+  records programmatically. <br /> **This is crucial for the setup to work
+  correctly and will take time to propagate.**
+
+Use https://dnschecker.org/#NS to verify that your domain's nameservers are correctly set up.
+
+</Callout>
+
+Once you have these prerequisites in place, you can proceed to the next steps in setting up the cluster and application.

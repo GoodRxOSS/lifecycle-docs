@@ -1,0 +1,53 @@
+---
+title: What is Lifecycle?
+description: Lifecycle is your effortless way to test and create ephemeral environments
+tags:
+  - core
+  - lifecycle
+  - intro
+date: "2025-03-12"
+---
+
+import { Image } from "@lifecycle-docs/components";
+import Iframe from "@/components/iframe";
+
+Lifecycle is an **ephemeral** _(/əˈfem(ə)rəl/, lasting for a very short time)_ environment orchestrator that transforms your GitHub pull requests into fully functional development environments. It enables developers to test, validate, and collaborate on features without the hassle of managing infrastructure manually.
+
+> With **Lifecycle**, every pull request gets its own connected playground—ensuring that changes can be previewed, integrated, and verified before merging into its main branch.
+
+## A Developer’s Story
+
+Imagine working in an organization that develops multiple services. Managing and testing changes across these services can be challenging, especially when multiple developers are working on different features simultaneously.
+
+Meet **Nick Holiday 👨‍💻**, an engineer who needs to update a database schema and modify the corresponding API in a backend service. Additionally, his change requires frontend service updates to display the new data correctly.
+
+### Traditional Workflow Challenges
+
+- **Shared environments** – Nick deploys his backend service changes to a shared dev or staging environment, but another engineer is testing unrelated changes at the same time.
+- **Conflicting updates** – The frontend engineers working on the UI might face issues if their code depends on a stable backend service that keeps changing.
+- **Environment management** – Setting up and maintaining an isolated environment for testing requires significant effort.
+
+### Enter Lifecycle
+
+With Lifecycle, as soon as Nick opens a pull request, the system automatically:
+
+1. 🏗️ **Creates an isolated development environment** – This environment includes Nick’s updated backend service along with the necessary frontend services.
+2. 🚀 **Deploys the application** – Everything is set up exactly as it would be in production, ensuring a reliable test scenario.
+3. 🔗 **Generates a shareable URL** – Nick and his teammates can interact with the new features without setting up anything locally.
+4. 🧹 **Cleans up automatically** – Once the PR is merged or closed, Lifecycle removes the environment, keeping things tidy.
+
+## Watch a Quick Demo
+
+<Iframe src="https://www.youtube.com/embed/ld9rWBPU3R8?si=ff-_y0lXTNOmRxdT" />
+
+## How It Works
+
+<Image src="/docs/simple-workflow.png" width={1941} height={1613} />
+
+## Why Use Lifecycle?
+
+- **Faster Feedback Loops** - Get instant previews of your changes without waiting for staging deployments.
+- **Isolation** - Each PR runs in its own sandbox, preventing conflicts.
+- **Seamless Collaboration** - Share URLs with stakeholders, designers, or QA engineers.
+- **Automatic Cleanup** - No more stale test environments; Lifecycle manages cleanup for you.
+- **Works with Your Stack** - Supports containerized applications and integrates with Kubernetes.

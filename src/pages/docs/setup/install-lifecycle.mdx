@@ -1,0 +1,68 @@
+---
+title: Install Lifecycle
+tags:
+  - lifecycle
+  - install
+  - getting-started
+  - setup
+---
+
+import { Callout } from "nextra/components";
+import { Image } from "@lifecycle-docs/components";
+
+Now that the infrastructure components are setup, let's install the lifecycle app and create a new Github app that will send events to the application to process and create ephemeral dev environments.
+
+<Callout type="info">
+  Make sure you have updated the kube config to be able to `helm install` in the
+  cluster you just created!
+</Callout>
+
+- Clone the repository:
+
+```sh
+git clone https://github.com/GoodRxOSS/lifecycle
+cd lifecycle
+```
+
+- Update the custom values file at `/helm/environments/defaults.yaml`:
+
+```yaml
+components:
+  #... other settings
+
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt
+    hosts:
+      - host: app.<your_domain_here> # Update this with your domain
+        paths: ["/"]
+#... other settings
+```
+
+- Install the Lifecycle Helm chart:
+
+```sh
+helm install lifecycle helm/web-app --namespace lifecycle-app --values ./helm/environments/default/lifecycle.yaml
+```
+
+- Wait for the installation to complete and verify that the pods are running:
+
+```sh
+kubectl get pods -n lifecycle-app
+```
+
+<Callout type="info">
+  Make sure to replace values with your actual domain and update the secret name
+  accordingly. Secret was created by the opentofu modules in the infrastructure
+  setup (`app-<domain>-<tld>`).
+</Callout>
+
+- Once the pods are running, you can access the application at your configured domain (e.g. `https://app.0env.com`)
+
+<Image src="/setup/app-installed.png" width={1890} height={1089} />
+
+Just like that, you have successfully installed Lifecycle and set up the necessary infrastructure to start creating ephemeral environments for your GitHub pull requests!
+
+Let's move on to the next step where we will create a GitHub app to connect Lifecycle with your repositories.

@@ -1,0 +1,60 @@
+---
+title: Terminology
+tags:
+  - build
+  - terminology
+  - glossary
+  - term
+  - environment
+  - webhook
+  - deploy
+  - service
+  - review
+---
+
+This glossary provides an overview of key Lifecycle concepts and terminology. Let's see how they fit into the environment setup and deployment process.
+
+## Repository
+
+A **repository** refers to a GitHub repository. Each environment that is built **must** have a default repository and an associated pull request.
+
+## Service
+
+A **service** is a deployable artifact. It can be a Docker container, CI pipeline, RDS database, or Helm chart. A single repository can contain multiple services.
+
+**Example:** <br/>
+`frontend-service` and `frontend-cache` are two services required for the frontend application to function correctly.
+
+## Environment
+
+An **environment** is a stack of services built and connected together.
+
+- **`defaultServices`** are built and deployed in an environment by default.
+- **`optionalServices`** can be built and deployed only when needed; otherwise, they fallback to the **default static environment**.
+
+## Static Environment
+
+A **static environment** is a long-lived environment based on a pull request. It tracks branches from configured services and updates automatically when new changes are merged.
+
+## Build
+
+A **build** is the actual instance of the process to build and deploy services within an environment.
+
+- Each build is uniquely identified by Lifecycle using a UUID (e.g., `arm-model-060825` or `dev-0`).
+- A build contains **one deploy per service** in the configuration.
+
+## Deploy
+
+A **deploy** manages the build and deployment execution of a service within an environment.
+
+**Example:**<br/>
+In a frontend environment, `frontend-service` and `frontend-cache` are two deploys created for the environment, each mapped to a unique build UUID.
+
+## Webhook
+
+Lifecycle can invoke third-party services when a build state changes. Currently, only **Codefresh triggers** are supported.
+
+### Example
+
+- When the build status is `deployed`, trigger end-to-end tests.
+- When the build status is `error`, trigger infrastructure cleanup.

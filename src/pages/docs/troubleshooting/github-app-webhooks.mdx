@@ -1,0 +1,50 @@
+---
+title: Missing PR comment
+tags:
+  - mission control
+  - comment
+  - missing
+  - issue
+  - setup
+---
+
+import { Callout } from "nextra/components";
+
+Let's quickly validate that the app is able to send events to the Lifecycle app successfully.
+
+- Navigate to your Github app
+- Click `App Settings` link in the Github application page
+- Choose `Advanced` from the left sidebar
+- `Recent Deliveries` section should show a successful delivery of the `installation` event to the Lifecycle app.
+
+  <Callout type="warning">
+    If you see an error or no deliveries, make sure the app is installed in the
+    atleast one repository and that the webhook URL is set correctly by
+    navigating to the `General` section from the left sidebar and checking the
+    `Webhook URL` field.
+  </Callout>
+
+- If the delivery is successful, you should see a status code of `200 OK`
+
+## Failing deliveries
+
+If you see a delivery failure, it could be due to various reasons. Here are some common issues and how to resolve them:
+
+### Github App secrets
+
+- Make sure that the Github App secrets are correctly set in the `lifecycle-app` namespace. You can verify this by running the following command:
+
+```sh
+kubectl get secret app-secrets --namespace lifecycle-app \
+      -o jsonpath='{.data}' | jq 'with_entries(.value |= @base64d)'
+```
+
+- The output should include all the `GITHUB_*` variables with the correct values.
+
+- If the secrets are present but the delivery is still failing, try restarting the following deployments.
+
+```sh
+ kubectl rollout restart  deployment lifecycle-web lifecycle-worker -n lifecycle-app
+```
+
+- Try triggering a new event (create a pull request) by making a change in the repository or by manually redelivering a failed delivery.
