@@ -25,7 +25,7 @@ export const Main = () => {
         <div className="w-full md:pr-20">
           <h1 className="text-center text-primary md:text-right">
             <span className="text-6xl font-bold md:block md:text-[4.25rem]">
-              Introducing
+              Introducing{" "}
             </span>
             <span className="text-6xl font-bold md:block md:text-[4.25rem]">
               Lifecycle
