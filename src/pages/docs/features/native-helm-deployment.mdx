@@ -1,0 +1,821 @@
+---
+title: Native Helm Deployment
+description: Deploy services using Helm directly in Kubernetes without external CI/CD dependencies
+tags:
+  - helm
+  - deployment
+  - kubernetes
+  - native
+date: "2025-01-29"
+---
+
+import { Callout, Steps, Tabs } from "nextra/components";
+import { Image } from "@lifecycle-docs/components";
+
+<Callout type="warning">
+  This feature is still in alpha and might change with breaking changes.
+</Callout>
+
+**Native Helm** is an alternative deployment method that runs Helm deployments directly within Kubernetes jobs, eliminating the need for external CI/CD systems. This provides a more self-contained and portable deployment solution.
+
+<Callout type="info">
+  Native Helm deployment is an opt-in feature that can be enabled globally or
+  per-service.
+</Callout>
+
+## Overview
+
+When enabled, Native Helm:
+
+- Creates Kubernetes jobs to execute Helm deployments
+- Runs in ephemeral namespaces with proper RBAC
+- Provides real-time deployment logs via WebSocket
+- Handles concurrent deployments automatically
+- Supports all standard Helm chart types
+
+## Quickstart
+
+Want to try native Helm deployment? Here's the fastest way to get started:
+
+```yaml filename="lifecycle.yaml" {5}
+services:
+  - name: my-api
+    defaultUUID: "dev-0"
+    helm:
+      deploymentMethod: "native" # That's it!
+      chart:
+        name: "local"
+        valueFiles:
+          - "./helm/values.yaml"
+```
+
+This configuration:
+
+1. Enables native Helm for the `my-api` service
+2. Uses a local Helm chart from your repository
+3. Applies values from `./helm/values.yaml`
+4. Runs deployment as a Kubernetes job
+
+<Callout type="tip">
+  To enable native Helm for all services at once, see [Global
+  Configuration](#enabling-native-helm).
+</Callout>
+
+## Configuration
+
+### Enabling Native Helm
+
+There are two ways to enable native Helm deployment:
+
+<Tabs items={["Per Service", "Global"]}>
+  <Tabs.Tab>
+    ```yaml {4} filename="lifecycle.yaml" services: - name: my-service helm:
+    deploymentMethod: "native" # Enable for this service only chart: name:
+    my-chart ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+    ```yaml {3} filename="lifecycle.yaml" helm: nativeHelm: enabled: true #
+    Enable for all services ```
+  </Tabs.Tab>
+</Tabs>
+
+### Configuration Precedence
+
+Lifecycle uses a hierarchical configuration system with three levels of precedence:
+
+1. **helmDefaults** - Base defaults for all deployments (database: `global_config` table)
+2. **Chart-specific config** - Per-chart defaults (database: `global_config` table)
+3. **Service YAML config** - Service-specific overrides (highest priority)
+
+<Callout>
+  Service-level configuration always takes precedence over global defaults.
+</Callout>
+
+### Global Configuration (Database)
+
+Global configurations are stored in the `global_config` table in the database. Each configuration is stored as a row with:
+
+- **key**: The configuration name (e.g., 'helmDefaults', 'postgresql', 'redis')
+- **config**: JSON object containing the configuration
+
+#### helmDefaults Configuration
+
+Stored in database with key `helmDefaults`:
+
+```json
+{
+  "nativeHelm": {
+    "enabled": true,
+    "defaultArgs": "--wait --timeout 30m",
+    "defaultHelmVersion": "3.12.0"
+  }
+}
+```
+
+**Field Descriptions**:
+
+- `enabled`: When `true`, enables native Helm deployment for all services unless they explicitly set `deploymentMethod: "ci"`
+- `defaultArgs`: Arguments automatically appended to every Helm command (appears before service-specific args)
+- `defaultHelmVersion`: The Helm version to use when not specified at the service or chart level
+
+#### Chart-specific Configuration
+
+Example: PostgreSQL configuration stored with key `postgresql`:
+
+```json
+{
+  "version": "3.13.0",
+  "args": "--force --timeout 60m0s --wait",
+  "chart": {
+    "name": "postgresql",
+    "repoUrl": "https://charts.bitnami.com/bitnami",
+    "version": "12.9.0",
+    "values": ["auth.username=postgres_user", "auth.database=postgres_db"]
+  }
+}
+```
+
+<Callout type="info">
+  These global configurations are managed by administrators and stored in the
+  database. They provide consistent defaults across all environments and can be
+  overridden at the service level.
+</Callout>
+
+## Usage Examples
+
+### Quick Experiment: Deploy Jenkins!
+
+Want to see native Helm in action? Let's deploy everyone's favorite CI/CD tool - Jenkins! This example shows how easy it is to deploy popular applications using native Helm.
+
+```yaml filename="lifecycle.yaml"
+environment:
+  defaultServices:
+    - name: "my-app"
+    - name: "jenkins" # Add Jenkins to your default services
+
+services:
+  - name: "jenkins"
+    helm:
+      deploymentMethod: "native"
+      repository: "myorg/apps"
+      branchName: "main"
+      chart:
+        name: "jenkins"
+        repoUrl: "https://charts.bitnami.com/bitnami"
+        version: "13.6.8"
+        values:
+          - "service.type=NodePort" # Override default LoadBalancer to avoid cloud resource costs
+```
+
+<Callout type="info">
+  🎉 That's it! With just a few lines of configuration, you'll have Jenkins
+  running in your Kubernetes cluster. The `service.type=NodePort` override is
+  important - the Bitnami Jenkins chart defaults to `LoadBalancer` which would
+  consume cloud resources like an AWS ELB or GCP Load Balancer.
+</Callout>
+
+To access your Jenkins instance:
+
+1. Check the deployment status in your PR comment
+2. Click the **Deploy Logs** link to monitor the deployment
+3. Once deployed, Jenkins will be available at the internal hostname
+
+<Callout type="tip">
+  For more Jenkins configuration options and values, check out the [Bitnami
+  Jenkins chart
+  documentation](https://github.com/bitnami/charts/tree/main/bitnami/jenkins).
+  This same pattern works for any Bitnami chart (PostgreSQL, Redis, MongoDB) or
+  any other public Helm chart!
+</Callout>
+
+### Basic Service Deployment
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: web-api
+    helm:
+      deploymentMethod: "native"
+      chart:
+        name: web-app
+        version: "1.2.0"
+```
+
+### PostgreSQL with Overrides
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: database
+    helm:
+      deploymentMethod: "native"
+      version: "3.14.0" # Override Helm version
+      args: "--atomic" # Override deployment args
+      chart:
+        name: postgresql
+        values: # Additional values merged with defaults
+          - "persistence.size=20Gi"
+          - "replicaCount=2"
+```
+
+### Custom Environment Variables
+
+Lifecycle supports flexible environment variable formatting through the `envMapping` configuration. This feature allows you to control how environment variables from your service configuration are passed to your Helm chart.
+
+<Callout type="info">
+  **Why envMapping?** Different Helm charts expect environment variables in
+  different formats. Some expect an array of objects with `name` and `value`
+  fields (Kubernetes standard), while others expect a simple key-value map. The
+  `envMapping` feature lets you adapt to your chart's requirements.
+</Callout>
+
+#### Default envMapping Configuration
+
+You can define default `envMapping` configurations in the `global_config` database table. These defaults apply to all services using that chart unless overridden at the service level.
+
+**Example: Setting defaults for your organization's chart**
+
+```json
+// In global_config table, key: "myorg-web-app"
+{
+  "chart": {
+    "name": "myorg-web-app",
+    "repoUrl": "https://charts.myorg.com"
+  },
+  "envMapping": {
+    "app": {
+      "format": "array",
+      "path": "deployment.containers[0].env"
+    }
+  }
+}
+```
+
+With this configuration, any service using the `myorg-web-app` chart will automatically use array format for environment variables:
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: api
+    helm:
+      deploymentMethod: "native"
+      chart:
+        name: "myorg-web-app" # Inherits envMapping from global_config
+      docker:
+        app:
+          env:
+            API_KEY: "secret"
+            # These will be formatted as array automatically
+```
+
+<Callout type="tip">
+  Setting `envMapping` in global_config is particularly useful when: - You have
+  a standard organizational chart used by many services - You want consistent
+  environment variable handling across services - You're migrating multiple
+  services and want to reduce configuration duplication
+</Callout>
+
+<Tabs items={['Array Format', 'Map Format']}>
+  <Tabs.Tab>
+#### Array Format
+Best for charts that expect Kubernetes-style env arrays.
+
+```yaml {7-9} filename="lifecycle.yaml"
+services:
+  - name: api
+    helm:
+      deploymentMethod: "native"
+      chart:
+        name: local
+      envMapping:
+        app:
+          format: "array"
+          path: "env"
+      docker:
+        app:
+          env:
+            DATABASE_URL: "postgres://localhost:5432/mydb"
+            API_KEY: "secret-key-123"
+            NODE_ENV: "production"
+```
+
+**This produces the following Helm values:**
+
+```bash
+--set env[0].name=DATABASE_URL
+--set env[0].value=postgres://localhost:5432/mydb
+--set env[1].name=API_KEY
+--set env[1].value=secret-key-123
+--set env[2].name=NODE_ENV
+--set env[2].value=production
+```
+
+**Your chart's values.yaml would use it like:**
+
+```yaml
+env:
+  - name: DATABASE_URL
+    value: postgres://localhost:5432/mydb
+  - name: API_KEY
+    value: secret-key-123
+  - name: NODE_ENV
+    value: production
+```
+
+  </Tabs.Tab>
+  <Tabs.Tab>
+#### Map Format
+Best for charts that expect a simple key-value object.
+
+```yaml {7-9} filename="lifecycle.yaml"
+services:
+  - name: api
+    helm:
+      deploymentMethod: "native"
+      chart:
+        name: local
+      envMapping:
+        app:
+          format: "map"
+          path: "envVars"
+      docker:
+        app:
+          env:
+            DATABASE_URL: "postgres://localhost:5432/mydb"
+            API_KEY: "secret-key-123"
+            NODE_ENV: "production"
+```
+
+**This produces the following Helm values:**
+
+```bash
+--set envVars.DATABASE__URL=postgres://localhost:5432/mydb
+--set envVars.API__KEY=secret-key-123
+--set envVars.NODE__ENV=production
+```
+
+<Callout type="warning">
+  Note: Underscores in environment variable names are converted to double
+  underscores (`__`) in map format to avoid Helm parsing issues.
+</Callout>
+
+**Your chart's values.yaml would use it like:**
+
+```yaml
+envVars:
+  DATABASE__URL: postgres://localhost:5432/mydb
+  API__KEY: secret-key-123
+  NODE__ENV: production
+```
+
+  </Tabs.Tab>
+</Tabs>
+
+#### Complete Example with Multiple Services
+
+```yaml filename="lifecycle.yaml"
+services:
+  # Service using array format (common for standard Kubernetes deployments)
+  - name: frontend
+    helm:
+      deploymentMethod: "native"
+      repository: "myorg/apps"
+      branchName: "main"
+      envMapping:
+        app:
+          format: "array"
+          path: "deployment.env"
+      chart:
+        name: "./charts/web-app"
+      docker:
+        app:
+          dockerfilePath: "frontend/Dockerfile"
+          env:
+            REACT_APP_API_URL: "https://api.example.com"
+            REACT_APP_VERSION: "{{build.uuid}}"
+
+  # Service using map format (common for custom charts)
+  - name: backend
+    helm:
+      deploymentMethod: "native"
+      repository: "myorg/apps"
+      branchName: "main"
+      envMapping:
+        app:
+          format: "map"
+          path: "config.environment"
+      chart:
+        name: "./charts/api"
+      docker:
+        builder:
+          engine: "buildkit"
+        defaultTag: "main"
+        app:
+          dockerfilePath: "docker/backend.dockerfile"
+          ports:
+            - 3000
+          env:
+            NODE_ENV: "production"
+            SERVICE_NAME: "backend"
+
+  - name: "mysql-database"
+    helm:
+      deploymentMethod: "native"
+      repository: "myorg/api-services"
+      branchName: "main"
+      chart:
+        name: "mysql" # Using public Helm chart
+        version: "9.14.1"
+        repoUrl: "https://charts.bitnami.com/bitnami"
+        valueFiles:
+          - "deploy/helm/mysql-values.yaml"
+```
+
+## Templated Variables
+
+Lifecycle supports template variables in Helm values that are resolved at deployment time. These variables allow you to reference dynamic values like build UUIDs, docker tags, and internal hostnames.
+
+### Available Variables
+
+Template variables use the format `{{{variableName}}}` and are replaced with actual values during deployment:
+
+| Variable                             | Description               | Example Value                            |
+| ------------------------------------ | ------------------------- | ---------------------------------------- |
+| `{{{serviceName_dockerTag}}}`        | Docker tag for a service  | `main-abc123`                            |
+| `{{{serviceName_dockerImage}}}`      | Full docker image path    | `registry.com/org/repo:main-abc123`      |
+| `{{{serviceName_internalHostname}}}` | Internal service hostname | `api-service.env-uuid.svc.cluster.local` |
+| `{{{build.uuid}}}`                   | Build UUID                | `env-12345`                              |
+| `{{{build.namespace}}}`              | Kubernetes namespace      | `env-12345`                              |
+
+### Usage in Values
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: web-api
+    helm:
+      deploymentMethod: "native"
+      chart:
+        name: "./charts/app"
+        values:
+          - "image.tag={{{web-api_dockerTag}}}"
+          - "backend.url=http://{{{backend-service_internalHostname}}}:8080"
+          - "env.BUILD_ID={{{build.uuid}}}"
+```
+
+<Callout type="info">
+**Docker Image Mapping**: When using custom charts, you'll need to map `{{{serviceName_dockerImage}}}` or `{{{serviceName_dockerTag}}}` to your chart's expected value path. Common patterns include:
+- `image.repository` and `image.tag` (most common)
+- `deployment.image` (single image string)
+- `app.image` or `application.image`
+- Custom paths specific to your chart
+
+Check your chart's `values.yaml` to determine the correct path.
+
+</Callout>
+
+#### Image Mapping Examples
+
+```yaml filename="lifecycle.yaml"
+# Example 1: Separate repository and tag (most common)
+services:
+  - name: web-api
+    helm:
+      chart:
+        name: "./charts/standard"
+        values:
+          - "image.repository=registry.com/org/web-api"    # Static repository
+          - "image.tag={{{web-api_dockerTag}}}"            # Dynamic tag only
+
+# Example 2: Combined image string
+services:
+  - name: worker
+    helm:
+      chart:
+        name: "./charts/custom"
+        values:
+          - "deployment.image={{{worker_dockerImage}}}"    # Full image with tag
+
+# Example 3: Nested structure
+services:
+  - name: backend
+    helm:
+      chart:
+        name: "./charts/microservice"
+        values:
+          - "app.container.image={{{backend_dockerImage}}}"  # Full image with tag
+```
+
+<Callout type="warning">
+**Important**: Always use triple braces `{{{variable}}}` instead of double braces `{{variable}}` for Lifecycle template variables. This prevents Helm from trying to process them as Helm template functions and ensures they are passed through correctly for Lifecycle to resolve.
+</Callout>
+
+### Template Resolution Order
+
+1. Lifecycle resolves `{{{variables}}}` before passing values to Helm
+2. The resolved values are then passed to Helm using `--set` flags
+3. Helm processes its own template functions (if any) after receiving the resolved values
+
+### Example with Service Dependencies
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: api-gateway
+    helm:
+      chart:
+        name: "./charts/gateway"
+        values:
+          - "config.authServiceUrl=http://{{{auth-service_internalHostname}}}:3000"
+          - "config.userServiceUrl=http://{{{user-service_internalHostname}}}:3000"
+          - "image.tag={{{api-gateway_dockerTag}}}"
+
+  - name: auth-service
+    helm:
+      chart:
+        name: "./charts/microservice"
+        values:
+          - "image.tag={{{auth-service_dockerTag}}}"
+          - "database.host={{{postgres-db_internalHostname}}}"
+```
+
+## Deployment Process
+
+<Steps>
+  1. **Job Creation**: A Kubernetes job is created in the ephemeral namespace 2.
+  **RBAC Setup**: Service account with namespace-scoped permissions is created
+  3. **Git Clone**: Init container clones the repository 4. **Helm Deploy**:
+  Main container executes the Helm deployment 5. **Monitoring**: Logs are
+  streamed in real-time via WebSocket
+</Steps>
+
+### Concurrent Deployment Handling
+
+Native Helm automatically handles concurrent deployments by:
+
+- Detecting existing deployment jobs
+- Force-deleting the old job
+- Starting the new deployment
+
+This ensures the newest deployment always takes precedence.
+
+## Monitoring Deployments
+
+### Deploy Logs Access
+
+For services using native Helm deployment, you can access deployment logs through the Lifecycle PR comment:
+
+1. Add the `lifecycle-status-comments!` label to your PR
+2. In the status comment that appears, you'll see a **Deploy Logs** link for each service using native Helm
+3. Click the link to view real-time deployment logs
+
+### Log Contents
+
+The deployment logs show:
+
+- Git repository cloning progress (`clone-repo` container)
+- Helm deployment execution (`helm-deploy` container)
+- Real-time streaming of all deployment output
+- Success or failure status
+
+## Chart Types
+
+Lifecycle automatically detects and handles three chart types:
+
+| Type          | Detection                                    | Features                                       |
+| ------------- | -------------------------------------------- | ---------------------------------------------- |
+| **ORG_CHART** | Matches `orgChartName` AND has `helm.docker` | Docker image injection, env var transformation |
+| **LOCAL**     | Name is "local" or starts with "./" or "../" | Flexible `envMapping` support                  |
+| **PUBLIC**    | Everything else                              | Standard labels and tolerations                |
+
+<Callout>
+  The `orgChartName` is configured in the database's `global_config` table with
+  key `orgChart`. This allows organizations to define their standard internal
+  Helm chart.
+</Callout>
+
+## Troubleshooting
+
+### Deployment Fails with "Another Operation in Progress"
+
+**Symptom**: Helm reports an existing operation is blocking deployment
+
+**Solution**: Native Helm automatically handles this by killing existing jobs. If the issue persists:
+
+```bash
+# Check for stuck jobs
+kubectl get jobs -n env-{uuid} -l service={serviceName}
+
+# Force delete if needed
+kubectl delete job {jobName} -n env-{uuid} --force --grace-period=0
+```
+
+### Environment Variables Not Working
+
+**Symptom**: Environment variables not passed to the deployment
+
+**Common Issues**:
+
+1. `envMapping` placed under `chart` instead of directly under `helm`
+2. Incorrect format specification (array vs map)
+3. Missing path configuration
+
+**Correct Configuration**:
+
+```yaml {4-7}
+helm:
+  deploymentMethod: "native"
+  chart:
+    name: local
+  envMapping: # Correct: directly under helm
+    app:
+      format: "array"
+      path: "env"
+```
+
+## Migration Example
+
+Here's a complete example showing how to migrate from GitHub-type services to Helm-type services:
+
+### Before: GitHub-type Services
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "api-gateway"
+    github:
+      repository: "myorg/api-services"
+      branchName: "main"
+      docker:
+        builder:
+          engine: "buildkit"
+        defaultTag: "main"
+        app:
+          dockerfilePath: "docker/api.dockerfile"
+          env:
+            BACKEND_URL: "{{backend-service_internalHostname}}:3000"
+            LOG_LEVEL: "info"
+            ENV_NAME: "production"
+          ports:
+            - 8080
+      deployment:
+        public: true
+        resource:
+          cpu:
+            request: "100m"
+          memory:
+            request: "256Mi"
+        readiness:
+          tcpSocketPort: 8080
+        hostnames:
+          host: "example.com"
+          defaultInternalHostname: "api-gateway-prod"
+          defaultPublicUrl: "api.example.com"
+
+  - name: "backend-service"
+    github:
+      repository: "myorg/api-services"
+      branchName: "main"
+      docker:
+        builder:
+          engine: "buildkit"
+        defaultTag: "main"
+        app:
+          dockerfilePath: "docker/backend.dockerfile"
+          ports:
+            - 3000
+          env:
+            NODE_ENV: "production"
+            SERVICE_NAME: "backend"
+      deployment:
+        public: false
+        resource:
+          cpu:
+            request: "50m"
+          memory:
+            request: "128Mi"
+        readiness:
+          tcpSocketPort: 3000
+
+  - name: "mysql-database"
+    docker:
+      dockerImage: "mysql"
+      defaultTag: "8.0-debian"
+      ports:
+        - 3306
+      env:
+        MYSQL_ROOT_PASSWORD: "strongpassword123"
+        MYSQL_DATABASE: "app_database"
+        MYSQL_USER: "app_user"
+        MYSQL_PASSWORD: "apppassword456"
+      deployment:
+        public: false
+        resource:
+          cpu:
+            request: "100m"
+          memory:
+            request: "512Mi"
+        readiness:
+          tcpSocketPort: 3306
+        serviceDisks:
+          - name: "mysql-data"
+            mountPath: "/var/lib/mysql"
+            accessModes: "ReadWriteOnce"
+            storageSize: "10Gi"
+```
+
+### After: Helm-type Services with Native Deployment
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "api-gateway"
+    helm:
+      deploymentMethod: "native" # Enable native Helm
+      version: "3.14.0"
+      repository: "myorg/api-services"
+      branchName: "main"
+      args: "--wait --timeout 10m"
+      envMapping:
+        app:
+          format: "array"
+          path: "containers.api.env"
+      chart:
+        name: "./charts/microservices"
+        values:
+          - 'image.tag="{{{api-gateway_dockerTag}}}"'
+          - "service.type=LoadBalancer"
+          - "ingress.enabled=true"
+        valueFiles:
+          - "deploy/helm/base-values.yaml"
+          - "deploy/helm/api-gateway-values.yaml"
+      docker:
+        builder:
+          engine: "buildkit"
+        defaultTag: "main"
+        app:
+          dockerfilePath: "docker/api.dockerfile"
+          env:
+            BACKEND_URL: "{{backend-service_internalHostname}}:3000"
+            LOG_LEVEL: "info"
+            ENV_NAME: "production"
+          ports:
+            - 8080
+
+  - name: "backend-service"
+    helm:
+      deploymentMethod: "native"
+      version: "3.14.0"
+      repository: "myorg/api-services"
+      branchName: "main"
+      envMapping:
+        app:
+          format: "map" # Using map format for this service
+          path: "env"
+      chart:
+        name: "./charts/microservices"
+        values:
+          - 'image.tag="{{{backend-service_dockerTag}}}"'
+          - "replicaCount=2"
+        valueFiles:
+          - "deploy/helm/base-values.yaml"
+          - "deploy/helm/backend-values.yaml"
+      docker:
+        builder:
+          engine: "buildkit"
+        defaultTag: "main"
+        app:
+          dockerfilePath: "docker/backend.dockerfile"
+          ports:
+            - 3000
+          env:
+            NODE_ENV: "production"
+            SERVICE_NAME: "backend"
+
+  - name: "mysql-database"
+    helm:
+      deploymentMethod: "native"
+      repository: "myorg/api-services"
+      branchName: "main"
+      chart:
+        name: "mysql" # Using public Helm chart
+        version: "9.14.1"
+        repoUrl: "https://charts.bitnami.com/bitnami"
+        valueFiles:
+          - "deploy/helm/mysql-values.yaml"
+```
+
+### Key Migration Points
+
+1. **Service Type Change**: Changed from `github:` to `helm:` configuration
+2. **Repository Location**: `repository` and `branchName` move from under `github:` to directly under `helm:`
+3. **Deployment Method**: Added `deploymentMethod: "native"` to enable native Helm
+4. **Chart Configuration**: Added `chart:` section with local or public charts
+5. **Environment Mapping**: Added `envMapping:` to control how environment variables are passed
+6. **Helm Arguments**: Added `args:` for Helm command customization
+7. **Docker Configuration**: Kept existing `docker:` config for build process
+
+<Callout type="warning">
+  Note that when converting from GitHub-type to Helm-type services, the
+  `repository` and `branchName` fields move from being nested under `github:` to
+  being directly under `helm:`.
+</Callout>
+
+<Callout type="tip">
+  Many configuration options (like Helm version, args, and chart details) can be
+  defined in the `global_config` database table, making the service YAML
+  cleaner. Only override when needed.
+</Callout>
