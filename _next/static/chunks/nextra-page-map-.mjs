@@ -44,6 +44,15 @@ export const pageMap = [{
         "date": "2025-01-29"
       }
     }, {
+      name: "native-helm-deployment",
+      route: "/docs/features/native-helm-deployment",
+      frontMatter: {
+        "title": "Native Helm Deployment",
+        "description": "Deploy services using Helm directly in Kubernetes without external CI/CD dependencies",
+        "tags": ["helm", "deployment", "kubernetes", "native"],
+        "date": "2025-01-29"
+      }
+    }, {
       name: "service-dependencies",
       route: "/docs/features/service-dependencies",
       frontMatter: {
@@ -476,6 +485,13 @@ export const pageMap = [{
       "description": "Lifecycle \"glossary\" docs"
     }
   }, {
+    name: "helm",
+    route: "/tags/helm",
+    frontMatter: {
+      "title": "helm",
+      "description": "Lifecycle \"helm\" docs"
+    }
+  }, {
     name: "install",
     route: "/tags/install",
     frontMatter: {
@@ -509,6 +525,13 @@ export const pageMap = [{
     frontMatter: {
       "title": "issues",
       "description": "Lifecycle \"issues\" docs"
+    }
+  }, {
+    name: "kubernetes",
+    route: "/tags/kubernetes",
+    frontMatter: {
+      "title": "kubernetes",
+      "description": "Lifecycle \"kubernetes\" docs"
     }
   }, {
     name: "labels",
@@ -565,6 +588,13 @@ export const pageMap = [{
     frontMatter: {
       "title": "mission control",
       "description": "Lifecycle \"mission control\" docs"
+    }
+  }, {
+    name: "native",
+    route: "/tags/native",
+    frontMatter: {
+      "title": "native",
+      "description": "Lifecycle \"native\" docs"
     }
   }, {
     name: "observability",
