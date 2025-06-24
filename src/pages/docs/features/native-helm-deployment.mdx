@@ -9,7 +9,7 @@ tags:
 date: "2025-01-29"
 ---
 
-import { Callout, Steps, Tabs } from "nextra/components";
+import { Callout, Steps } from "nextra/components";
 import { Image } from "@lifecycle-docs/components";
 
 <Callout type="warning">
@@ -67,17 +67,28 @@ This configuration:
 
 There are two ways to enable native Helm deployment:
 
-<Tabs items={["Per Service", "Global"]}>
-  <Tabs.Tab>
-    ```yaml {4} filename="lifecycle.yaml" services: - name: my-service helm:
-    deploymentMethod: "native" # Enable for this service only chart: name:
-    my-chart ```
-  </Tabs.Tab>
-  <Tabs.Tab>
-    ```yaml {3} filename="lifecycle.yaml" helm: nativeHelm: enabled: true #
-    Enable for all services ```
-  </Tabs.Tab>
-</Tabs>
+#### Per Service Configuration
+
+Enable native Helm for individual services:
+
+```yaml {4} filename="lifecycle.yaml"
+services:
+  - name: my-service
+    helm:
+      deploymentMethod: "native" # Enable for this service only
+      chart:
+        name: my-chart
+```
+
+#### Global Configuration
+
+Enable native Helm for all services:
+
+```yaml {3} filename="lifecycle.yaml"
+helm:
+  nativeHelm:
+    enabled: true # Enable for all services
+```
 
 ### Configuration Precedence
 
@@ -272,9 +283,8 @@ services:
   services and want to reduce configuration duplication
 </Callout>
 
-<Tabs items={['Array Format', 'Map Format']}>
-  <Tabs.Tab>
 #### Array Format
+
 Best for charts that expect Kubernetes-style env arrays.
 
 ```yaml {7-9} filename="lifecycle.yaml"
@@ -319,9 +329,8 @@ env:
     value: production
 ```
 
-  </Tabs.Tab>
-  <Tabs.Tab>
 #### Map Format
+
 Best for charts that expect a simple key-value object.
 
 ```yaml {7-9} filename="lifecycle.yaml"
@@ -364,9 +373,6 @@ envVars:
   API__KEY: secret-key-123
   NODE__ENV: production
 ```
-
-  </Tabs.Tab>
-</Tabs>
 
 #### Complete Example with Multiple Services
 
