@@ -26,5 +26,8 @@ export default {
   },
   "service-dependencies": {
     "title": "Service Dependencies"
+  },
+  "native-helm-deployment": {
+    "title": "Native Helm Deployment"
   }
 };
