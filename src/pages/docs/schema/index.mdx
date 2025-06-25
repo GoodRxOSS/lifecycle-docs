@@ -46,12 +46,12 @@ environment:
     - name: "defined-in-lifecycle"
     - name: "define-outside-lifecycle"
       repository: "org/repo"
-      branchName: "main"
+      branch: "main"
   optionalServices:
     - name: "optional-service-1"
     - name: "optional-service-2"
       repository: "org/repo"
-      branchName: "main"
+      branch: "main"
   ...
 ```
 
@@ -131,7 +131,7 @@ environment:
     - name: "always-deployed-2"
     - name: "define-outside-lifecycle-always-deployed"
       repository: "org/repo"
-      branchName: "main"
+      branch: "main"
   ...
 ```
 
@@ -163,7 +163,7 @@ environment:
     - name: "optional-service-1"
     - name: "optional-service-2"
       repository: "org/repo"
-      branchName: "main"
+      branch: "main"
   ...
 ```
 
@@ -606,7 +606,6 @@ services:
 
 ```yaml
 ---
-
 environment: ...
 services:
   - name: "my-service"
