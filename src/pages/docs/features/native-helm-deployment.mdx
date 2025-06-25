@@ -167,9 +167,6 @@ environment:
 services:
   - name: "jenkins"
     helm:
-      deploymentMethod: "native"
-      repository: "myorg/apps"
-      branchName: "main"
       chart:
         name: "jenkins"
         repoUrl: "https://charts.bitnami.com/bitnami"
