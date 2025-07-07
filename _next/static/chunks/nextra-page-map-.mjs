@@ -73,7 +73,7 @@ export const pageMap = [{
       route: "/docs/features/webhooks",
       frontMatter: {
         "title": "Webhooks",
-        "tags": ["webhook", "automation", "codefresh", "deployment", "lifecycle"],
+        "tags": ["webhook", "automation", "codefresh", "deployment", "lifecycle", "docker", "command"],
         "date": "2025-02-16"
       }
     }]
@@ -345,6 +345,13 @@ export const pageMap = [{
       "description": "Lifecycle \"codefresh\" docs"
     }
   }, {
+    name: "command",
+    route: "/tags/command",
+    frontMatter: {
+      "title": "command",
+      "description": "Lifecycle \"command\" docs"
+    }
+  }, {
     name: "comment",
     route: "/tags/comment",
     frontMatter: {
@@ -413,6 +420,13 @@ export const pageMap = [{
     frontMatter: {
       "title": "dev-0",
       "description": "Lifecycle \"dev-0\" docs"
+    }
+  }, {
+    name: "docker",
+    route: "/tags/docker",
+    frontMatter: {
+      "title": "docker",
+      "description": "Lifecycle \"docker\" docs"
     }
   }, {
     name: "edit",
