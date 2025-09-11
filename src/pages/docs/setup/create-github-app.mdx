@@ -10,6 +10,84 @@ tags:
 import { Callout } from "nextra/components";
 import { Image } from "@lifecycle-docs/components";
 
+## Configure BuildKit Endpoint
+
+Before creating the GitHub app, you need to configure the BuildKit endpoint in the database:
+
+<Callout type="warning">
+  Set the `HELM_RELEASE` environment variable to your actual Helm release name
+  before running the commands below.
+</Callout>
+
+<Callout type="info">
+  The following commands will create the `buildkit` object and `endpoint`
+  configuration if they don't exist, or update them if they do.
+</Callout>
+
+### Option 1: Using kubectl exec with psql
+
+Execute the following commands to connect to the PostgreSQL pod and run the query:
+
+```bash
+# Set your Helm release name (replace with your actual release name)
+export HELM_RELEASE=<YOUR-HELM-RELEASE>
+
+# Get the database password from the secret
+export PGPASSWORD=$(kubectl get secret ${HELM_RELEASE}-postgres -n lifecycle-app -o jsonpath='{.data.POSTGRES_USER_PASSWORD}' | base64 -d)
+
+# Run the query
+kubectl exec -it ${HELM_RELEASE}-postgres-0 -n lifecycle-app -- env PGPASSWORD=$PGPASSWORD psql -U lifecycle -d lifecycle -c "
+UPDATE global_config
+SET config = jsonb_set(
+    jsonb_set(
+        COALESCE(config::jsonb, '{}'::jsonb),
+        '{buildkit}',
+        COALESCE(config::jsonb->'buildkit', '{}'::jsonb),
+        true
+    ),
+    '{buildkit,endpoint}',
+    '\"tcp://${HELM_RELEASE}-buildkit.lifecycle-app.svc.cluster.local:1234\"'::jsonb,
+    true
+),
+\"updatedAt\" = NOW()
+WHERE key = 'buildDefaults';"
+```
+
+### Option 2: Direct SQL query
+
+If you have direct database access, run the following SQL query (replace `<YOUR-HELM-RELEASE>` with your actual Helm release name):
+
+```sql
+UPDATE global_config
+SET config = jsonb_set(
+    jsonb_set(
+        COALESCE(config::jsonb, '{}'::jsonb),
+        '{buildkit}',
+        COALESCE(config::jsonb->'buildkit', '{}'::jsonb),
+        true
+    ),
+    '{buildkit,endpoint}',
+    '"tcp://<YOUR-HELM-RELEASE>-buildkit.lifecycle-app.svc.cluster.local:1234"'::jsonb,
+    true
+),
+"updatedAt" = NOW()
+WHERE key = 'buildDefaults';
+```
+
+### Refresh Configuration Cache
+
+After running either option above, refresh the configuration cache:
+
+```bash
+curl -X 'PUT' \
+  'https://app.<your_domain>/api/v1/config/cache' \
+  -H 'accept: application/json'
+```
+
+Replace `<your_domain>` with your actual domain (e.g., `0env.com`).
+
+## Create GitHub App
+
 To create a Github app that will send events to the Lifecycle with necessary permissions, follow these steps:
 
 <Callout type="info">
