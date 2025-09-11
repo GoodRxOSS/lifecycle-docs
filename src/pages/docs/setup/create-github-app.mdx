@@ -10,46 +10,64 @@ tags:
 import { Callout } from "nextra/components";
 import { Image } from "@lifecycle-docs/components";
 
-To create a Github app that will send events to the Lifecycle with necessary permissions, follow these steps:
-
 ## Configure BuildKit Endpoint
 
 Before creating the GitHub app, you need to configure the BuildKit endpoint in the database:
 
 <Callout type="warning">
-  Replace `my-lifecycle` in the commands below with your actual Helm release
-  name before running them.
+  Set the `HELM_RELEASE` environment variable to your actual Helm release name
+  before running the commands below.
+</Callout>
+
+<Callout type="info">
+  The following commands will create the `buildkit` object and `endpoint`
+  configuration if they don't exist, or update them if they do.
 </Callout>
 
 ### Option 1: Using kubectl exec with psql
 
-Execute the following command to connect to the PostgreSQL pod and run the query:
+Execute the following commands to connect to the PostgreSQL pod and run the query:
 
 ```bash
-kubectl exec -it my-lifecycle-postgres-0 -- psql -U lifecycle -d lifecycle -c "
+# Set your Helm release name (replace with your actual release name)
+export HELM_RELEASE=<YOUR-HELM-RELEASE>
+
+# Get the database password from the secret
+export PGPASSWORD=$(kubectl get secret ${HELM_RELEASE}-postgres -n lifecycle-app -o jsonpath='{.data.POSTGRES_USER_PASSWORD}' | base64 -d)
+
+# Run the query
+kubectl exec -it ${HELM_RELEASE}-postgres-0 -n lifecycle-app -- env PGPASSWORD=$PGPASSWORD psql -U lifecycle -d lifecycle -c "
 UPDATE global_config
 SET config = jsonb_set(
-    COALESCE(config::jsonb, '{}'::jsonb),
+    jsonb_set(
+        COALESCE(config::jsonb, '{}'::jsonb),
+        '{buildkit}',
+        COALESCE(config::jsonb->'buildkit', '{}'::jsonb),
+        true
+    ),
     '{buildkit,endpoint}',
-    '\"tcp://my-lifecycle-buildkit.lifecycle-app.svc.cluster.local:1234\"'::jsonb,
+    '\"tcp://${HELM_RELEASE}-buildkit.lifecycle-app.svc.cluster.local:1234\"'::jsonb,
     true
 ),
 \"updatedAt\" = NOW()
 WHERE key = 'buildDefaults';"
 ```
 
-Note: `my-lifecycle-postgres-0` is the pod name where `my-lifecycle` is your Helm release name.
-
 ### Option 2: Direct SQL query
 
-If you have direct database access, run the following SQL query:
+If you have direct database access, run the following SQL query (replace `<YOUR-HELM-RELEASE>` with your actual Helm release name):
 
 ```sql
 UPDATE global_config
 SET config = jsonb_set(
-    COALESCE(config::jsonb, '{}'::jsonb),
+    jsonb_set(
+        COALESCE(config::jsonb, '{}'::jsonb),
+        '{buildkit}',
+        COALESCE(config::jsonb->'buildkit', '{}'::jsonb),
+        true
+    ),
     '{buildkit,endpoint}',
-    '"tcp://my-lifecycle-buildkit.lifecycle-app.svc.cluster.local:1234"'::jsonb,
+    '"tcp://<YOUR-HELM-RELEASE>-buildkit.lifecycle-app.svc.cluster.local:1234"'::jsonb,
     true
 ),
 "updatedAt" = NOW()
@@ -69,6 +87,8 @@ curl -X 'PUT' \
 Replace `<your_domain>` with your actual domain (e.g., `0env.com`).
 
 ## Create GitHub App
+
+To create a Github app that will send events to the Lifecycle with necessary permissions, follow these steps:
 
 <Callout type="info">
   Make sure you have admin access to the Github organization or account where
