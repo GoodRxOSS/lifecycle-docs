@@ -17,22 +17,7 @@ Now that the infrastructure components are setup, let's install the lifecycle ap
   cluster you just created!
 </Callout>
 
-- Clone the repository:
-
-```sh
-git clone https://github.com/GoodRxOSS/lifecycle
-cd lifecycle
-```
-
-- Install the Lifecycle Helm chart:
-
-```sh
-helm upgrade -i lifecycle helm/web-app --namespace lifecycle-app --values ./helm/environments/default/lifecycle.yaml --set components.web.ingress.hosts\[0\].host=app.<your_domain_here>
-```
-
-<Callout type="info">
-  Make sure to replace values with your actual domain.
-</Callout>
+- Follow installation steps in [lifecycle helm chart](https://github.com/GoodRxOSS/helm-charts/blob/main/charts/lifecycle/README.md)
 
 - Wait for the installation to complete and verify that the pods are running:
 
