@@ -86,7 +86,7 @@ export const MainTemplate = ({ children }: MainProps) => {
 
 export const TopNavExtraContent = () => {
   return (
-    <a href="https://discord.gg/TEtKgCs8T84">
+    <a href="https://discord.gg/M5fhHJuEX8">
       <Discord className="size-6" />
     </a>
   );
