@@ -30,12 +30,6 @@ export default {
   "--": {
     "type": "separator"
   },
-  "schema": {
-    "title": "Lifecycle Schema"
-  },
-  "---": {
-    "type": "separator"
-  },
   "features": {
     "title": "Features"
   },

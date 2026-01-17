@@ -131,8 +131,6 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
-src/pages/docs/schema/yaml
-
 src/lib/data
 
 src/pages/tags
