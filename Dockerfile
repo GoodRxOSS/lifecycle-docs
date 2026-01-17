@@ -19,8 +19,6 @@ WORKDIR /app
 # Copy dependency files
 COPY package*.json bun.lock* ./
 RUN bun install
-ARG SYNC_LIFECYCLE_DOCS
-ENV SYNC_LIFECYCLE_DOCS=${SYNC_LIFECYCLE_DOCS}
 
 COPY . .
 

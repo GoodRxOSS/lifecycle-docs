@@ -16,6 +16,5 @@
 
 import { Bg } from "@/components/home/bg";
 import { ServicesFlow as Services, Static } from "@/components/home/flows";
-import LatestPosts from "@/components/home/latest";
 export { Main } from "@/components/home/main";
-export { Bg, Services, Static, LatestPosts };
+export { Bg, Services, Static };
