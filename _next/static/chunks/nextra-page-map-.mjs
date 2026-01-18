@@ -2,6 +2,7 @@ import meta from "../../../src/pages/_meta.ts";
 import docs_meta from "../../../src/pages/docs/_meta.ts";
 import docs_features_meta from "../../../src/pages/docs/features/_meta.ts";
 import docs_getting_started_meta from "../../../src/pages/docs/getting-started/_meta.ts";
+import docs_schema_meta from "../../../src/pages/docs/schema/_meta.ts";
 import docs_setup_meta from "../../../src/pages/docs/setup/_meta.ts";
 import docs_tips_meta from "../../../src/pages/docs/tips/_meta.ts";
 import docs_troubleshooting_meta from "../../../src/pages/docs/troubleshooting/_meta.ts";
@@ -104,6 +105,84 @@ export const pageMap = [{
       frontMatter: {
         "title": "Terminology",
         "tags": ["build", "terminology", "glossary", "term", "environment", "webhook", "deploy", "service", "review"]
+      }
+    }]
+  }, {
+    name: "schema",
+    route: "/docs/schema",
+    children: [{
+      data: docs_schema_meta
+    }, {
+      name: "aurora-restore",
+      route: "/docs/schema/aurora-restore",
+      frontMatter: {
+        "title": "Aurora Restore Service",
+        "description": "Restore AWS Aurora database snapshots for ephemeral environments",
+        "tags": ["schema", "aurora", "database", "aws", "restore"]
+      }
+    }, {
+      name: "codefresh",
+      route: "/docs/schema/codefresh",
+      frontMatter: {
+        "title": "Codefresh Service",
+        "description": "Trigger external Codefresh pipelines for deployment and destruction",
+        "tags": ["schema", "codefresh", "pipeline", "ci-cd"]
+      }
+    }, {
+      name: "configuration",
+      route: "/docs/schema/configuration",
+      frontMatter: {
+        "title": "Configuration Service",
+        "description": "Deploy configuration-only services for feature flags and shared configuration",
+        "tags": ["schema", "configuration", "feature-flags", "config"]
+      }
+    }, {
+      name: "docker",
+      route: "/docs/schema/docker",
+      frontMatter: {
+        "title": "Docker Service",
+        "description": "Deploy pre-built Docker images like databases, caches, and other infrastructure components",
+        "tags": ["schema", "docker", "database", "redis", "postgres"]
+      }
+    }, {
+      name: "environment",
+      route: "/docs/schema/environment",
+      frontMatter: {
+        "title": "Environment Configuration",
+        "description": "Configure deployment behavior, service grouping, and automation for ephemeral environments",
+        "tags": ["schema", "environment", "configuration", "services"]
+      }
+    }, {
+      name: "github",
+      route: "/docs/schema/github",
+      frontMatter: {
+        "title": "GitHub Service",
+        "description": "Build and deploy services from GitHub repositories with Docker",
+        "tags": ["schema", "github", "docker", "deployment", "build"]
+      }
+    }, {
+      name: "helm",
+      route: "/docs/schema/helm",
+      frontMatter: {
+        "title": "Helm Service",
+        "description": "Deploy services using Helm charts - local, OCI, or public repositories",
+        "tags": ["schema", "helm", "kubernetes", "charts"]
+      }
+    }, {
+      name: "overview",
+      route: "/docs/schema/overview",
+      frontMatter: {
+        "title": "Schema Overview",
+        "description": "Introduction to the lifecycle.yaml configuration file and its structure",
+        "tags": ["schema", "configuration", "lifecycle.yaml"]
+      }
+    }, {
+      name: "webhooks",
+      route: "/docs/schema/webhooks",
+      frontMatter: {
+        "title": "Webhooks Configuration",
+        "description": "Schema reference for configuring webhooks to automate actions on deployment events",
+        "tags": ["schema", "webhooks", "automation", "codefresh", "docker"]
       }
     }]
   }, {
@@ -227,6 +306,13 @@ export const pageMap = [{
       "description": "Lifecycle \"app\" docs"
     }
   }, {
+    name: "aurora",
+    route: "/tags/aurora",
+    frontMatter: {
+      "title": "aurora",
+      "description": "Lifecycle \"aurora\" docs"
+    }
+  }, {
     name: "auto",
     route: "/tags/auto",
     frontMatter: {
@@ -267,6 +353,20 @@ export const pageMap = [{
     frontMatter: {
       "title": "builduuid",
       "description": "Lifecycle \"builduuid\" docs"
+    }
+  }, {
+    name: "charts",
+    route: "/tags/charts",
+    frontMatter: {
+      "title": "charts",
+      "description": "Lifecycle \"charts\" docs"
+    }
+  }, {
+    name: "ci-cd",
+    route: "/tags/ci-cd",
+    frontMatter: {
+      "title": "ci-cd",
+      "description": "Lifecycle \"ci-cd\" docs"
     }
   }, {
     name: "cleanup",
@@ -311,6 +411,13 @@ export const pageMap = [{
       "description": "Lifecycle \"comment\" docs"
     }
   }, {
+    name: "config",
+    route: "/tags/config",
+    frontMatter: {
+      "title": "config",
+      "description": "Lifecycle \"config\" docs"
+    }
+  }, {
     name: "configuration",
     route: "/tags/configuration",
     frontMatter: {
@@ -330,6 +437,13 @@ export const pageMap = [{
     frontMatter: {
       "title": "core",
       "description": "Lifecycle \"core\" docs"
+    }
+  }, {
+    name: "database",
+    route: "/tags/database",
+    frontMatter: {
+      "title": "database",
+      "description": "Lifecycle \"database\" docs"
     }
   }, {
     name: "datadog",
@@ -414,6 +528,13 @@ export const pageMap = [{
     frontMatter: {
       "title": "explore",
       "description": "Lifecycle \"explore\" docs"
+    }
+  }, {
+    name: "feature-flags",
+    route: "/tags/feature-flags",
+    frontMatter: {
+      "title": "feature-flags",
+      "description": "Lifecycle \"feature-flags\" docs"
     }
   }, {
     name: "first environment",
@@ -528,6 +649,13 @@ export const pageMap = [{
       "description": "Lifecycle \"lifecycle\" docs"
     }
   }, {
+    name: "lifecycle.yaml",
+    route: "/tags/lifecycle.yaml",
+    frontMatter: {
+      "title": "lifecycle.yaml",
+      "description": "Lifecycle \"lifecycle.yaml\" docs"
+    }
+  }, {
     name: "logs",
     route: "/tags/logs",
     frontMatter: {
@@ -584,6 +712,20 @@ export const pageMap = [{
       "description": "Lifecycle \"optionalservices\" docs"
     }
   }, {
+    name: "pipeline",
+    route: "/tags/pipeline",
+    frontMatter: {
+      "title": "pipeline",
+      "description": "Lifecycle \"pipeline\" docs"
+    }
+  }, {
+    name: "postgres",
+    route: "/tags/postgres",
+    frontMatter: {
+      "title": "postgres",
+      "description": "Lifecycle \"postgres\" docs"
+    }
+  }, {
     name: "pr",
     route: "/tags/pr",
     frontMatter: {
@@ -612,6 +754,13 @@ export const pageMap = [{
       "description": "Lifecycle \"pull request\" docs"
     }
   }, {
+    name: "redis",
+    route: "/tags/redis",
+    frontMatter: {
+      "title": "redis",
+      "description": "Lifecycle \"redis\" docs"
+    }
+  }, {
     name: "requirements",
     route: "/tags/requirements",
     frontMatter: {
@@ -619,11 +768,25 @@ export const pageMap = [{
       "description": "Lifecycle \"requirements\" docs"
     }
   }, {
+    name: "restore",
+    route: "/tags/restore",
+    frontMatter: {
+      "title": "restore",
+      "description": "Lifecycle \"restore\" docs"
+    }
+  }, {
     name: "review",
     route: "/tags/review",
     frontMatter: {
       "title": "review",
       "description": "Lifecycle \"review\" docs"
+    }
+  }, {
+    name: "schema",
+    route: "/tags/schema",
+    frontMatter: {
+      "title": "schema",
+      "description": "Lifecycle \"schema\" docs"
     }
   }, {
     name: "service-dependencies",
@@ -638,6 +801,13 @@ export const pageMap = [{
     frontMatter: {
       "title": "service",
       "description": "Lifecycle \"service\" docs"
+    }
+  }, {
+    name: "services",
+    route: "/tags/services",
+    frontMatter: {
+      "title": "services",
+      "description": "Lifecycle \"services\" docs"
     }
   }, {
     name: "setup",
@@ -736,6 +906,13 @@ export const pageMap = [{
     frontMatter: {
       "title": "webhook",
       "description": "Lifecycle \"webhook\" docs"
+    }
+  }, {
+    name: "webhooks",
+    route: "/tags/webhooks",
+    frontMatter: {
+      "title": "webhooks",
+      "description": "Lifecycle \"webhooks\" docs"
     }
   }]
 }];
