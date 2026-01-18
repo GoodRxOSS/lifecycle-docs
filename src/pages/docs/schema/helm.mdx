@@ -243,21 +243,22 @@ Configuration for the main application container:
 
 Configuration for an init container that runs before the main application. Uses the same fields as `docker.app`.
 
-## Complete Fields Reference
+## Fields Reference
 
-| Field              | Type   | Required   | Description               |
-| ------------------ | ------ | ---------- | ------------------------- |
-| `chart.name`       | string | **Yes**    | Chart name or path        |
-| `chart.repoUrl`    | string | For public | Helm repository URL       |
-| `chart.version`    | string | No         | Chart version             |
-| `chart.values`     | array  | No         | Inline Helm values        |
-| `chart.valueFiles` | array  | No         | Value file paths          |
-| `repository`       | string | For builds | GitHub repository         |
-| `branchName`       | string | For builds | Branch to build from      |
-| `docker`           | object | No         | Docker build config       |
-| `args`             | string | No         | Additional Helm arguments |
-| `version`          | string | No         | Helm CLI version          |
-| `deploymentMethod` | string | No         | `"native"` or `"ci"`      |
+| Field              | Type    | Required   | Description                            |
+| ------------------ | ------- | ---------- | -------------------------------------- |
+| `chart.name`       | string  | **Yes**    | Chart name or path                     |
+| `chart.repoUrl`    | string  | For public | Helm repository URL                    |
+| `chart.version`    | string  | No         | Chart version                          |
+| `chart.values`     | array   | No         | Inline Helm values                     |
+| `chart.valueFiles` | array   | No         | Value file paths                       |
+| `repository`       | string  | For builds | GitHub repository                      |
+| `branchName`       | string  | For builds | Branch to build from                   |
+| `docker`           | object  | No         | Docker build config                    |
+| `args`             | string  | No         | Additional Helm arguments              |
+| `version`          | string  | No         | Helm CLI version                       |
+| `deploymentMethod` | string  | No         | `"native"` or `"ci"`                   |
+| `envLens`          | boolean | No         | Enable environment lens ingress banner |
 
 ## Templated Variables
 
