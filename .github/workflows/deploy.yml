@@ -39,8 +39,6 @@ jobs:
       - name: Deploy app
         run: bun run deploy
         env:
-          GITHUB_TOKEN: ${{ secrets.LC_DOCS_PUBLISH }}
-          SYNC_LIFECYCLE_DOCS: ${{ secrets.LC_DOCS_PUBLISH }}
           UI_BRANCH: main
           CORE_BRANCH: main
 

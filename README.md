@@ -92,23 +92,6 @@ Install the dependencies
 bun install
 ```
 
-Create a PAT with with the permissions below (`"code"` is `"Read and Write content"` ).
-Add it to your `.env` file by copying `.env.example` and adding your PAT to the `SYNC_LIFECYCLE_DOCS` and `GITHUB_TOKEN`.
-
-### PAT: Personal Access Token, create a fine-grained access token with the following permissions
-
-| rule | access level |
-| --- | --- |
-| members | `read` |
-| metadata | `read` |
-| actions | `read/write` |
-| contents | `read/write` |
-| pull requests | `read/write` |
-| workflows | `read/write` |
-
-\*The following permissiones allow you to update content located in scripts
-
-
 Run the development server
 
 ```bash

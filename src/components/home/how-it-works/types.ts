@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-export default {
-  "index": {
-    "title": "Section by section"
-  },
-  "full": {
-    "title": "All at once"
-  }
-};
+import type { LucideIcon } from "lucide-react";
+
+export interface Step {
+  id: string;
+  number: number;
+  title: string;
+  description: string;
+  icon: LucideIcon;
+}

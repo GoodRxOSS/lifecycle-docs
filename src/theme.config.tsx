@@ -15,9 +15,10 @@
  */
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import React, { ReactElement } from "react";
-import { useConfig } from "nextra-theme-docs";
+import React, { ReactElement, useState, useEffect } from "react";
+import { useConfig, useTheme } from "nextra-theme-docs";
 import { FaDiscord as Discord } from "react-icons/fa";
+import { Moon, Sun, Github, Heart } from "lucide-react";
 import TagContent from "@/components/tags";
 import { Archived } from "@/components/archived";
 import { Separator } from "@/components/ui/separator";
@@ -84,11 +85,43 @@ export const MainTemplate = ({ children }: MainProps) => {
   return <main className="grid layout-full mt-10">{children}</main>;
 };
 
+const ThemeToggle = () => {
+  const [mounted, setMounted] = useState(false);
+  const { theme, setTheme } = useTheme();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <button className="p-2 rounded-md" title="Toggle theme">
+        <Moon className="size-5" />
+      </button>
+    );
+  }
+
+  const isDark = theme === "dark";
+
+  return (
+    <button
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+      className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+      title="Toggle theme"
+    >
+      {isDark ? <Sun className="size-5" /> : <Moon className="size-5" />}
+    </button>
+  );
+};
+
 export const TopNavExtraContent = () => {
   return (
-    <a href="https://discord.gg/M5fhHJuEX8">
-      <Discord className="size-6" />
-    </a>
+    <div className="flex items-center gap-2">
+      <a href="https://discord.gg/M5fhHJuEX8">
+        <Discord className="size-6" />
+      </a>
+      <ThemeToggle />
+    </div>
   );
 };
 
@@ -112,8 +145,38 @@ export const TocBackToTop = () => {
   return <p className="_font-semibold _tracking-tight">Back to top</p>;
 };
 
+const Footer = () => {
+  return (
+    <footer className="w-full -my-10 flex items-center justify-between text-sm text-muted-foreground">
+      <div className="flex items-center gap-1.5">
+        <span>Happy Coding!</span>
+        <Heart className="size-3 text-red-500 fill-red-500" />
+      </div>
+      <div className="flex items-center gap-3">
+        <a
+          href="https://github.com/GoodRxOSS/lifecycle"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 hover:text-foreground transition-colors"
+        >
+          <Github className="size-4" />
+          <span className="hidden sm:inline">GitHub</span>
+        </a>
+        <a
+          href="https://discord.gg/M5fhHJuEX8"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 hover:text-foreground transition-colors"
+        >
+          <Discord className="size-4" />
+          <span className="hidden sm:inline">Discord</span>
+        </a>
+      </div>
+    </footer>
+  );
+};
+
 export default {
-  // TODO: update to new repo before oss release
   docsRepositoryBase: "https://github.com/GoodRxOSS/lifecycle-docs/blob/main",
   editLink: {
     text: "Edit this page",
@@ -129,7 +192,6 @@ export default {
     next: true,
   },
   project: {
-    // TODO: update to new repo before oss release
     link: "https://github.com/GoodRxOSS/lifecycle",
   },
   search: {
@@ -145,12 +207,11 @@ export default {
     extraContent: TocExtraContent,
   },
   footer: {
-    content: (
-      <span>
-        Lifecycle,{" "}
-        {new Date().getFullYear()}. Happy Coding!
-      </span>
-    ),
+    content: <Footer />,
+  },
+  darkMode: true,
+  themeSwitch: {
+    component: null,
   },
   components: {
     Code,

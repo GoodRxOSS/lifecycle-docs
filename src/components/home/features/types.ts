@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-export type Post = {
+import type { LucideIcon } from "lucide-react";
+
+export interface Feature {
+  id: string;
   title: string;
   description: string;
-  path: string;
-  date: string;
-};
-
-export type LatestPostsProps = {
-  blogRoll: Post[];
-};
+  icon: LucideIcon;
+}

@@ -1,5 +1,5 @@
 /**
- * Copyright 2025 GoodRx, Inc.
+ * Copyright 2026 GoodRx, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,10 +24,6 @@ export default {
     "theme": {
       "layout": "full"
     }
-  },
-  "articles": {
-    "title": "Articles",
-    "type": "page"
   },
   "docs": {
     "title": "Docs",
