@@ -177,7 +177,6 @@ const Footer = () => {
 };
 
 export default {
-  // TODO: update to new repo before oss release
   docsRepositoryBase: "https://github.com/GoodRxOSS/lifecycle-docs/blob/main",
   editLink: {
     text: "Edit this page",
@@ -193,7 +192,6 @@ export default {
     next: true,
   },
   project: {
-    // TODO: update to new repo before oss release
     link: "https://github.com/GoodRxOSS/lifecycle",
   },
   search: {
