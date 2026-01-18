@@ -15,7 +15,7 @@
  */
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import React, { ReactElement } from "react";
+import React, { ReactElement, useState, useEffect } from "react";
 import { useConfig, useTheme } from "nextra-theme-docs";
 import { FaDiscord as Discord } from "react-icons/fa";
 import { Moon, Sun, Github, Heart } from "lucide-react";
@@ -86,7 +86,21 @@ export const MainTemplate = ({ children }: MainProps) => {
 };
 
 const ThemeToggle = () => {
+  const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <button className="p-2 rounded-md" title="Toggle theme">
+        <Moon className="size-5" />
+      </button>
+    );
+  }
+
   const isDark = theme === "dark";
 
   return (

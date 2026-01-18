@@ -25,10 +25,6 @@ export default {
       "layout": "full"
     }
   },
-  "articles": {
-    "title": "Articles",
-    "type": "page"
-  },
   "docs": {
     "title": "Docs",
     "type": "page"
