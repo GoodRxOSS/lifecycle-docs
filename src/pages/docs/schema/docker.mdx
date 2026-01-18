@@ -167,13 +167,14 @@ services:
 
 ### Optional Fields
 
-| Field        | Type   | Description                                                 |
-| ------------ | ------ | ----------------------------------------------------------- |
-| `command`    | string | Override container entrypoint                               |
-| `arguments`  | string | Arguments passed to the command. Use `%%SPLIT%%` for spaces |
-| `env`        | object | Environment variables                                       |
-| `ports`      | array  | Exposed container ports                                     |
-| `deployment` | object | Deployment configuration (see below)                        |
+| Field        | Type    | Description                                                 |
+| ------------ | ------- | ----------------------------------------------------------- |
+| `command`    | string  | Override container entrypoint                               |
+| `arguments`  | string  | Arguments passed to the command. Use `%%SPLIT%%` for spaces |
+| `env`        | object  | Environment variables                                       |
+| `ports`      | array   | Exposed container ports                                     |
+| `deployment` | object  | Deployment configuration (see below)                        |
+| `envLens`    | boolean | Enable environment lens ingress banner                      |
 
 ## Deployment Options
 

@@ -270,6 +270,23 @@ Persistent volume mounts for stateful data:
 | `accessModes` | No       | `ReadWriteOnce` or `ReadWriteMany` |
 | `medium`      | No       | Storage medium                     |
 
+## Fields Reference
+
+### Required Fields
+
+| Field        | Type   | Description                              |
+| ------------ | ------ | ---------------------------------------- |
+| `repository` | string | GitHub repository in `owner/repo` format |
+| `branchName` | string | Branch to build from                     |
+| `docker`     | object | Docker build configuration (see above)   |
+
+### Optional Fields
+
+| Field        | Type    | Description                            |
+| ------------ | ------- | -------------------------------------- |
+| `deployment` | object  | Deployment configuration (see above)   |
+| `envLens`    | boolean | Enable environment lens ingress banner |
+
 ## Template Variables
 
 Reference other services in your configuration using template variables. See the [Template Variables](/docs/features/template-variables) guide for the complete list.
