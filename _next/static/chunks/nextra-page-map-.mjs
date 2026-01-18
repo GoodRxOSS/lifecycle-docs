@@ -1,29 +1,13 @@
 import meta from "../../../src/pages/_meta.ts";
-import articles_meta from "../../../src/pages/articles/_meta.ts";
 import docs_meta from "../../../src/pages/docs/_meta.ts";
 import docs_features_meta from "../../../src/pages/docs/features/_meta.ts";
 import docs_getting_started_meta from "../../../src/pages/docs/getting-started/_meta.ts";
-import docs_schema_meta from "../../../src/pages/docs/schema/_meta.ts";
 import docs_setup_meta from "../../../src/pages/docs/setup/_meta.ts";
 import docs_tips_meta from "../../../src/pages/docs/tips/_meta.ts";
 import docs_troubleshooting_meta from "../../../src/pages/docs/troubleshooting/_meta.ts";
 import tags_meta from "../../../src/pages/tags/_meta.ts";
 export const pageMap = [{
   data: meta
-}, {
-  name: "articles",
-  route: "/articles",
-  children: [{
-    data: articles_meta
-  }, {
-    name: "introduction",
-    route: "/articles/introduction",
-    frontMatter: {
-      "title": "Introducing Lifecycle",
-      "tags": ["intro", "lifecycle", "core"],
-      "date": "2025-05-23"
-    }
-  }]
 }, {
   name: "docs",
   route: "/docs",
@@ -40,8 +24,7 @@ export const pageMap = [{
       frontMatter: {
         "title": "Auto Deploy & Labels",
         "description": "How to setup auto deploy for pull requests and control envionment with labels",
-        "tags": ["deploy", "auto", "labels", "lifecycle-deploy", "lifecycle-disabled"],
-        "date": "2025-01-29"
+        "tags": ["deploy", "auto", "labels", "lifecycle-deploy", "lifecycle-disabled"]
       }
     }, {
       name: "native-helm-deployment",
@@ -49,8 +32,7 @@ export const pageMap = [{
       frontMatter: {
         "title": "Native Helm Deployment",
         "description": "Deploy services using Helm directly in Kubernetes without external CI/CD dependencies",
-        "tags": ["helm", "deployment", "kubernetes", "native"],
-        "date": "2025-01-29"
+        "tags": ["helm", "deployment", "kubernetes", "native"]
       }
     }, {
       name: "service-dependencies",
@@ -58,8 +40,7 @@ export const pageMap = [{
       frontMatter: {
         "title": "Service Dependencies",
         "description": "Understand service dependencies, their impact, and configuration.",
-        "tags": ["lifecycle", "service-dependencies", "configuration", "defaultServices", "optionalServices"],
-        "date": "2025-02-16"
+        "tags": ["lifecycle", "service-dependencies", "configuration", "defaultServices", "optionalServices"]
       }
     }, {
       name: "template-variables",
@@ -73,8 +54,7 @@ export const pageMap = [{
       route: "/docs/features/webhooks",
       frontMatter: {
         "title": "Webhooks",
-        "tags": ["webhook", "automation", "codefresh", "deployment", "lifecycle", "docker", "command"],
-        "date": "2025-02-16"
+        "tags": ["webhook", "automation", "codefresh", "deployment", "lifecycle", "docker", "command"]
       }
     }]
   }, {
@@ -124,32 +104,6 @@ export const pageMap = [{
       frontMatter: {
         "title": "Terminology",
         "tags": ["build", "terminology", "glossary", "term", "environment", "webhook", "deploy", "service", "review"]
-      }
-    }]
-  }, {
-    name: "schema",
-    route: "/docs/schema",
-    children: [{
-      data: docs_schema_meta
-    }, {
-      name: "full",
-      route: "/docs/schema/full",
-      frontMatter: {
-        "title": "Lifecycle Full Schema",
-        "description": "Lifecycle Schema documentation; this page contains the full schema as defined in lifecycle core—all at once.",
-        "navtext": "All at once",
-        "tags": ["schema", "lifecycle"],
-        "date": "2025-05-31"
-      }
-    }, {
-      name: "index",
-      route: "/docs/schema",
-      frontMatter: {
-        "title": "Lifecycle Schema",
-        "description": "Lifecycle Schema documentation; a section by section breakdown of the Lifecycle schema.",
-        "navtext": "Section by section",
-        "tags": ["schema", "lifecycle"],
-        "date": "2025-03-28"
       }
     }]
   }, {
@@ -234,8 +188,7 @@ export const pageMap = [{
       frontMatter: {
         "title": "Deploy Issues",
         "description": "Understand how to handle common deploy issues with environments",
-        "tags": ["deploy", "issues", "error", "todo", "codefresh"],
-        "date": "2025-03-11"
+        "tags": ["deploy", "issues", "error", "todo", "codefresh"]
       }
     }, {
       name: "github-app-webhooks",
@@ -251,8 +204,7 @@ export const pageMap = [{
     frontMatter: {
       "title": "What is Lifecycle?",
       "description": "Lifecycle is your effortless way to test and create ephemeral environments",
-      "tags": ["core", "lifecycle", "intro"],
-      "date": "2025-03-12"
+      "tags": ["core", "lifecycle", "intro"]
     }
   }]
 }, {
@@ -260,7 +212,7 @@ export const pageMap = [{
   route: "/",
   frontMatter: {
     "title": "Lifecycle",
-    "description": "Transform your pull requests into connected development playgrounds! 🚤"
+    "description": "Enterprise-grade ephemeral environments that grow with you"
   }
 }, {
   name: "tags",
@@ -672,13 +624,6 @@ export const pageMap = [{
     frontMatter: {
       "title": "review",
       "description": "Lifecycle \"review\" docs"
-    }
-  }, {
-    name: "schema",
-    route: "/tags/schema",
-    frontMatter: {
-      "title": "schema",
-      "description": "Lifecycle \"schema\" docs"
     }
   }, {
     name: "service-dependencies",
