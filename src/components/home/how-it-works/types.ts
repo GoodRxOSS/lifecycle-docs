@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-import { Bg } from "@/components/home/bg";
-import { ServicesFlow as Services, Static } from "@/components/home/flows";
-export { Main } from "@/components/home/main";
-export { Bg, Services, Static };
+import type { LucideIcon } from "lucide-react";
 
-// New homepage sections
-export { Hero } from "@/components/home/hero";
-export { Features } from "@/components/home/features";
-export { HowItWorks } from "@/components/home/how-it-works";
+export interface Step {
+  id: string;
+  number: number;
+  title: string;
+  description: string;
+  icon: LucideIcon;
+}

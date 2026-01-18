@@ -37,6 +37,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "codehike": "^1.0.7",
+    "framer-motion": "^12.26.2",
     "lucide-react": "^0.511.0",
     "next": "^15.3.2",
     "nextra": "^^^3.2.4",
