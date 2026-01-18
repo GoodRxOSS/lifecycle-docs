@@ -23,8 +23,20 @@ import TagContent from "@/components/tags";
 import { Archived } from "@/components/archived";
 import { Separator } from "@/components/ui/separator";
 import { Code } from "@/components";
+import Image from "next/image";
 
-const logo = <p className="flex flex-nowrap">Lifecycle</p>;
+const logo = (
+  <div className="flex items-center gap-2 logo-shake">
+    <Image
+      src="/logo.png"
+      alt="Lifecycle"
+      width={32}
+      height={32}
+      className="rounded logo-image"
+    />
+    <span className="text-lg font-semibold tracking-wide">Lifecycle</span>
+  </div>
+);
 
 export type MainProps = {
   children?: ReactElement;
@@ -59,6 +71,7 @@ export const HeadMeta = () => {
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <meta property="og:title" content="Lifecycle" />
       <meta property="og:description" content="Documentation for Lifecycle" />
+      <link rel="icon" type="image/png" href="/logo.png" />
     </>
   );
 };
