@@ -1,0 +1,337 @@
+---
+title: Webhooks Configuration
+description: Configure webhooks to run automated tasks when environment events occur
+tags:
+  - schema
+  - webhooks
+  - automation
+date: "2025-01-29"
+---
+
+import { Callout } from "nextra/components";
+
+Webhooks allow you to trigger automated tasks when specific events occur in your Lifecycle environment. You can use webhooks to send notifications, run tests, or perform cleanup tasks.
+
+## Overview
+
+Webhooks are configured in the `environment.webhooks` array of your `lifecycle.yaml` file. When a specified event occurs (like deployment completing), Lifecycle executes your webhook.
+
+```yaml filename="lifecycle.yaml"
+environment:
+  webhooks:
+    - name: "notify-slack"
+      state: "deployed"
+      type: "docker"
+      docker:
+        image: "curlimages/curl:latest"
+        command: ["curl", "-X", "POST", "https://hooks.slack.com/..."]
+      env:
+        WEBHOOK_URL: "https://hooks.slack.com/services/..."
+```
+
+---
+
+## Webhook Fields Reference
+
+### Required Fields
+
+| Field   | Type   | Description                                                                    |
+| ------- | ------ | ------------------------------------------------------------------------------ |
+| `state` | string | **Required.** When the webhook fires. One of: `deployed`, `error`, `torn_down` |
+| `type`  | string | **Required.** How the webhook runs. One of: `docker`, `command`, `codefresh`   |
+| `env`   | object | **Required.** Environment variables passed to the webhook                      |
+
+### Optional Fields
+
+| Field         | Type   | Description                                         |
+| ------------- | ------ | --------------------------------------------------- |
+| `name`        | string | Identifier for logging and debugging                |
+| `description` | string | Human-readable description of what the webhook does |
+
+---
+
+## Webhook States (Triggers)
+
+The `state` field determines when your webhook fires:
+
+| State       | When It Fires                                                         |
+| ----------- | --------------------------------------------------------------------- |
+| `deployed`  | After all services in the environment are successfully deployed       |
+| `error`     | When a build or deployment fails                                      |
+| `torn_down` | After the environment is cleaned up (PR closed or manually torn down) |
+
+---
+
+## Webhook Types
+
+### Docker Webhooks
+
+Run a Docker container to execute your webhook logic. Best for complex tasks or when you need specific tools.
+
+```yaml
+webhooks:
+  - name: "integration-tests"
+    state: "deployed"
+    type: "docker"
+    docker:
+      image: "myorg/test-runner:latest"
+      command: ["npm", "run", "test:integration"]
+      args: ["--env", "lifecycle"]
+      timeout: 3600
+    env:
+      API_URL: "{{myservice_publicUrl}}"
+      TEST_ENV: "lifecycle"
+```
+
+**Docker Configuration Fields:**
+
+| Field            | Type   | Required | Default | Description                                     |
+| ---------------- | ------ | -------- | ------- | ----------------------------------------------- |
+| `docker.image`   | string | Yes      | -       | Docker image to run                             |
+| `docker.command` | array  | No       | -       | Command to execute (overrides image entrypoint) |
+| `docker.args`    | array  | No       | -       | Arguments passed to the command                 |
+| `docker.timeout` | number | No       | 1800    | Maximum execution time in seconds (1-86400)     |
+
+### Command Webhooks
+
+Run a shell script inside a container. Best for simple tasks that can be expressed as a script.
+
+```yaml
+webhooks:
+  - name: "notify-team"
+    state: "deployed"
+    type: "command"
+    command:
+      image: "curlimages/curl:latest"
+      script: |
+        curl -X POST "$SLACK_WEBHOOK_URL" \
+          -H "Content-Type: application/json" \
+          -d '{"text": "Environment deployed: '"$BUILD_URL"'"}'
+      timeout: 300
+    env:
+      SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/..."
+      BUILD_URL: "{{build_publicUrl}}"
+```
+
+**Command Configuration Fields:**
+
+| Field             | Type   | Required | Default | Description                                 |
+| ----------------- | ------ | -------- | ------- | ------------------------------------------- |
+| `command.image`   | string | Yes      | -       | Container image to run the script in        |
+| `command.script`  | string | Yes      | -       | Shell script to execute                     |
+| `command.timeout` | number | No       | 1800    | Maximum execution time in seconds (1-86400) |
+
+### Codefresh Webhooks
+
+Trigger a Codefresh pipeline. Best when you have existing CI/CD pipelines in Codefresh.
+
+```yaml
+webhooks:
+  - name: "run-e2e-tests"
+    state: "deployed"
+    type: "codefresh"
+    pipelineId: "my-project/e2e-tests"
+    trigger: "lifecycle-deploy"
+    env:
+      ENVIRONMENT_URL: "{{myapp_publicUrl}}"
+```
+
+**Codefresh Configuration Fields:**
+
+| Field        | Type   | Required | Description                          |
+| ------------ | ------ | -------- | ------------------------------------ |
+| `pipelineId` | string | Yes      | The Codefresh pipeline ID to trigger |
+| `trigger`    | string | Yes      | The Codefresh trigger name to use    |
+
+---
+
+## Environment Variables
+
+The `env` field passes environment variables to your webhook. You can use template variables to include dynamic values:
+
+```yaml
+env:
+  # Static values
+  SLACK_CHANNEL: "#deployments"
+
+  # Template variables (resolved at execution time)
+  SERVICE_URL: "{{myservice_publicUrl}}"
+  BUILD_UUID: "{{build_uuid}}"
+  NAMESPACE: "{{build_namespace}}"
+```
+
+<Callout type="info">
+  See [Template Variables](/docs/features/template-variables) for the full list
+  of available variables.
+</Callout>
+
+---
+
+## Timeout Configuration
+
+- **Default timeout:** 1800 seconds (30 minutes)
+- **Minimum timeout:** 1 second
+- **Maximum timeout:** 86400 seconds (24 hours)
+
+If a webhook exceeds its timeout, it will be terminated.
+
+---
+
+## Practical Examples
+
+### Slack Notification on Deploy
+
+```yaml
+webhooks:
+  - name: "slack-deploy-notification"
+    description: "Notify team when environment is ready"
+    state: "deployed"
+    type: "command"
+    command:
+      image: "curlimages/curl:8.1.0"
+      script: |
+        curl -X POST "$SLACK_WEBHOOK" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "text": "Environment Ready!",
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*Environment deployed successfully*\nURL: '"$APP_URL"'"
+                }
+              }
+            ]
+          }'
+    env:
+      SLACK_WEBHOOK: "https://hooks.slack.com/services/T00/B00/XXX"
+      APP_URL: "{{myapp_publicUrl}}"
+```
+
+### Run Integration Tests After Deploy
+
+```yaml
+webhooks:
+  - name: "integration-tests"
+    description: "Run integration test suite"
+    state: "deployed"
+    type: "docker"
+    docker:
+      image: "myorg/test-runner:v2"
+      command: ["npm", "run", "test:integration"]
+      timeout: 3600
+    env:
+      API_BASE_URL: "{{api_publicUrl}}"
+      AUTH_SERVICE_URL: "{{auth_internalHostname}}"
+      TEST_TIMEOUT: "60000"
+```
+
+### Cleanup Tasks on Teardown
+
+```yaml
+webhooks:
+  - name: "cleanup-external-resources"
+    description: "Clean up test data in external systems"
+    state: "torn_down"
+    type: "docker"
+    docker:
+      image: "myorg/cleanup-tool:latest"
+      command: ["./cleanup.sh"]
+      timeout: 600
+    env:
+      ENVIRONMENT_ID: "{{build_uuid}}"
+      CLEANUP_DATABASE: "true"
+```
+
+### Error Notification
+
+```yaml
+webhooks:
+  - name: "error-alert"
+    description: "Alert on-call when deployment fails"
+    state: "error"
+    type: "command"
+    command:
+      image: "curlimages/curl:8.1.0"
+      script: |
+        curl -X POST "$PAGERDUTY_URL" \
+          -H "Content-Type: application/json" \
+          -d '{"event_action": "trigger", "payload": {"summary": "Lifecycle deployment failed", "source": "lifecycle"}}'
+    env:
+      PAGERDUTY_URL: "https://events.pagerduty.com/v2/enqueue"
+```
+
+### Multiple Webhooks
+
+You can configure multiple webhooks for different events:
+
+```yaml
+environment:
+  webhooks:
+    # Notify on successful deploy
+    - name: "deploy-success"
+      state: "deployed"
+      type: "command"
+      command:
+        image: "curlimages/curl:latest"
+        script: 'curl -X POST "$WEBHOOK_URL" -d "status=deployed"'
+      env:
+        WEBHOOK_URL: "https://example.com/webhook"
+
+    # Run tests after deploy
+    - name: "smoke-tests"
+      state: "deployed"
+      type: "docker"
+      docker:
+        image: "myorg/smoke-tests:latest"
+        timeout: 600
+      env:
+        TARGET_URL: "{{myapp_publicUrl}}"
+
+    # Alert on errors
+    - name: "error-notification"
+      state: "error"
+      type: "command"
+      command:
+        image: "curlimages/curl:latest"
+        script: 'curl -X POST "$WEBHOOK_URL" -d "status=error"'
+      env:
+        WEBHOOK_URL: "https://example.com/webhook"
+
+    # Cleanup on teardown
+    - name: "cleanup"
+      state: "torn_down"
+      type: "docker"
+      docker:
+        image: "myorg/cleanup:latest"
+      env:
+        ENV_ID: "{{build_uuid}}"
+```
+
+---
+
+## Troubleshooting
+
+### Webhook Not Firing
+
+1. Verify the `state` matches the event you expect
+2. Check that both `type` and `state` are specified (both are required)
+3. Ensure the `env` field is present (even if empty: `env: {}`)
+
+### Webhook Timing Out
+
+1. Check if your task needs more time and increase the `timeout` value
+2. For long-running tasks, consider using asynchronous patterns (trigger a job and exit)
+
+### Docker Image Not Found
+
+1. Verify the image name and tag are correct
+2. Ensure the image is accessible from your Kubernetes cluster
+3. For private registries, ensure proper authentication is configured
+
+### Environment Variables Not Available
+
+1. Verify the variable names in your `env` block
+2. Check that template variables use the correct syntax: `{{variable_name}}`
+3. Ensure referenced services exist in your environment

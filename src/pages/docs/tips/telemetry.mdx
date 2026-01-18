@@ -1,43 +1,187 @@
 ---
-title: Telemetry
+title: Telemetry & Observability
+description: Monitor your Lifecycle environments with logging, tracing, and metrics
 tags:
-  - logs
-  - metrics
   - telemetry
+  - logging
   - datadog
   - observability
+  - monitoring
+date: "2025-01-29"
 ---
 
-Lifecycle comes with built-in support for Datadog telemetry. To collect logs and metrics from your cluster and deployed applications, install the Datadog Agent and Cluster Agent in your cluster.
+import { Callout } from "nextra/components";
+import { Mermaid } from "@lifecycle-docs/components";
 
-The deployed applications are already configured with the necessary Datadog labels and environment variables for seamless integration:
+## Quick Reference
 
-**Pod labels:**
+| Feature | Tool        | Key Variable            | Filter Query                    |
+| ------- | ----------- | ----------------------- | ------------------------------- |
+| Logging | Pino        | `LOG_LEVEL=info`        | `buildUuid:{uuid}`              |
+| Tracing | Datadog APM | `DD_TRACE_ENABLED=true` | `env:lifecycle-{buildUUID}`     |
+| Metrics | StatsD      | -                       | `lifecycle.{category}.{metric}` |
 
-```yaml
-tags.datadoghq.com/env: lifecycle-binlab-zero-101010
-tags.datadoghq.com/service: frontend
-tags.datadoghq.com/version: binlab-zero-101010
+<Mermaid
+  chart={`
+flowchart TB
+    subgraph telemetry["Lifecycle Telemetry"]
+        subgraph logging["Logging (Pino/JSON)"]
+            L1["correlationId"]
+            L2["buildUuid"]
+            L3["stage"]
+        end
+        subgraph tracing["Tracing (Datadog APM)"]
+            T1["dd.trace_id"]
+            T2["dd.span_id"]
+            T3["service tags"]
+        end
+        subgraph metrics["Metrics (StatsD)"]
+            M1["lifecycle.build.*"]
+            M2["lifecycle.deploy.*"]
+            M3["lifecycle.webhook.*"]
+        end
+    end
+`}
+/>
+
+---
+
+## Datadog Integration
+
+Lifecycle automatically configures pods with Datadog labels and environment variables.
+
+<Callout type="info">
+  Your application must have a Datadog tracing library installed (dd-trace for
+  Node.js, ddtrace for Python, etc.).
+</Callout>
+
+### Auto-Injected Configuration
+
+| Pod Label / Env Variable                    | Value                   | Purpose                |
+| ------------------------------------------- | ----------------------- | ---------------------- |
+| `tags.datadoghq.com/env` / `DD_ENV`         | `lifecycle-{buildUUID}` | Environment grouping   |
+| `tags.datadoghq.com/service` / `DD_SERVICE` | Service name            | Service identification |
+| `tags.datadoghq.com/version` / `DD_VERSION` | Build UUID              | Version tracking       |
+| `DD_AGENT_HOST`                             | Agent hostname          | Agent location         |
+
+**Prerequisite:** Datadog agent must be running in your cluster (install via Helm chart or operator).
+
+---
+
+## Logging
+
+### Configuration Variables
+
+| Variable      | Default | Description                                             |
+| ------------- | ------- | ------------------------------------------------------- |
+| `LOG_LEVEL`   | `debug` | `trace` > `debug` > `info` > `warn` > `error` > `fatal` |
+| `PINO_LOGGER` | `true`  | Enable/disable logging                                  |
+| `PINO_PRETTY` | `false` | Pretty-print for local dev                              |
+
+### Log Context Fields
+
+| Field                  | Description              |
+| ---------------------- | ------------------------ |
+| `correlationId`        | Trace related operations |
+| `buildUuid`            | Environment identifier   |
+| `deployUuid`           | Deployment identifier    |
+| `serviceName`          | Service name             |
+| `stage`                | Operation stage          |
+| `repo`, `pr`, `branch` | Git context              |
+
+### Log Stages by Operation
+
+| Operation | Stages                                                                                       |
+| --------- | -------------------------------------------------------------------------------------------- |
+| Webhook   | `received` → `queued` → `processing` → `complete`/`skipped`                                  |
+| Build     | `created` → `queued` → `starting` → `image.building` → `image.pushing` → `complete`/`failed` |
+| Deploy    | `queued` → `starting` → `helm.installing` → `helm.complete` → `complete`/`failed`            |
+| Cleanup   | `starting` → `complete`/`failed`                                                             |
+
+---
+
+## Distributed Tracing
+
+### Automatic Traces
+
+Traces are created for: API requests, build operations, deployment jobs, database queries, and Redis operations.
+
+### Service Mapping
+
+| Internal    | Datadog Service      |
+| ----------- | -------------------- |
+| Redis       | `lifecycle-redis`    |
+| PostgreSQL  | `lifecycle-postgres` |
+| Application | `lifecycle-job`      |
+
+### Log-Trace Correlation
+
+Logs include `dd.trace_id` and `dd.span_id` for jumping directly from logs to traces in Datadog.
+
+---
+
+## Metrics
+
+### Metric Format
+
+```
+lifecycle.{category}.{metric}
 ```
 
-**Environment variables:**
+| Type      | Example                         | Description       |
+| --------- | ------------------------------- | ----------------- |
+| Increment | `lifecycle.build.started`       | Count occurrences |
+| Timing    | `lifecycle.deploy.duration`     | Measure duration  |
+| Event     | `lifecycle.environment.created` | Record events     |
 
-```yaml
-- name: DD_ENV
-  valueFrom:
-    fieldRef:
-      apiVersion: v1
-      fieldPath: metadata.labels['tags.datadoghq.com/env']
-- name: DD_SERVICE
-  valueFrom:
-    fieldRef:
-      apiVersion: v1
-      fieldPath: metadata.labels['tags.datadoghq.com/service']
-- name: DD_VERSION
-  valueFrom:
-    fieldRef:
-      apiVersion: v1
-      fieldPath: metadata.labels['tags.datadoghq.com/version']
+**Tags:** `env`, `uuid`, `repositoryName`, `branchName`, `sha`
+
+---
+
+## Accessing Data
+
+### Datadog Filters
+
+```bash
+# By environment
+env:lifecycle-{buildUUID}
+
+# By service
+service:{serviceName}
 ```
 
-This setup ensures that Datadog automatically detects the environment, service, and version for each application, enabling rich observability and correlation of logs and metrics in the Datadog platform.
+### Dashboard Links
+
+The Lifecycle dashboard provides direct links to: Logs, APM Traces, Container Dashboards, Fastly Logs, and RUM Sessions.
+
+---
+
+## Disabling Telemetry
+
+| Goal              | Configuration                            |
+| ----------------- | ---------------------------------------- |
+| Disable tracing   | `DD_TRACE_ENABLED: "false"`              |
+| Reduce log volume | `LOG_LEVEL: "warn"`                      |
+| Disable logging   | `PINO_LOGGER: "false"` (not recommended) |
+
+---
+
+## Troubleshooting
+
+| Problem               | Solution                                                                                                                      |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Traces not appearing  | 1. Verify Datadog agent is running<br/>2. Check `DD_TRACE_ENABLED` is not false<br/>3. Confirm tracing library is installed   |
+| Logs missing context  | 1. Check log level setting<br/>2. Verify structured logging is enabled<br/>3. Ensure correlationId is passed through requests |
+| Metrics not collected | 1. Verify StatsD endpoint configuration<br/>2. Check network connectivity to collector                                        |
+
+---
+
+## Summary Checklist
+
+- [ ] Datadog agent installed in cluster
+- [ ] Application instrumented with Datadog tracing library
+- [ ] `LOG_LEVEL` set appropriately (`info` or `warn` for production)
+- [ ] Use `correlationId` and `buildUuid` for debugging
+- [ ] Check `stage` field to identify where failures occur
+- [ ] Configure alerts on error metrics
+- [ ] Use APM traces for performance bottlenecks

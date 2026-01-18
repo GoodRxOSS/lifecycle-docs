@@ -4,24 +4,86 @@ tags:
   - intro
   - lifecycle
   - core
-date: "2025-05-23"
+date: "2025-06-05"
 ---
 
-import { Link } from "next/link";
-import { Callout } from "@lifecycle-docs/components";
+import { Callout, Mermaid } from "@lifecycle-docs/components";
 
-We started building **Lifecycle** at GoodRx in 2019 because managing our lower environments like staging, development, QA had become a daily headache. As our architecture shifted from a monolith to microservices, our internal channels were flooded with messages like "Is anyone using staging?" "Staging is broken again," and "Who just overwrote my changes?" Waiting in line for hours (sometimes days) to test code in a real-world-like environment was the norm.
+## Quick Reference
 
-We simply couldn't scale with our engineering growth. So, as a proof of concept, we spun up **Lifecycle**: a tool that lets you create on-demand, ephemeral environments off of github pull request.
+| Attribute         | Details                                          |
+| ----------------- | ------------------------------------------------ |
+| **What**          | On-demand ephemeral environments from GitHub PRs |
+| **Origin**        | Built at GoodRx starting 2019                    |
+| **License**       | Apache 2.0 (open source)                         |
+| **Configuration** | Single `lifecycle.yaml` per repository           |
+| **Community**     | [Discord](https://discord.gg/M5fhHJuEX8)         |
 
-At first, only a handful of services were onboarded, but our engineers immediately saw the difference, no more static staging servers, no more pipeline gymnastics, and no more accidental overwrites. They wanted Lifecycle wherever they touched code, so we built a simple lifecycle.yaml configuration, replaced our manual database entries, and baked Lifecycle support into every new service template.
+## The Problem We Faced
 
-After ironing out early scaling kinks, we realized Lifecycle had become more than an internal convenience, it was a game-changer for us.
+In 2019, GoodRx's shift from monolith to microservices created environment chaos:
 
-Today (June 5, 2025), we're thrilled to open-source five years of collective effort under the Apache 2.0 license. This project represents countless late-night brainstorming sessions, pull requests, and "aha" moments, and we can't wait to see how you'll make it your own: adding integrations, optimizing performance, or finding novel workflows we never imagined.
+<Mermaid
+  chart={`
+flowchart LR
+    A[Developer A] --> D1[Deploys to staging] --> Q1["Is anyone using staging?"]
+    B[Developer B] --> D2[Overwrites A's code] --> Q2["Who broke staging?"]
+    C[Developer C] --> D3[Waits hours/days] --> Q3[Productivity lost]
+`}
+/>
 
-By sharing Lifecycle, we hope to help teams stuck in the same limited environment limbo we once were and build a community of passionate likeminded developers who'll shape the the future of Lifecycle.
+Shared staging environments meant constant conflicts, broken deployments, and wasted time.
 
-We look forward to learning from you, growing together, and making shipping high-quality software faster and more enjoyable for everyone!
+## The Solution
 
-Join our Discord server [here](https://discord.gg/M5fhHJuEX8) to connect!!
+We built **Lifecycle**: a tool that creates isolated, ephemeral environments for every GitHub pull request.
+
+**Before Lifecycle:**
+
+- Static staging servers with deployment conflicts
+- Manual coordination via Slack: "Is staging free?"
+- Hours or days waiting to test changes
+
+**After Lifecycle:**
+
+- Every PR gets its own isolated environment
+- No coordination needed
+- Instant feedback on code changes
+
+## Our Journey
+
+<Mermaid
+  chart={`
+timeline
+    title Lifecycle Journey
+    2019 : Proof of concept
+    Early adoption : Engineers loved it : Rapid expansion
+    Scaling : Baked into all service templates
+    2024 : Open-sourced under Apache 2.0
+`}
+/>
+
+Key milestones:
+
+1. **Proof of concept** - Handful of services onboarded
+2. **Organic growth** - Engineers requested Lifecycle for all projects
+3. **Standardization** - Created `lifecycle.yaml` config, replaced manual database entries
+4. **Maturity** - Became essential infrastructure at GoodRx
+
+## Why We Open-Sourced
+
+This release represents five years of development, countless iterations, and hard-won lessons. We open-sourced Lifecycle to:
+
+- Help teams escape "environment limbo"
+- Build a community of contributors
+- See novel use cases we never imagined
+
+## Get Involved
+
+We want to learn from you and grow together.
+
+| Action             | Link                                          |
+| ------------------ | --------------------------------------------- |
+| Join the community | [Discord](https://discord.gg/M5fhHJuEX8)      |
+| Explore the docs   | [What is Lifecycle?](/docs/what-is-lifecycle) |
+| Get started        | [Setup Guide](/docs/setup)                    |

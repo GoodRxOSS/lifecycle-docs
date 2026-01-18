@@ -10,32 +10,188 @@ tags:
 import { Callout } from "nextra/components";
 import { Image } from "@lifecycle-docs/components";
 
-Now that the infrastructure components are setup, let's install the lifecycle app and create a new Github app that will send events to the application to process and create ephemeral dev environments.
+# Install Lifecycle
+
+## Quick Reference
+
+| Item                 | Value                                                |
+| -------------------- | ---------------------------------------------------- |
+| **Namespace**        | `lifecycle-app`                                      |
+| **Helm Repo**        | `goodrx` → `https://goodrxoss.github.io/helm-charts` |
+| **Chart**            | `goodrx/lifecycle`                                   |
+| **Required Secrets** | `app-secrets`, `app-postgres`, `app-redis`           |
+| **Components**       | `lifecycle-web`, `lifecycle-worker`                  |
+
+## Prerequisites
+
+- Kubernetes cluster (GKE/EKS) from previous setup
+- `kubectl` configured for your cluster
+- `helm` 3.x installed
+- Namespace `lifecycle-app` created
 
 <Callout type="info">
-  Make sure you have updated the kube config to be able to `helm install` in the
-  cluster you just created!
+  Ensure your kubeconfig is updated for the target cluster before running `helm
+  install`.
 </Callout>
 
-- Follow installation steps in [lifecycle helm chart](https://github.com/GoodRxOSS/helm-charts/blob/main/charts/lifecycle/README.md)
+## Installation
 
-- Wait for the installation to complete and verify that the pods are running:
+### Step 1: Add Helm Repository
+
+```sh
+helm repo add goodrx https://goodrxoss.github.io/helm-charts
+helm repo update
+```
+
+### Step 2: Create Secrets
+
+Create placeholder secrets (populated after GitHub App creation):
+
+```sh
+kubectl create secret generic app-secrets \
+  --namespace lifecycle-app \
+  --from-literal=GITHUB_PRIVATE_KEY="" \
+  --from-literal=GITHUB_CLIENT_SECRET="" \
+  --from-literal=GITHUB_WEBHOOK_SECRET="" \
+  --from-literal=GITHUB_APP_ID="" \
+  --from-literal=GITHUB_CLIENT_ID="" \
+  --from-literal=GITHUB_APP_INSTALLATION_ID="" \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
+
+### Step 3: Configure Values
+
+Create `values.yaml`:
+
+```yaml values.yaml
+global:
+  image:
+    repository: lifecycleoss/app
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  env:
+    - name: JOB_VERSION
+      value: default
+    - name: ENVIRONMENT
+      value: production
+    - name: NODE_ENV
+      value: production
+    - name: APP_ENV
+      value: production
+    - name: PORT
+      value: "80"
+    - name: DATABASE_URL
+      valueFrom:
+        secretKeyRef:
+          name: app-postgres
+          key: DATABASE_URL
+    - name: REDIS_URL
+      valueFrom:
+        secretKeyRef:
+          name: app-redis
+          key: REDIS_URL
+  envFrom:
+    - secretRef:
+        name: app-secrets
+
+components:
+  web:
+    enabled: true
+    fullnameOverride: "lifecycle-web"
+    service:
+      enabled: true
+      type: ClusterIP
+      port: 80
+    ingress:
+      enabled: true
+      ingressClassName: nginx
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt
+      hosts:
+        - host: app.<YOUR_DOMAIN> # Replace with your domain
+          paths: ["/"]
+    deployment:
+      replicaCount: 1
+      resources:
+        requests:
+          cpu: 200m
+          memory: 200Mi
+
+  worker:
+    enabled: true
+    fullnameOverride: "lifecycle-worker"
+    service:
+      enabled: false
+    ingress:
+      enabled: false
+    deployment:
+      replicaCount: 1
+      resources:
+        limits:
+          cpu: 1000m
+          memory: 4000Mi
+        requests:
+          cpu: 200m
+          memory: 200Mi
+      extraEnv:
+        - name: LIFECYCLE_MODE
+          value: job
+        - name: LOG_LEVEL
+          value: info
+        - name: MAX_GITHUB_API_REQUEST
+          value: "40"
+        - name: GITHUB_API_REQUEST_INTERVAL
+          value: "10000"
+
+# Enable only if NOT using external services
+postgresql:
+  enabled: false
+redis:
+  enabled: false
+
+rbac:
+  create: true
+
+secrets:
+  enabled: true
+```
+
+### Step 4: Install Chart
+
+```sh
+helm install lifecycle goodrx/lifecycle \
+  --namespace lifecycle-app \
+  --values values.yaml
+```
+
+See also: [Lifecycle Helm chart documentation](https://github.com/GoodRxOSS/helm-charts/blob/main/charts/lifecycle/README.md)
+
+### Step 5: Verify Installation
 
 ```sh
 kubectl get pods -n lifecycle-app
 ```
 
-- Once the pods are running, you can access the application at your configured domain (e.g. `https://app.0env.com`)
+**Expected output:**
+
+```
+NAME                               READY   STATUS    RESTARTS   AGE
+lifecycle-web-xxxxx-xxxxx          1/1     Running   0          2m
+lifecycle-worker-xxxxx-xxxxx       1/1     Running   0          2m
+```
+
+Access the application at your configured domain (e.g., `https://app.0env.com`).
 
 <Image src="/setup/app-installed.png" width={1890} height={1089} />
 
-Just like that, you have successfully installed Lifecycle and set up the necessary infrastructure to start creating ephemeral environments for your GitHub pull requests!
+## Troubleshooting
 
-If you notice any secure certificate issues when accessing the application, you can check the status of your certificate using the following command:
-
-```sh
-kubectl get certificate -n lifecycle-app
-```
+| Problem                       | Solution                                                                                                          |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| **Certificate not ready**     | Check status: `kubectl get certificate -n lifecycle-app` — wait for `Ready` state or verify DNS settings          |
+| **Pods not starting**         | Check logs: `kubectl logs -n lifecycle-app -l app=lifecycle-web`                                                  |
+| **Database connection fails** | Verify secret: `kubectl get secret app-postgres -n lifecycle-app -o jsonpath='{.data.DATABASE_URL}' \| base64 -d` |
 
 <Image
   src="/setup/cert-ready.png"
@@ -44,6 +200,16 @@ kubectl get certificate -n lifecycle-app
   ratio={2572 / 844}
 />
 
-Make sure the certificate is in the `Ready` state. If it is not, you may need to wait a bit longer for the certificate to be issued or troubleshoot any issues with your DNS settings.
+## Summary Checklist
 
-Let's move on to the next step where we will create a GitHub app to connect Lifecycle with your repositories.
+- [ ] Helm repo added and updated
+- [ ] `app-secrets` secret created
+- [ ] `values.yaml` configured with your domain
+- [ ] Helm chart installed
+- [ ] Both pods running (`lifecycle-web`, `lifecycle-worker`)
+- [ ] Certificate in `Ready` state
+- [ ] Application accessible at configured domain
+
+---
+
+**Next:** Create a GitHub App to connect Lifecycle with your repositories.

@@ -1,0 +1,338 @@
+---
+title: GitHub Services
+description: Configure services that build from GitHub source code
+navtext: GitHub Services
+tags:
+  - schema
+  - github
+  - services
+  - build
+date: "2025-01-29"
+---
+
+import { Callout } from "nextra/components";
+
+## GitHub Services
+
+Build and deploy Docker images directly from your GitHub repositories.
+
+### Quick Reference
+
+| Field                              | Required | Description                         |
+| ---------------------------------- | -------- | ----------------------------------- |
+| `github.repository`                | Yes      | Repository in `org/repo` format     |
+| `github.branchName`                | Yes      | Default branch to build from        |
+| `github.docker.defaultTag`         | Yes      | Fallback image tag (e.g., `latest`) |
+| `github.docker.app.dockerfilePath` | Yes      | Path to Dockerfile                  |
+| `github.docker.app.ports`          | No       | Container ports (default: `[8080]`) |
+| `github.docker.builder.engine`     | No       | `buildkit` or `kaniko`              |
+
+---
+
+## Minimal Configuration
+
+```yaml filename=lifecycle.yaml
+services:
+  - name: "my-api"
+    github:
+      repository: "myorg/my-api"
+      branchName: "main"
+      docker:
+        defaultTag: "latest"
+        app:
+          dockerfilePath: "Dockerfile"
+          ports:
+            - 8080
+```
+
+---
+
+## Build Engine Comparison
+
+| Engine     | Best For                | Notes                         |
+| ---------- | ----------------------- | ----------------------------- |
+| `buildkit` | Most use cases          | Faster builds, better caching |
+| `kaniko`   | Restricted environments | No Docker daemon required     |
+
+```yaml
+github:
+  docker:
+    builder:
+      engine: "buildkit" # Recommended default
+```
+
+---
+
+## Common Patterns
+
+### Web API with Database
+
+```yaml
+services:
+  - name: "api"
+    requires:
+      - name: "database"
+    deploymentDependsOn:
+      - "database"
+    github:
+      repository: "myorg/api"
+      branchName: "main"
+      docker:
+        defaultTag: "latest"
+        builder:
+          engine: "buildkit"
+        app:
+          dockerfilePath: "Dockerfile"
+          ports:
+            - 8080
+          env:
+            DATABASE_URL: "postgres://{{database_internalHostname}}:5432/app"
+```
+
+### Service with Database Migrations (Init Container)
+
+```yaml
+github:
+  docker:
+    init:
+      dockerfilePath: "Dockerfile.migrate"
+      command: "/bin/sh"
+      arguments: "-c%%SPLIT%%npm run migrate"
+      env:
+        DATABASE_URL: "postgres://{{database_internalHostname}}:5432/app"
+    app:
+      dockerfilePath: "Dockerfile"
+      ports:
+        - 8080
+```
+
+<Callout type="info">
+  Init containers run **before** the main app container. Use them for
+  migrations, config setup, or health checks.
+</Callout>
+
+### Custom Entrypoint with Arguments
+
+Use `%%SPLIT%%` to separate command arguments:
+
+```yaml
+github:
+  docker:
+    app:
+      dockerfilePath: "Dockerfile"
+      command: "node"
+      arguments: "server.js%%SPLIT%%--port%%SPLIT%%8080"
+```
+
+This translates to: `node server.js --port 8080`
+
+---
+
+## Common Mistakes
+
+### WRONG: Missing required fields
+
+```yaml
+services:
+  - name: "my-api"
+    github:
+      repository: "myorg/my-api"
+      # Missing: branchName, docker.defaultTag, docker.app.dockerfilePath
+```
+
+### CORRECT: All required fields present
+
+```yaml
+services:
+  - name: "my-api"
+    github:
+      repository: "myorg/my-api"
+      branchName: "main"
+      docker:
+        defaultTag: "latest"
+        app:
+          dockerfilePath: "Dockerfile"
+```
+
+### WRONG: Arguments as array
+
+```yaml
+github:
+  docker:
+    app:
+      arguments:
+        - "server.js"
+        - "--port"
+        - "8080"
+```
+
+### CORRECT: Arguments with `%%SPLIT%%` delimiter
+
+```yaml
+github:
+  docker:
+    app:
+      arguments: "server.js%%SPLIT%%--port%%SPLIT%%8080"
+```
+
+---
+
+## Field Reference
+
+### Service-Level Fields
+
+| Field                 | Type   | Required | Description                                      |
+| --------------------- | ------ | -------- | ------------------------------------------------ |
+| `name`                | string | Yes      | Unique service identifier                        |
+| `appShort`            | string | No       | Short identifier for registry organization       |
+| `defaultUUID`         | string | No       | Fallback UUID for inactive services              |
+| `requires`            | array  | No       | Service dependencies (affects service discovery) |
+| `deploymentDependsOn` | array  | No       | Deployment order (affects startup sequence)      |
+
+### GitHub Configuration
+
+| Field        | Type   | Required | Description                                    |
+| ------------ | ------ | -------- | ---------------------------------------------- |
+| `repository` | string | Yes      | Format: `org/repo`                             |
+| `branchName` | string | Yes      | Default branch (PR environments override this) |
+
+### Docker Configuration
+
+| Field            | Type   | Required | Description                                      |
+| ---------------- | ------ | -------- | ------------------------------------------------ |
+| `defaultTag`     | string | Yes      | Tag when not building from specific commit       |
+| `ecr`            | string | No       | Custom ECR URL (otherwise uses default registry) |
+| `pipelineId`     | string | No       | External CI/CD pipeline ID (Codefresh)           |
+| `builder.engine` | string | No       | `buildkit` or `kaniko`                           |
+
+### App Container
+
+| Field            | Type     | Required | Default  | Description                                |
+| ---------------- | -------- | -------- | -------- | ------------------------------------------ |
+| `dockerfilePath` | string   | Yes      | -        | Path relative to repo root                 |
+| `command`        | string   | No       | -        | Override container entrypoint              |
+| `arguments`      | string   | No       | -        | Args with `%%SPLIT%%` delimiter            |
+| `env`            | object   | No       | -        | Environment variables (supports templates) |
+| `ports`          | number[] | No       | `[8080]` | Exposed container ports                    |
+
+### Init Container
+
+Same fields as app container (`dockerfilePath`, `command`, `arguments`, `env`). Runs before the main container.
+
+### After Build Pipeline
+
+| Field                                                | Type    | Description            |
+| ---------------------------------------------------- | ------- | ---------------------- |
+| `afterBuildPipelineConfig.afterBuildPipelineId`      | string  | Pipeline ID to trigger |
+| `afterBuildPipelineConfig.detatchAfterBuildPipeline` | boolean | Run asynchronously     |
+| `afterBuildPipelineConfig.description`               | string  | Pipeline description   |
+
+---
+
+## Deployment Configuration
+
+See [Deployment Configuration](/docs/schema/deployment-config) for full options. Quick example:
+
+```yaml
+github:
+  deployment:
+    public: true
+    capacityType: "SPOT"
+    resource:
+      cpu:
+        request: "256m"
+        limit: "512m"
+      memory:
+        request: "512Mi"
+        limit: "1Gi"
+    readiness:
+      httpGet:
+        path: "/health"
+        port: 8080
+    hostnames:
+      host: "api.example.com"
+```
+
+---
+
+## Troubleshooting
+
+| Problem                        | Solution                                               |
+| ------------------------------ | ------------------------------------------------------ |
+| Build fails to find Dockerfile | Verify `dockerfilePath` is relative to repo root       |
+| Init container never completes | Check init container logs; ensure it exits with code 0 |
+| Service can't reach dependency | Use template variables: `{{service_internalHostname}}` |
+| Arguments not parsed correctly | Use `%%SPLIT%%` between each argument                  |
+| Image not found                | Check `defaultTag` matches an existing image           |
+
+---
+
+## Complete Example
+
+```yaml filename=lifecycle.yaml
+services:
+  - name: "backend-api"
+    appShort: "api"
+    defaultUUID: "dev-0"
+    requires:
+      - name: "database"
+    deploymentDependsOn:
+      - "database"
+      - "cache"
+    github:
+      repository: "myorg/backend-api"
+      branchName: "main"
+      docker:
+        defaultTag: "latest"
+        builder:
+          engine: "buildkit"
+        init:
+          dockerfilePath: "docker/migrate.Dockerfile"
+          command: "/bin/sh"
+          arguments: "-c%%SPLIT%%npm run db:migrate"
+          env:
+            DATABASE_URL: "postgres://{{database_internalHostname}}:5432/app"
+        app:
+          dockerfilePath: "Dockerfile"
+          command: "node"
+          arguments: "dist/server.js"
+          ports:
+            - 8080
+            - 9090
+          env:
+            NODE_ENV: "production"
+            DATABASE_URL: "postgres://{{database_internalHostname}}:5432/app"
+            REDIS_URL: "redis://{{cache_internalHostname}}:6379"
+      deployment:
+        public: true
+        capacityType: "SPOT"
+        resource:
+          cpu:
+            request: "256m"
+            limit: "1000m"
+          memory:
+            request: "512Mi"
+            limit: "2Gi"
+        readiness:
+          httpGet:
+            path: "/health"
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        hostnames:
+          host: "api.lifecycle.example.com"
+```
+
+---
+
+## Summary: When to Use What
+
+| Scenario                      | Configuration                                         |
+| ----------------------------- | ----------------------------------------------------- |
+| Simple web service            | Minimal config with `dockerfilePath` and `ports`      |
+| Database migrations on deploy | Add `init` container with migration command           |
+| Service needs another service | Add to `requires` and use `{{name_internalHostname}}` |
+| Control startup order         | Use `deploymentDependsOn`                             |
+| Custom registry               | Set `docker.ecr`                                      |
+| No Docker daemon available    | Use `builder.engine: "kaniko"`                        |
+| Run tests after build         | Configure `afterBuildPipelineConfig`                  |

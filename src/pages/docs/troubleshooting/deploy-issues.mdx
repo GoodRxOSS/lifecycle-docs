@@ -1,18 +1,304 @@
 ---
-title: Deploy Issues
-description: Understand how to handle common deploy issues with environments
+title: Deployment Issues
+description: Troubleshooting common deployment problems in Lifecycle
 tags:
+  - troubleshooting
   - deploy
-  - issues
-  - error
-  - todo
-  - codefresh
-date: "2025-03-11"
+  - kubernetes
+  - helm
+  - errors
+date: "2025-01-29"
 ---
 
 import { Callout } from "nextra/components";
 
+## Quick Reference
+
+| Problem              | Likely Cause                   | Quick Fix                                       |
+| -------------------- | ------------------------------ | ----------------------------------------------- |
+| **Build Failed**     | Dockerfile error, missing deps | Check build logs, test `docker build` locally   |
+| **ImagePullBackOff** | Image not found or auth failed | Verify image exists, check registry credentials |
+| **CrashLoopBackOff** | App crashes on startup         | Check container logs, fix startup issues        |
+| **OOMKilled**        | Memory limit exceeded          | Increase `memory.limit` in config               |
+| **Pending**          | Insufficient cluster resources | Lower resource requests or contact admin        |
+| **Deploy Failed**    | Invalid config or Helm error   | Check deploy logs, validate `lifecycle.yaml`    |
+
 <Callout type="info">
-  TODO: This document will cover common deploy issues that you may encounter
-  when working with Lifecycle environments.
+  **Pods must pass health checks within 15 minutes** or deployment fails. Check
+  readiness probe configuration if timing out.
 </Callout>
+
+---
+
+## Deployment Status Flow
+
+```
+Queued -> Cloning -> Building -> Built -> Waiting -> Deploying -> Ready
+                        |                               |
+                        v                               v
+                   Build Failed                   Deploy Failed
+```
+
+| Status            | Meaning                |
+| ----------------- | ---------------------- |
+| **Queued**        | Waiting in queue       |
+| **Cloning**       | Pulling source code    |
+| **Building**      | Building Docker image  |
+| **Built**         | Image ready            |
+| **Waiting**       | Dependencies not ready |
+| **Deploying**     | Rolling out to K8s     |
+| **Ready**         | Healthy and serving    |
+| **Build Failed**  | Docker build error     |
+| **Deploy Failed** | K8s deployment error   |
+| **Torn Down**     | Environment deleted    |
+
+---
+
+## Build Failures
+
+### Problem: Build Failed Status
+
+**Check build logs first** - 90% of issues are visible there.
+
+| Cause                   | Solution                               |
+| ----------------------- | -------------------------------------- |
+| Dockerfile syntax error | Test locally: `docker build -t test .` |
+| Missing base image      | Verify image exists in registry        |
+| Package install failed  | Check network access, package versions |
+| Registry push failed    | Verify ECR/registry credentials        |
+
+### Problem: Git SHA Not Found
+
+```
+# WRONG: Branch not pushed
+git commit -m "fix"
+# (forgot to push)
+
+# CORRECT: Push before deploying
+git commit -m "fix"
+git push origin feature-branch
+```
+
+**Checklist:**
+
+- Branch exists on remote (not just local)
+- Commit SHA is pushed
+- GitHub App has repository access
+
+### Problem: ECR Configuration Missing
+
+Contact your administrator to:
+
+1. Create ECR repository for your service
+2. Configure registry in Lifecycle
+3. Verify IAM permissions
+
+---
+
+## Pod Failures
+
+### Diagnosing Pod Issues
+
+```
+Pod Status           Meaning                    Action
+-----------          -------                    ------
+ImagePullBackOff  -> Can't pull image        -> Check image name, registry auth
+CrashLoopBackOff  -> App keeps crashing      -> Check app logs, fix startup bug
+OOMKilled         -> Out of memory           -> Increase memory.limit
+Pending           -> Can't schedule          -> Lower resource requests
+```
+
+### Problem: OOMKilled
+
+```yaml
+# WRONG: Memory limit too low
+deployment:
+  resource:
+    memory:
+      request: "64Mi"
+      limit: "128Mi"    # App needs more
+
+# CORRECT: Match your app's actual needs
+deployment:
+  resource:
+    memory:
+      request: "256Mi"
+      limit: "512Mi"
+```
+
+### Problem: Pods Stuck Pending
+
+```yaml
+# WRONG: Requesting more than cluster has
+deployment:
+  resource:
+    cpu:
+      request: "4000m"   # 4 CPUs - too high
+    memory:
+      request: "8Gi"     # 8GB - too high
+
+# CORRECT: Use reasonable defaults
+deployment:
+  resource:
+    cpu:
+      request: "100m"
+      limit: "500m"
+    memory:
+      request: "256Mi"
+      limit: "512Mi"
+```
+
+---
+
+## Helm Deployment Issues
+
+### Problem: Helm Deployment Failed
+
+| Error             | Cause             | Fix                               |
+| ----------------- | ----------------- | --------------------------------- |
+| Chart not found   | Bad name/URL      | Verify `chart.name` and `repoUrl` |
+| Version not found | Invalid version   | Check available versions in repo  |
+| Invalid values    | YAML syntax error | Validate values syntax            |
+| Release blocked   | Previous op stuck | Wait or contact admin             |
+
+### Blocked Release States
+
+| State              | What Happened        | Resolution                |
+| ------------------ | -------------------- | ------------------------- |
+| `pending-install`  | Install interrupted  | Auto-cleanup by Lifecycle |
+| `pending-upgrade`  | Upgrade interrupted  | Auto-cleanup by Lifecycle |
+| `pending-rollback` | Rollback interrupted | Auto-cleanup by Lifecycle |
+| `failed`           | Operation failed     | Auto-retry by Lifecycle   |
+
+<Callout>
+  Lifecycle automatically detects and cleans up stuck Helm releases.
+</Callout>
+
+### Helm Configuration Examples
+
+```yaml
+# WRONG: Missing required fields
+helm:
+  chart:
+    name: "my-chart"
+    # Missing version for public chart!
+    repoUrl: "https://charts.example.com"
+
+# CORRECT: All required fields present
+helm:
+  chart:
+    name: "my-chart"
+    version: "1.2.3"
+    repoUrl: "https://charts.example.com"
+```
+
+---
+
+## Network & Ingress Issues
+
+### Problem: Service Deployed but URL Not Accessible
+
+**Checklist:**
+
+| Check                  | How                             |
+| ---------------------- | ------------------------------- |
+| Service marked public? | Verify `public: true` in config |
+| Hostname correct?      | Check hostname configuration    |
+| Ingress working?       | Check ingress controller status |
+| DNS configured?        | Verify DNS record exists        |
+| TLS valid?             | Check certificate expiration    |
+
+```yaml
+# WRONG: Service not exposed
+services:
+  my-api:
+    # Missing public setting
+
+# CORRECT: Service exposed publicly
+services:
+  my-api:
+    public: true
+    hostname: "my-api.example.com"
+```
+
+---
+
+## Database Issues (Aurora)
+
+### Problem: Aurora Restore Failed
+
+| Cause                  | Solution                                   |
+| ---------------------- | ------------------------------------------ |
+| Snapshot doesn't exist | Verify exact snapshot name                 |
+| Permission denied      | Check IAM RDS permissions                  |
+| Region mismatch        | Snapshot must be in same region as cluster |
+
+---
+
+## Accessing Logs
+
+| Log Type           | Location                                                               |
+| ------------------ | ---------------------------------------------------------------------- |
+| **Build Logs**     | Dashboard -> Environment -> Service -> Build Logs                      |
+| **Deploy Logs**    | PR with `lifecycle-status-comments!` label -> Click "Deploy Logs" link |
+| **Container Logs** | Dashboard -> Environment -> Service -> Container Logs                  |
+
+---
+
+## Troubleshooting Checklist
+
+When deployment fails, work through this list:
+
+```
+1. BUILD OK?
+   |-- No  -> Check build logs, test Dockerfile locally
+   |-- Yes -> Continue
+
+2. IMAGE PULL OK?
+   |-- No  -> ImagePullBackOff? Check registry auth
+   |-- Yes -> Continue
+
+3. RESOURCES OK?
+   |-- No  -> Pending? Lower resource requests
+   |-- Yes -> Continue
+
+4. APP HEALTHY?
+   |-- No  -> CrashLoopBackOff? Check app logs
+   |-- Yes -> Continue
+
+5. NETWORK OK?
+   |-- No  -> Check public: true, hostname, ingress
+   |-- Yes -> Should be working!
+```
+
+---
+
+## Getting Help
+
+**Before contacting support, collect:**
+
+- Build UUID or Environment ID
+- Service name
+- Error messages (copy from logs)
+- Steps to reproduce
+
+**Resources:**
+
+- Configuration guides in this documentation
+- Schema reference for valid field names
+- Your Lifecycle administrator for cluster issues
+
+---
+
+## Summary
+
+| Issue            | First Step                                 |
+| ---------------- | ------------------------------------------ |
+| Build Failed     | Check build logs, test Docker locally      |
+| ImagePullBackOff | Verify image name and registry credentials |
+| CrashLoopBackOff | Check container logs for crash reason      |
+| OOMKilled        | Increase `memory.limit`                    |
+| Pending          | Lower resource requests                    |
+| Helm Failed      | Check deploy logs for specific error       |
+| URL Not Working  | Verify `public: true` and hostname         |
+| Aurora Failed    | Verify snapshot name and region            |

@@ -1,0 +1,293 @@
+---
+title: Environment Configuration
+description: Complete documentation for the environment section of the Lifecycle schema
+navtext: Environment
+tags:
+  - schema
+  - lifecycle
+  - environment
+date: "2025-01-29"
+---
+
+import { Callout } from "nextra/components";
+
+# Environment Configuration
+
+The `environment` object is the top-level configuration in `lifecycle.yaml` that controls global deployment behavior and defines which services are included.
+
+## Quick Reference
+
+| Field                    | Type    | Default | Purpose                                   |
+| ------------------------ | ------- | ------- | ----------------------------------------- |
+| `autoDeploy`             | boolean | `false` | Auto-deploy on PR open                    |
+| `githubDeployments`      | boolean | `false` | Create GitHub Deployments                 |
+| `useGithubStatusComment` | boolean | `false` | Post PR status comments (not implemented) |
+| `enabledFeatures`        | array   | `[]`    | Feature flags                             |
+| `defaultServices`        | array   | `[]`    | Always-deployed services                  |
+| `optionalServices`       | array   | `[]`    | On-demand services                        |
+| `webhooks`               | array   | `[]`    | Custom automation                         |
+
+---
+
+## Minimal vs Complete Example
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 mb-8">
+<div>
+
+**Minimal Setup**
+
+```yaml filename=lifecycle.yaml
+version: "1.0.0"
+
+environment:
+  defaultServices:
+    - name: "my-service"
+
+services:
+  - name: "my-service"
+    # ... service config
+```
+
+</div>
+<div>
+
+**Full Featured**
+
+```yaml filename=lifecycle.yaml
+version: "1.0.0"
+
+environment:
+  autoDeploy: true
+  githubDeployments: true
+  enabledFeatures:
+    - "no-default-env-resolve"
+  defaultServices:
+    - name: "api-service"
+    - name: "shared-db"
+      repository: "myorg/db"
+      branch: "main"
+  optionalServices:
+    - name: "debug-tools"
+  webhooks:
+    - name: "smoke-tests"
+      state: "deployed"
+      type: "docker"
+      docker:
+        image: "myorg/tests:latest"
+      env:
+        URL: "{{api-service_publicUrl}}"
+```
+
+</div>
+</div>
+
+---
+
+## Service Configuration
+
+### defaultServices vs optionalServices
+
+```
++------------------+     +-------------------+
+| defaultServices  |     | optionalServices  |
++------------------+     +-------------------+
+| Always deployed  |     | Deploy on demand  |
+| Core services    |     | Debug tools       |
+| Required deps    |     | Heavy services    |
++------------------+     +-------------------+
+        |                        |
+        v                        v
+   Auto-start              Enable via PR UI
+```
+
+| Use Case                  | defaultServices | optionalServices |
+| ------------------------- | --------------- | ---------------- |
+| API server your app needs | Yes             | No               |
+| Database dependency       | Yes             | No               |
+| Debug dashboard           | No              | Yes              |
+| Resource-heavy analytics  | No              | Yes              |
+| Mock payment service      | No              | Yes              |
+
+### Service Object Fields
+
+| Field        | Required          | Description                  |
+| ------------ | ----------------- | ---------------------------- |
+| `name`       | Yes               | Must match a defined service |
+| `repository` | Only for external | GitHub repo (`org/repo`)     |
+| `branch`     | Only for external | Branch to deploy             |
+
+### WRONG vs CORRECT Examples
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 mb-8">
+<div>
+
+**WRONG: External service missing fields**
+
+```yaml
+environment:
+  defaultServices:
+    # Missing repository and branch!
+    - name: "shared-database"
+```
+
+</div>
+<div>
+
+**CORRECT: External service with all fields**
+
+```yaml
+environment:
+  defaultServices:
+    - name: "shared-database"
+      repository: "myorg/shared-database"
+      branch: "main"
+```
+
+</div>
+</div>
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 mb-8">
+<div>
+
+**WRONG: Local service with unnecessary fields**
+
+```yaml
+environment:
+  defaultServices:
+    # repository/branch ignored for local
+    - name: "api-service"
+      repository: "myorg/api"
+      branch: "main"
+```
+
+</div>
+<div>
+
+**CORRECT: Local service with name only**
+
+```yaml
+environment:
+  defaultServices:
+    # Defined in same lifecycle.yaml
+    - name: "api-service"
+```
+
+</div>
+</div>
+
+<Callout type="info">
+  For services defined in the same `lifecycle.yaml`, only `name` is needed. Use
+  `repository` and `branch` only for external services from other repos.
+</Callout>
+
+---
+
+## Deployment Behavior
+
+### autoDeploy
+
+Controls whether environments deploy automatically when PRs are opened.
+
+| Setting           | Behavior                             |
+| ----------------- | ------------------------------------ |
+| `true`            | Deploy immediately on PR open/reopen |
+| `false` (default) | Requires manual deploy label         |
+
+```yaml
+environment:
+  autoDeploy: true # Deploys automatically
+```
+
+### githubDeployments
+
+Creates native GitHub Deployments for tracking.
+
+| Setting           | Behavior                                                       |
+| ----------------- | -------------------------------------------------------------- |
+| `true`            | Deployment status in PR timeline, history in Environments page |
+| `false` (default) | No GitHub integration                                          |
+
+```yaml
+environment:
+  githubDeployments: true
+```
+
+### useGithubStatusComment
+
+<Callout type="warning">
+  **Not implemented.** This field exists in the schema but has no effect. Use
+  the `lifecycle-status-comments!` label on PRs instead.
+</Callout>
+
+---
+
+## Feature Flags
+
+Enable special behaviors via `enabledFeatures`:
+
+| Flag                                     | Description                                                                      |
+| ---------------------------------------- | -------------------------------------------------------------------------------- |
+| `no-default-env-resolve`                 | Prevents automatic resolution to default environment UUIDs for inactive services |
+| `hack-force-pull-request-branch`         | Forces specific services to use the PR branch                                    |
+| `hack-force-pull-request-service-<name>` | Specifies which services use the PR branch hack                                  |
+
+```yaml
+environment:
+  enabledFeatures:
+    - "no-default-env-resolve"
+```
+
+---
+
+## Webhooks
+
+Run custom automation when deployment state changes. See [Webhooks](/docs/features/webhooks) for full documentation.
+
+### Quick Setup
+
+```yaml
+environment:
+  webhooks:
+    - name: "run-tests"
+      state: "deployed" # Trigger: deployed, error, torn_down
+      type: "docker" # Type: docker, command, codefresh
+      docker:
+        image: "my-test-runner:latest"
+        timeout: 300
+      env:
+        API_URL: "{{api-service_publicUrl}}"
+```
+
+### Available Trigger States
+
+| State       | When it fires                     |
+| ----------- | --------------------------------- |
+| `deployed`  | All services successfully running |
+| `error`     | Build or deployment failed        |
+| `torn_down` | Environment destroyed             |
+
+---
+
+## Troubleshooting
+
+| Problem                        | Solution                                                |
+| ------------------------------ | ------------------------------------------------------- |
+| External service not deploying | Add `repository` and `branch` fields                    |
+| PR not auto-deploying          | Set `autoDeploy: true`                                  |
+| No GitHub status updates       | Set `githubDeployments: true`                           |
+| Service in wrong environment   | Check `defaultServices` vs `optionalServices` placement |
+| Webhook not firing             | Verify `state` matches deployment outcome               |
+
+---
+
+## Summary: When to Use What
+
+| I want to...                        | Use this                                      |
+| ----------------------------------- | --------------------------------------------- |
+| Auto-deploy on every PR             | `autoDeploy: true`                            |
+| Track deployments in GitHub UI      | `githubDeployments: true`                     |
+| Always deploy a service             | `defaultServices`                             |
+| Optionally deploy a service         | `optionalServices`                            |
+| Include a service from another repo | Add `repository` + `branch` to service entry  |
+| Run tests after deploy              | `webhooks` with `state: deployed`             |
+| Disable default env resolution      | `enabledFeatures: ["no-default-env-resolve"]` |

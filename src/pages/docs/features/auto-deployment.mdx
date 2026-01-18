@@ -1,6 +1,6 @@
 ---
 title: Auto Deploy & Labels
-description: How to setup auto deploy for pull requests and control envionment with labels
+description: How automatic deployments work and how to control environments with labels
 tags:
   - deploy
   - auto
@@ -10,57 +10,184 @@ tags:
 date: "2025-01-29"
 ---
 
-## Auto-Deploy Configuration
+import { Callout } from "nextra/components";
+import { Mermaid } from "@lifecycle-docs/components";
 
-To enable **automatic deployment** when a PR is created, set the `autoDeploy` attribute in your repository's `lifecycle.yaml` file:
+## Quick Reference
 
-```yaml {2} filename="lifecycle.yaml"
+| Label                        | Effect                              | Use When                      |
+| ---------------------------- | ----------------------------------- | ----------------------------- |
+| `lifecycle-deploy!`          | Deploy environment, rebuild on push | You want to test changes      |
+| `lifecycle-disabled!`        | Tear down, block all deploys        | Temporarily pause testing     |
+| `lifecycle-keep!`            | Prevent automatic cleanup           | Long-running test environment |
+| `lifecycle-status-comments!` | Post status updates to PR           | You want build progress in PR |
+
+**TL;DR:** Set `autoDeploy: true` to deploy on every PR. Use labels for manual control.
+
+---
+
+## Label Precedence
+
+<Mermaid
+  chart={`
+flowchart TB
+    A[Label Evaluation Order] --> B{lifecycle-disabled! present?}
+    B -->|YES| C[Environment DISABLED<br/>highest priority]
+    B -->|NO| D{lifecycle-deploy! present?}
+    D -->|YES| E[Environment ENABLED]
+    D -->|NO| F{autoDeploy: true<br/>in lifecycle.yaml?}
+    F -->|YES| G[Environment ENABLED]
+    F -->|NO| H[Environment DISABLED]
+`}
+/>
+
+<Callout type="warning">
+  `lifecycle-disabled!` always wins. If both deploy and disabled labels are
+  present, the environment stays disabled.
+</Callout>
+
+---
+
+## Configuration
+
+Enable automatic deployment when PRs are opened:
+
+```yaml filename="lifecycle.yaml"
 environment:
   autoDeploy: true
   defaultServices:
+    # your services...
 ```
 
-- Lifecycle will **automatically create** the environment as soon as a PR is opened.
-- A `lifecycle-deploy!` label will be added to the PR to indicate that the environment has been deployed.
+| Setting                       | Behavior                                                          |
+| ----------------------------- | ----------------------------------------------------------------- |
+| `autoDeploy: true`            | Deploy automatically when PR opens, add `lifecycle-deploy!` label |
+| `autoDeploy: false` (default) | Wait for manual `lifecycle-deploy!` label                         |
 
 ---
 
-## Managing Deployments with Labels
+## Common Patterns
 
-If **auto-deploy is not enabled**, you can manually control the environment using PR labels.
+### Pattern 1: Always Deploy (Active Development)
 
-### Deploy an Environment
+Best for teams that want every PR to have an environment.
 
-To create an ephemeral environment for a PR, **add** the `lifecycle-deploy!` label.
+```yaml filename="lifecycle.yaml"
+environment:
+  autoDeploy: true
+```
 
-### Tear Down an Environment
+**Flow:** PR opened → Environment deploys → Pushes rebuild automatically
 
-To **delete** an active environment, use either of these labels:
+### Pattern 2: On-Demand Deploy (Selective Testing)
 
-- **Remove** `lifecycle-deploy!`
-- **Add** `lifecycle-disabled!`
+Best for high-volume repos where you only test specific PRs.
+
+```yaml filename="lifecycle.yaml"
+environment:
+  autoDeploy: false
+```
+
+**Flow:** PR opened → Nothing happens → Add `lifecycle-deploy!` → Environment deploys
+
+### Pattern 3: Long-Running Test Environment
+
+For environments that need to persist beyond normal TTL cleanup.
+
+1. Add `lifecycle-deploy!` to deploy
+2. Add `lifecycle-keep!` to prevent automatic cleanup
+3. Environment persists until PR closes or you remove labels
 
 ---
 
-## Automatic Cleanup on PR Closure
+## WRONG vs CORRECT Examples
 
-When a PR is **closed**, Lifecycle will:
+### Expecting deployment without configuration
 
-1. **Tear down** the active environment.
-2. **Remove** the `lifecycle-deploy!` label from the PR.
+```yaml filename="lifecycle.yaml"
+# WRONG: Missing autoDeploy, nothing deploys automatically
+environment:
+  defaultServices:
+    - name: api
+```
 
-This ensures that unused environments do not persist after the PR lifecycle is complete.
+```yaml filename="lifecycle.yaml"
+# CORRECT: Explicitly enable auto-deploy
+environment:
+  autoDeploy: true
+  defaultServices:
+    - name: api
+```
+
+### Trying to deploy with disabled label present
+
+```
+# WRONG: Both labels present - disabled wins, no deployment
+Labels: lifecycle-deploy!, lifecycle-disabled!
+Result: Environment torn down
+```
+
+```
+# CORRECT: Remove disabled label first
+Labels: lifecycle-deploy!
+Result: Environment deploys
+```
+
+### Config in wrong branch
+
+```
+# WRONG: lifecycle.yaml only in main branch
+PR branch: feature/new-api (no lifecycle.yaml)
+Result: Lifecycle cannot read config, deployment fails
+```
+
+```
+# CORRECT: lifecycle.yaml in PR branch
+PR branch: feature/new-api (has lifecycle.yaml)
+Result: Lifecycle reads config from PR, deployment succeeds
+```
 
 ---
 
-## Summary
+## PR Event Behavior
 
-| Feature                      | Behavior                                        |
-| ---------------------------- | ----------------------------------------------- |
-| `autoDeploy: true` in config | PR environments are **automatically** deployed. |
-| `lifecycle-deploy!`          | **Manually deploy** an environment.             |
-| Remove `lifecycle-deploy!`   | **Tear down** the environment.                  |
-| Add `lifecycle-disabled!`    | **Tear down** the environment manually.         |
-| PR closed                    | **Environment is deleted automatically**.       |
+| Event            | Deploy Enabled            | Deploy Disabled       |
+| ---------------- | ------------------------- | --------------------- |
+| PR opened        | Build & deploy            | Create records only   |
+| PR reopened      | Build & deploy            | Create records only   |
+| Push commits     | Rebuild affected services | No action             |
+| PR closed/merged | Tear down environment     | Tear down environment |
 
-Using these configurations and labels, teams can efficiently manage **ephemeral environments** in their development workflow.
+### Label Changes
+
+| Action                       | Result                                                      |
+| ---------------------------- | ----------------------------------------------------------- |
+| Add `lifecycle-deploy!`      | Set `deployOnUpdate=true`, trigger build                    |
+| Remove `lifecycle-deploy!`   | Set `deployOnUpdate=false`, tear down                       |
+| Add `lifecycle-disabled!`    | Set `deployOnUpdate=false`, tear down, block future deploys |
+| Remove `lifecycle-disabled!` | Restore previous deploy state                               |
+
+---
+
+## Troubleshooting
+
+| Problem                             | Solution                                                                                        |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------- |
+| PR opened but no deployment         | Verify `autoDeploy: true` in `lifecycle.yaml` on PR branch, or add `lifecycle-deploy!` manually |
+| Environment torn down unexpectedly  | Check for `lifecycle-disabled!` label; verify PR is still open                                  |
+| Pushes not triggering rebuilds      | Ensure `lifecycle-deploy!` label present and `lifecycle-disabled!` absent                       |
+| Can't deploy even with deploy label | Remove `lifecycle-disabled!` label (it takes precedence)                                        |
+
+---
+
+## Quick Decision Guide
+
+| I want to...                    | Do this                                                            |
+| ------------------------------- | ------------------------------------------------------------------ |
+| Deploy every PR automatically   | Set `autoDeploy: true`                                             |
+| Deploy only specific PRs        | Keep `autoDeploy: false`, add `lifecycle-deploy!` when needed      |
+| Stop deploying a PR             | Remove `lifecycle-deploy!` or add `lifecycle-disabled!`            |
+| Prevent accidental redeployment | Add `lifecycle-disabled!` (blocks deploy label too)                |
+| Keep environment alive longer   | Add `lifecycle-keep!`                                              |
+| See build status in PR          | Add `lifecycle-status-comments!`                                   |
+| Tear down an environment        | Close PR, remove `lifecycle-deploy!`, or add `lifecycle-disabled!` |

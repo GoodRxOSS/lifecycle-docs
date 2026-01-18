@@ -1,184 +1,345 @@
 ---
 title: Service Dependencies
-description: Understand service dependencies, their impact, and configuration.
+description: Configure which services deploy together and in what order
 tags:
-  - lifecycle
-  - service-dependencies
-  - configuration
-  - defaultServices
-  - optionalServices
-date: "2025-02-16"
+  - dependencies
+  - requires
+  - deploymentDependsOn
+  - deployment-order
+date: "2025-01-29"
 ---
 
 import { Callout } from "nextra/components";
+import { Mermaid } from "@lifecycle-docs/components";
 
-This document will cover `environment.{defaultServices,optionalServices}` and `service.requires`, their differences, impact scope, and usage.
+## Quick Reference
 
-## `environment.{defaultServices,optionalServices}`
+Lifecycle has two dependency fields that serve different purposes:
 
-### Impact scope
+| Field                 | What it does                         | When to use                                |
+| --------------------- | ------------------------------------ | ------------------------------------------ |
+| `requires`            | Includes services in the environment | "I need this service to exist"             |
+| `deploymentDependsOn` | Controls deployment order            | "Wait for this service before starting me" |
 
-| Scope                     | Impact |
-| ------------------------- | ------ |
-| Service repo<sup>\*</sup> | ✅     |
-| Outside repo<sup>\*</sup> | ❌     |
-| dev-0<sup>\*</sup>        | ❌     |
-
-This represents the default environment that will be created by lifecycle when a pull request is opened in the service repo<sup>\*</sup> and does not have any impact on outside repos, dev-0, or any other static environments that use this service.
-
-## `services.requires`
-
-### Impact scope
-
-| Scope                     | Impact |
-| ------------------------- | ------ |
-| Service repo<sup>\*</sup> | ✅     |
-| Outside repo<sup>\*</sup> | ✅     |
-| dev-0<sup>\*</sup>        | ✅     |
-
-`services.requires` has an impact across the board; hence, it is important to understand how it works and when we should use them.
-
-**Please read the info blocks below carefully.**
-
-You can think of `services.requires` as a hard dependency definition. For example, if you have an API service and a database, the API service will have a hard dependency on the database.
-In this scenario, the database should not be defined as the default service. Instead, we should make the dependency explicitly clear by adding the database to the API’s `requires` block.
-By doing this, we ensure that any outside repo that wants to use our API service will get the database along with it but only needs to specify the API service in their `defaultServices` or `optionalServices`.
-
-<Callout type="warning">
-  Only services defined in `lifecycle.yaml` should be used in the `requires`
-  array. If a service is defined in an outside repo, use
-  `environment.defaultServices` instead.
+<Callout type="info">
+  **Most common pattern:** Use both fields together when your service needs
+  another service to be running before it can start.
 </Callout>
 
-Do not use services in the `services.requires` if the service itself is not
-defined in the same lifecycle.yaml.
-
-<Callout type="warning">
-  Services defined in the `requires` block will only be resolved 1 level down.
-</Callout>
-
-**This is a very important nuance, which we get tripped by regularly.**
+```yaml
+services:
+  - name: "api"
+    requires:
+      - name: "database" # Include database in environment
+    deploymentDependsOn:
+      - "database" # Wait for database before deploying
+```
 
 ---
 
-## Examples
+## Understanding the Difference
 
-To better illustrate the above statement, consider this example.
+### `requires` = Environment Composition
 
-Repository A `r-A` has 3 services `s-A`, `s-B`, and `s-C`.
+The `requires` field answers: **"What services must exist for this service to function?"**
 
-- `s-A` requires `s-B`.
-- `s-B` requires `s-C`.
+- Adds services to the environment automatically
+- Does NOT control when services deploy
+- Follows the service everywhere (PRs, static environments, cross-repo references)
 
-As you can see, `s-A` has an indirect dependency on `s-C` through `s-B`.
+### `deploymentDependsOn` = Deployment Order
 
-### Scenario 1: Pull Request in Service repo<sup>\*</sup> ✅
+The `deploymentDependsOn` field answers: **"What services must be running before this service starts?"**
 
-When we open a pull request in `r-A` repo, lifecycle will deploy 3 services: `s-A`, `s-B`, and `s-C`.
+- Controls the order services deploy
+- Does NOT add services to the environment
+- Only affects deployment timing
 
-#### Breakdown
-
-- Lifecycle deploys `s-A` and `s-B` because they are defined in `defaultServices`.
-- Services defined in the `requires` block will only be resolved **one level down**.
-- Only services defined in `lifecycle.yaml` should be used in the `requires` array. If a service is defined in an outside repo, use `environment.defaultServices` instead.
+### Why You Often Need Both
 
 ```yaml
-# `r-A.lifecycle.yaml`
-environment:
-  defaultServices:
-    - name: "s-A"
-    - name: "s-B"
-
+# WRONG - database may not be ready when api starts
 services:
-  - name: "s-A"
+  - name: "api"
     requires:
-      - name: "s-B"
-    helm: ...
+      - name: "database"    # Database is included, but...
+    # ...api might deploy before database is ready!
 
-  - name: "s-B"
-    requires:
-      - name: "s-C"
-    helm: ...
-
-  - name: "s-C"
-    helm: ...
-```
-
-### Scenario 2: ❌
-
-Repository B `r-B` has service `s-X` and also defines an outside repo `r-A` service `s-A` as `environment.defaultServices`.
-
-```yaml
-#  `r-B.lifecycle.yaml`
-environment:
-  defaultServices:
-    - name: "s-X"
-    - name: "s-A"
-      repository: "lifecycle/r-A"
-      branch: "main"
-
+# CORRECT - database is included AND api waits for it
 services:
-  - name: "s-X"
-    helm: ...
-```
-
-#### Breakdown
-
-1. Lifecycle deploys `s-X` and `s-A` because they are defined in `defaultServices`.
-2. Lifecycle deploys `s-B` because it is a 1st level dependency of a service (`s-A`) listed in `defaultServices`.
-3. Lifecycle **does not** deploy `s-C` since it is **not** a 1st level dependency of any service listed in `defaultServices` or `optionalServices`.
-
-The way this scenario manifests is lifecycle will deploy `s-X`, `s-A`, and `s-B`, but the build will likely **fail** because `s-B` is missing a required dependency `s-C`.
-
-### Solutions
-
-There are 2 ways to address this depending on your use case.
-
-#### Solution 1
-
-Add `s-B` to `r-B`’s `environment.defaultServices` block in `r-B.lifecycle.yaml`. In effect, this will make `s-C` a first-level dependency.
-
-```yaml
-environment:
-  defaultServices:
-    - name: "s-X"
-    - name: "s-A"
-      repository: "lifecycle/r-A"
-      branch: "main"
-    - name: "s-B"
-      repository: "lifecycle/r-A"
-      branch: "main"
-```
-
-#### Solution 2
-
-Add `s-C` to the `services.requires` block of `r-A` in `r-A.lifecycle.yaml`. This will also make `s-C` a first-level dependency.
-
-```yaml
-environment:
-  defaultServices:
-    - name: "s-A"
-    - name: "s-B"
-
-services:
-  - name: "s-A"
+  - name: "api"
     requires:
-      - name: "s-B"
-      - name: "s-C"
-    helm: ...
+      - name: "database"    # Include database
+    deploymentDependsOn:
+      - "database"          # Wait for database
 ```
-
-### Choosing the Right Solution
-
-In summary, the solution you should use depends on how you want your service to be consumed in an outside repo<sup>\*</sup>.
-
-- If you want outside repos to explicitly include `s-A` and `s-B`, use **Solution 1**.
-- If you want outside repos to only include `s-A` and let dependencies resolve automatically, use **Solution 2**.
 
 ---
 
-### Terminology
+## The `requires` Field
 
-- **Service repo**: The repository where `lifecycle.yaml` is defined.
-- **Outside repo**: Another repository referencing it.
-- **dev-0**: Default static environment.
+### Basic Syntax
+
+```yaml
+services:
+  - name: "api"
+    requires:
+      - name: "database"
+      - name: "cache"
+```
+
+When `api` is deployed, `database` and `cache` are automatically included.
+
+### Cross-Repository References
+
+```yaml
+requires:
+  - name: "shared-auth"
+    repository: "myorg/auth-service"
+    branch: "main"
+```
+
+<Callout type="warning">
+  **One-level limit:** External repository dependencies only resolve one level
+  deep.
+</Callout>
+
+**What this means:**
+
+<Mermaid
+  chart={`
+flowchart LR
+    subgraph YourRepo["Your Repo"]
+        api
+    end
+    subgraph ExternalRepo["External Repo"]
+        auth
+        redis
+    end
+    api -->|requires| auth
+    auth -.->|requires| redis
+    auth -.-|included| api
+    redis -.-|NOT included| api
+`}
+/>
+
+If `auth` requires `redis`, you must explicitly add `redis` to your configuration:
+
+```yaml
+requires:
+  - name: "auth"
+    repository: "myorg/auth-service"
+    branch: "main"
+  - name: "redis" # Explicitly add transitive dependency
+    repository: "myorg/auth-service"
+    branch: "main"
+```
+
+---
+
+## The `deploymentDependsOn` Field
+
+### Basic Syntax
+
+```yaml
+services:
+  - name: "api"
+    deploymentDependsOn:
+      - "database"
+      - "cache"
+```
+
+The `api` service waits for `database` and `cache` to be ready before deploying.
+
+### How Deployment Order Works
+
+Lifecycle deploys services in levels:
+
+1. **Level 0:** Services with no dependencies (deploy in parallel)
+2. **Level 1:** Services depending only on Level 0 (deploy in parallel)
+3. **Level 2:** Services depending on Level 0 or 1 (deploy in parallel)
+4. And so on...
+
+**Example:**
+
+```yaml
+services:
+  - name: "database" # Level 0
+
+  - name: "cache" # Level 0
+
+  - name: "api" # Level 1
+    deploymentDependsOn:
+      - "database"
+      - "cache"
+
+  - name: "worker" # Level 1
+    deploymentDependsOn:
+      - "database"
+
+  - name: "frontend" # Level 2
+    deploymentDependsOn:
+      - "api"
+```
+
+**Deployment timeline:**
+
+<Mermaid
+  chart={`
+flowchart TB
+    subgraph Level0["Level 0 (deploy in parallel)"]
+        database
+        cache
+    end
+    subgraph Level1["Level 1 (deploy in parallel after Level 0)"]
+        api
+        worker
+    end
+    subgraph Level2["Level 2 (deploys after Level 1)"]
+        frontend
+    end
+    Level0 --> Level1
+    Level1 --> Level2
+`}
+/>
+
+### Edge Cases
+
+- **Self-references:** Automatically ignored
+- **Missing services:** References to services not in the environment are ignored
+- **Circular dependencies:** Affected services won't deploy (no error thrown)
+
+---
+
+## Common Patterns
+
+### Pattern 1: Database with Migrations
+
+```yaml
+services:
+  - name: "database"
+    docker:
+      dockerImage: "postgres"
+      defaultTag: "15"
+
+  - name: "migrations"
+    deploymentDependsOn:
+      - "database"
+    # Runs after database is ready
+
+  - name: "api"
+    requires:
+      - name: "database"
+    deploymentDependsOn:
+      - "migrations"
+    # Runs after migrations complete
+```
+
+### Pattern 2: Frontend with Backend
+
+```yaml
+services:
+  - name: "backend"
+    requires:
+      - name: "database"
+      - name: "cache"
+    deploymentDependsOn:
+      - "database"
+      - "cache"
+
+  - name: "frontend"
+    deploymentDependsOn:
+      - "backend"
+    # Frontend waits for backend, but doesn't "require" it
+    # (frontend can run without backend for static content)
+```
+
+### Pattern 3: Cross-Repository Service
+
+```yaml
+environment:
+  defaultServices:
+    - name: "my-app"
+    - name: "shared-api"
+      repository: "myorg/shared-api"
+      branch: "main"
+    - name: "shared-database" # Explicitly include transitive deps
+      repository: "myorg/shared-api"
+      branch: "main"
+
+services:
+  - name: "my-app"
+    deploymentDependsOn:
+      - "shared-api"
+```
+
+---
+
+## Environment Configuration
+
+### Default Services
+
+Services that always deploy with the environment:
+
+```yaml
+environment:
+  defaultServices:
+    - name: "api"
+    - name: "database"
+```
+
+### Optional Services
+
+Services that can be toggled on/off via Mission Control:
+
+```yaml
+environment:
+  optionalServices:
+    - name: "debug-tools"
+    - name: "monitoring"
+```
+
+---
+
+## Troubleshooting
+
+### Service not deploying
+
+1. Is it in `defaultServices`, `optionalServices`, or another service's `requires`?
+2. For external repos: Did you include transitive dependencies explicitly?
+3. Check for typos in service names
+
+### Service deploys before its dependency is ready
+
+Add the dependency to `deploymentDependsOn`, not just `requires`:
+
+```yaml
+# Add this:
+deploymentDependsOn:
+  - "database"
+```
+
+### External service missing its dependencies
+
+The one-level limit means you must explicitly include transitive dependencies:
+
+```yaml
+environment:
+  defaultServices:
+    - name: "external-api"
+      repository: "myorg/external"
+      branch: "main"
+    - name: "external-database" # Add this explicitly
+      repository: "myorg/external"
+      branch: "main"
+```
+
+---
+
+## Summary
+
+| Question                                  | Answer               | Field                              |
+| ----------------------------------------- | -------------------- | ---------------------------------- |
+| "What services do I need?"                | List them            | `requires`                         |
+| "What order should services deploy?"      | Specify dependencies | `deploymentDependsOn`              |
+| "I need service X running before I start" | Use both             | `requires` + `deploymentDependsOn` |

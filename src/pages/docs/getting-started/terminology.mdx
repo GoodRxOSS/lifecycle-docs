@@ -12,49 +12,196 @@ tags:
   - review
 ---
 
-This glossary provides an overview of key Lifecycle concepts and terminology. Let's see how they fit into the environment setup and deployment process.
+import { Mermaid } from "@lifecycle-docs/components";
 
-## Repository
+# Terminology
 
-A **repository** refers to a GitHub repository. Each environment that is built **must** have a default repository and an associated pull request.
+## Quick Reference
 
-## Service
+| Term            | Definition                                              |
+| --------------- | ------------------------------------------------------- |
+| **Environment** | A stack of connected services (ephemeral or static)     |
+| **Service**     | A deployable artifact (Docker, Helm, GitHub, etc.)      |
+| **Build**       | The process instance that builds and deploys services   |
+| **Deploy**      | Execution of a single service within a build            |
+| **Repository**  | A GitHub repo registered with Lifecycle                 |
+| **UUID**        | Unique identifier for builds (e.g., `arm-model-060825`) |
 
-A **service** is a deployable artifact. It can be a Docker container, CI pipeline, RDS database, or Helm chart. A single repository can contain multiple services.
+## How Lifecycle Components Relate
 
-**Example:** <br/>
-`frontend-service` and `frontend-cache` are two services required for the frontend application to function correctly.
+<Mermaid chart={`
+flowchart TB
+    subgraph repo["REPOSITORY<br/>(GitHub + lifecycle.yaml)"]
+    end
 
-## Environment
+    repo -->|"Pull Request opened"| env
 
-An **environment** is a stack of services built and connected together.
+    subgraph env["ENVIRONMENT (UUID: arm-model-060825)"]
+        subgraph build["BUILD"]
+            deploy1["DEPLOY<br/>service-a"]
+            deploy2["DEPLOY<br/>service-b"]
+            deploy3["DEPLOY<br/>service-c"]
+        end
+    end
 
-- **`defaultServices`** are built and deployed in an environment by default.
-- **`optionalServices`** can be built and deployed only when needed; otherwise, they fallback to the **default static environment**.
+    env --> ns
 
-## Static Environment
+    subgraph ns["KUBERNETES NAMESPACE<br/>(env-arm-model-060825)"]
+    end
 
-A **static environment** is a long-lived environment based on a pull request. It tracks branches from configured services and updates automatically when new changes are merged.
+`} />
 
-## Build
+---
 
-A **build** is the actual instance of the process to build and deploy services within an environment.
+## Core Concepts
 
-- Each build is uniquely identified by Lifecycle using a UUID (e.g., `arm-model-060825` or `dev-0`).
-- A build contains **one deploy per service** in the configuration.
+### Environment
 
-## Deploy
+A stack of services built and connected together. Two types exist:
 
-A **deploy** manages the build and deployment execution of a service within an environment.
+| Type          | Lifespan                   | Use Case                       |
+| ------------- | -------------------------- | ------------------------------ |
+| **Ephemeral** | Tied to PR lifecycle       | Feature branch testing         |
+| **Static**    | Long-lived (e.g., `dev-0`) | Fallback for optional services |
 
-**Example:**<br/>
-In a frontend environment, `frontend-service` and `frontend-cache` are two deploys created for the environment, each mapped to a unique build UUID.
+Environments define **defaultServices** (always deployed) and **optionalServices** (deployed on demand).
 
-## Webhook
+### Service
 
-Lifecycle can invoke third-party services when a build state changes. Currently, only **Codefresh triggers** are supported.
+A deployable artifact defined in `lifecycle.yaml`.
 
-### Example
+| Type            | Description                           |
+| --------------- | ------------------------------------- |
+| `docker`        | Container built from a Dockerfile     |
+| `github`        | Built from GitHub source code         |
+| `helm`          | Helm chart deployment                 |
+| `codefresh`     | Codefresh pipeline-managed deployment |
+| `configuration` | Configuration-only (no build)         |
 
-- When the build status is `deployed`, trigger end-to-end tests.
-- When the build status is `error`, trigger infrastructure cleanup.
+A single repository can contain multiple services.
+
+### Build
+
+The process instance that builds and deploys all services in an environment. Each build:
+
+- Has a unique UUID (e.g., `arm-model-060825`)
+- Contains one deploy per service
+- Tracks overall environment status
+
+### Deploy
+
+The execution of a single service within a build. Manages building the Docker image and deploying to Kubernetes.
+
+---
+
+## Status Reference
+
+### Build Status
+
+<Mermaid
+  chart={`
+flowchart LR
+    pending --> queued --> building --> built --> deploying --> deployed
+    deployed --> tearing_down --> torn_down
+    deployed --> error
+    deployed --> config_error
+`}
+/>
+
+| Status         | Meaning                       |
+| -------------- | ----------------------------- |
+| `pending`      | Being prepared                |
+| `queued`       | Waiting to be processed       |
+| `building`     | Docker images building        |
+| `built`        | All images built successfully |
+| `deploying`    | Deploying to Kubernetes       |
+| `deployed`     | All services running          |
+| `tearing_down` | Being deleted                 |
+| `torn_down`    | Fully deleted                 |
+| `error`        | Build or deploy failed        |
+| `config_error` | Invalid `lifecycle.yaml`      |
+
+### Deploy Status
+
+| Status          | Meaning                      |
+| --------------- | ---------------------------- |
+| `pending`       | Waiting to start             |
+| `queued`        | In the queue                 |
+| `cloning`       | Cloning source code          |
+| `building`      | Building Docker image        |
+| `built`         | Image built                  |
+| `deploying`     | Deploying to Kubernetes      |
+| `ready`         | Running and healthy          |
+| `waiting`       | Waiting for dependencies     |
+| `build_failed`  | Image build failed           |
+| `deploy_failed` | Kubernetes deployment failed |
+| `error`         | Unexpected error             |
+| `torn_down`     | Service removed              |
+
+---
+
+## GitHub Integration
+
+### Labels
+
+| Label                        | Effect                           |
+| ---------------------------- | -------------------------------- |
+| `lifecycle-deploy!`          | Triggers deployment              |
+| `lifecycle-disabled!`        | Deletes the environment          |
+| `lifecycle-keep!`            | Prevents TTL cleanup             |
+| `lifecycle-status-comments!` | Enables detailed status comments |
+
+### Mission Control Comment
+
+Posted by Lifecycle on your PR. Provides:
+
+- Build status and service URLs
+- Checkboxes to enable/disable services
+- Configuration overrides
+
+### Webhooks
+
+Invoke external services on build state changes. Example uses:
+
+- Trigger E2E tests when `deployed`
+- Send notifications on `error`
+
+---
+
+## Infrastructure
+
+### Namespace
+
+Kubernetes namespace where your environment runs. Format: `env-<uuid>`
+
+### UUID
+
+Human-readable identifier using haikunator pattern (e.g., `arm-model-060825`). Used for:
+
+- Environment identification
+- Namespace naming
+- URL generation
+
+### Template Variables
+
+Placeholders resolved at build time:
+
+| Variable                         | Resolves To                  |
+| -------------------------------- | ---------------------------- |
+| `{{{service_publicUrl}}}`        | Public URL of a service      |
+| `{{{service_internalHostname}}}` | Internal Kubernetes hostname |
+
+### TTL (Time-To-Live)
+
+Automatic cleanup of inactive environments.
+
+- **Inactivity period**: 14 days
+- **Check interval**: 4 hours
+- **Override**: Add `lifecycle-keep!` label
+
+### Capacity Type
+
+| Type        | Description                         |
+| ----------- | ----------------------------------- |
+| `ON_DEMAND` | Standard, always-available compute  |
+| `SPOT`      | Cost-effective (may be interrupted) |

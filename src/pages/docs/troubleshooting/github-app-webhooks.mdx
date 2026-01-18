@@ -1,50 +1,214 @@
 ---
-title: Missing PR comment
+title: GitHub App Webhooks
+description: Troubleshoot GitHub App webhook issues in Lifecycle
 tags:
-  - mission control
-  - comment
-  - missing
-  - issue
+  - github
+  - webhooks
+  - troubleshooting
   - setup
+date: "2025-01-29"
 ---
 
-import { Callout } from "nextra/components";
+import { Callout, Steps } from "nextra/components";
+import { Mermaid } from "@lifecycle-docs/components";
 
-Let's quickly validate that the app is able to send events to the Lifecycle app successfully.
+## Quick Reference
 
-- Navigate to your Github app
-- Click `App Settings` link in the Github application page
-- Choose `Advanced` from the left sidebar
-- `Recent Deliveries` section should show a successful delivery of the `installation` event to the Lifecycle app.
+| Symptom         | Likely Cause                      | Quick Fix                                       |
+| --------------- | --------------------------------- | ----------------------------------------------- |
+| No PR comments  | Webhook not delivered             | Check GitHub App > Advanced > Recent Deliveries |
+| No deployment   | Missing `lifecycle-deploy!` label | Add label to PR                                 |
+| HTTP 500 errors | Webhook secret mismatch           | Sync secret between GitHub App and Kubernetes   |
+| Webhook timeout | Service unavailable               | Check pod status and restart deployments        |
+| Events ignored  | Wrong events enabled              | Enable Pull requests, Push, Issue comments      |
 
-  <Callout type="warning">
-    If you see an error or no deliveries, make sure the app is installed in the
-    atleast one repository and that the webhook URL is set correctly by
-    navigating to the `General` section from the left sidebar and checking the
-    `Webhook URL` field.
-  </Callout>
+---
 
-- If the delivery is successful, you should see a status code of `200 OK`
+## Required Configuration
 
-## Failing deliveries
+### Webhook URL Format
 
-If you see a delivery failure, it could be due to various reasons. Here are some common issues and how to resolve them:
+```
+CORRECT:  https://your-lifecycle-domain.com/api/webhooks/github
+```
 
-### Github App secrets
+| Mistake               | Example                                   |
+| --------------------- | ----------------------------------------- |
+| Missing path          | `https://domain.com`                      |
+| HTTP instead of HTTPS | `http://domain.com/api/webhooks/github`   |
+| Trailing slash        | `https://domain.com/api/webhooks/github/` |
 
-- Make sure that the Github App secrets are correctly set in the `lifecycle-app` namespace. You can verify this by running the following command:
+### Required Events
 
-```sh
+| Event          | What It Does                                   |
+| -------------- | ---------------------------------------------- |
+| Pull requests  | Creates/destroys environments on PR open/close |
+| Push           | Triggers rebuilds when code is pushed          |
+| Issue comments | Enables configuration changes via comments     |
+
+Label events (`labeled`, `unlabeled`) control:
+
+- `lifecycle-deploy!` - Enable deployments
+- `lifecycle-disabled!` - Disable deployments
+- `lifecycle-keep!` - Preserve environments
+
+---
+
+## Problem → Solution
+
+### No PR Comments Appearing
+
+<Mermaid
+  chart={`
+flowchart LR
+    A[GitHub PR Event] --> B[Webhook URL]
+    B --> C[Lifecycle Web]
+    C --> D[PR Comment]
+    A -.-> E["Check here"]
+    B -.-> F["Check URL"]
+    C -.-> G["Check logs"]
+`}
+/>
+
+1. **Verify webhook delivery**: GitHub App > Advanced > Recent Deliveries
+2. **Confirm installation**: Repository Settings > Integrations > GitHub Apps
+3. **Check deploy label**: Comments only appear on PRs with `lifecycle-deploy!`
+
+### Deployments Not Triggering
+
+| Check                 | Command/Action                          |
+| --------------------- | --------------------------------------- |
+| Deploy label present? | Add `lifecycle-deploy!` label           |
+| Disabled label?       | Remove `lifecycle-disabled!` if present |
+| Bot PR?               | PRs from bot accounts are ignored       |
+| Webhook delivered?    | Check Recent Deliveries in GitHub App   |
+
+### Push Events Not Rebuilding
+
+Requirements for push-triggered rebuilds:
+
+1. PR must be open
+2. PR must have `lifecycle-deploy!` label
+3. Pushed branch must match tracked deployment
+4. Push webhook must be delivered successfully
+
+### Webhook Secret Mismatch (HTTP 500 Errors)
+
+**Symptoms:**
+
+- All deliveries return HTTP 500
+- Logs show "Webhook not verified"
+
+**Verify the secret:**
+
+```bash
 kubectl get secret app-secrets --namespace lifecycle-app \
-      -o jsonpath='{.data}' | jq 'with_entries(.value |= @base64d)'
+  -o jsonpath='{.data.GITHUB_WEBHOOK_SECRET}' | base64 -d
 ```
 
-- The output should include all the `GITHUB_*` variables with the correct values.
+**Fix mismatched secret:**
 
-- If the secrets are present but the delivery is still failing, try restarting the following deployments.
+```bash
+# Update secret
+kubectl create secret generic app-secrets \
+  --namespace lifecycle-app \
+  --from-literal=GITHUB_WEBHOOK_SECRET=your-new-secret \
+  --dry-run=client -o yaml | kubectl apply -f -
 
-```sh
- kubectl rollout restart  deployment lifecycle-web lifecycle-worker -n lifecycle-app
+# Restart services
+kubectl rollout restart deployment lifecycle-web lifecycle-worker -n lifecycle-app
 ```
 
-- Try triggering a new event (create a pull request) by making a change in the repository or by manually redelivering a failed delivery.
+---
+
+## Verify Webhook Delivery
+
+<Steps>
+### Open Recent Deliveries
+
+GitHub App Settings > Advanced > Recent Deliveries
+
+### Interpret Status Icons
+
+| Icon            | Meaning                    |
+| --------------- | -------------------------- |
+| Green checkmark | Success (HTTP 200)         |
+| Red X           | Failed delivery            |
+| Yellow warning  | Timeout or partial failure |
+
+### Inspect Failed Deliveries
+
+Click any delivery to view:
+
+- Request headers (event type, `x-github-delivery` ID)
+- Request payload (event data)
+- Response (status code, error message)
+
+<Callout type="info">
+  Save the `x-github-delivery` ID to search Lifecycle logs.
+</Callout>
+
+### Redeliver After Fixing
+
+Click **Redeliver** to retry failed webhooks after resolving configuration issues.
+
+</Steps>
+
+---
+
+## Debug Checklist
+
+```bash
+# 1. Check if app is installed
+# Repository Settings > Integrations > GitHub Apps
+
+# 2. Verify pods are running
+kubectl get pods -n lifecycle-app
+
+# 3. Check required secrets exist
+kubectl get secret app-secrets --namespace lifecycle-app \
+  -o jsonpath='{.data}' | jq 'keys'
+
+# 4. Search logs for delivery ID
+kubectl logs -n lifecycle-app -l app=lifecycle-web --since=1h | grep "DELIVERY_ID"
+
+# 5. Check worker processing
+kubectl logs -n lifecycle-app -l app=lifecycle-worker --since=1h
+
+# 6. Verify Redis connectivity
+kubectl exec -it -n lifecycle-app deployment/lifecycle-web -- redis-cli ping
+
+# 7. Restart services if needed
+kubectl rollout restart deployment lifecycle-web lifecycle-worker -n lifecycle-app
+```
+
+### Required Kubernetes Secrets
+
+| Secret                   | Purpose                        |
+| ------------------------ | ------------------------------ |
+| `GITHUB_APP_ID`          | App identification             |
+| `GITHUB_APP_PRIVATE_KEY` | Authentication                 |
+| `GITHUB_CLIENT_ID`       | OAuth client                   |
+| `GITHUB_CLIENT_SECRET`   | OAuth authentication           |
+| `GITHUB_WEBHOOK_SECRET`  | Webhook signature verification |
+
+### Log Messages to Look For
+
+| Message                       | Meaning                        |
+| ----------------------------- | ------------------------------ |
+| `Webhook: received event=...` | Event received successfully    |
+| `Webhook: queued`             | Event queued for processing    |
+| `Webhook not verified`        | Secret mismatch - sync secrets |
+
+---
+
+## Getting Help
+
+When reporting issues, include:
+
+1. `x-github-delivery` ID from failed webhook
+2. Lifecycle web and worker logs
+3. Screenshot of Recent Deliveries page
+4. Pod status output (`kubectl get pods -n lifecycle-app`)
+
+See [Lifecycle GitHub repository](https://github.com/GoodRxOSS/lifecycle) for known issues.

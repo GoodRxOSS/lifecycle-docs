@@ -9,73 +9,141 @@ tags:
 ---
 
 import { Callout } from "nextra/components";
+import { Mermaid } from "@lifecycle-docs/components";
 
-A **static environment** in Lifecycle is a persistent environment that serves as a fallback when dependent services do not need to be rebuilt.
+## Quick Reference
 
-Unlike ephemeral environments that are built on short lived pull requests, static environments are built on top of long lived pull requests. These environments exist continuously and update automatically as changes are merged into the default branch of configured services.
+| Property       | Value                                            |
+| -------------- | ------------------------------------------------ |
+| Default UUID   | `dev-0`                                          |
+| Repository     | `lifecycle-static-env`                           |
+| Config file    | `lifecycle.yaml` (root)                          |
+| Deploy label   | `lifecycle-deploy!`                              |
+| Database flags | `trackDefaultBranches = true`, `isStatic = true` |
 
-## What is `dev-0`
+## What is a Static Environment?
 
-The **default static environment** is `dev-0`. This environment ensures that there is always a **stable and up-to-date version** of services available without needing to build every dependency manually.
+A **static environment** is a persistent, long-lived environment that auto-updates when changes merge to default branches. It serves as the fallback for services not explicitly built in ephemeral environments.
+
+<Mermaid
+  chart={`
+flowchart TB
+    subgraph ephemeral["Ephemeral Environment"]
+        frontend["frontend"]
+        backend["backend"]
+        note1["(explicitly built)"]
+    end
+    subgraph static["dev-0 (Static Fallback)"]
+        grpc["grpc"]
+        database["database"]
+        cache["cache"]
+        other["other services"]
+    end
+    frontend --> static
+    backend --> static
+`}
+/>
 
 <Callout type="warning">
-
-The `dev-0` environment should be created for your installation.
-
-During the initial bootstrapping of Lifecycle, the `dev-0` build record is created automatically but this itself does not have any services built.
-
+  The `dev-0` environment must be created manually. The bootstrap process
+  creates the record but does not build any services.
 </Callout>
+
+## Static vs Ephemeral
+
+| Aspect   | Static                | Ephemeral         |
+| -------- | --------------------- | ----------------- |
+| Lifespan | Persistent            | PR lifecycle      |
+| Updates  | Auto on merge to main | Manual/PR updates |
+| Cleanup  | Manual only           | Auto on PR close  |
+| Example  | `dev-0`               | `feature-123`     |
 
 ## Create `dev-0`
 
-- Delete the dummy `dev-0` build record from `builds` table in the database
+### Step 1: Delete Bootstrap Record
 
 ```sql
 DELETE FROM builds WHERE uuid = 'dev-0';
 ```
 
-- Create a repository named `lifecycle-static-env` in your GitHub account
-- Install the Lifecycle GitHub App in this repository
-- Create a pull request in this repository with branch `dev-0`
-- Add `lifecycle.yaml` file to the root of the repository with all the services you want to include in the `dev-0` environment
+### Step 2: Create Repository
 
-  **Example:**
+Create `lifecycle-static-env` repository in your GitHub account.
 
-```yaml
+### Step 3: Install GitHub App
+
+Install the Lifecycle GitHub App on the new repository.
+
+### Step 4: Add Configuration
+
+Create a PR from branch `dev-0` with `lifecycle.yaml`:
+
+```yaml filename="lifecycle.yaml"
 environment:
   defaultServices:
     - name: "frontend"
       repository: "account/frontend-repo"
       branch: "main"
-    - name: "grpc"
-      repository: "account/backend-grpc"
+    - name: "backend"
+      repository: "account/backend-api"
+      branch: "main"
+    - name: "database"
+      repository: "account/database-service"
       branch: "main"
 ```
 
-- Deploy the `dev-0` environment by adding `lifecycle-deploy!` label to the pull request
-- Update `uuid` for the environment to `dev-0` in the [mission control comment](/docs/tips/using-mission-control#override-uuid)
-- Finally, execute this query to track default branches of the services in the `dev-0` environment:
+### Step 5: Deploy
+
+Add `lifecycle-deploy!` label to the PR.
+
+### Step 6: Set UUID
+
+Update UUID to `dev-0` in the [mission control comment](/docs/tips/using-mission-control#override-uuid).
+
+### Step 7: Enable Tracking
 
 ```sql
 UPDATE builds
-SET
-    "trackDefaultBranches" = true,
-    "isStatic" = true
-WHERE
-    uuid = 'dev-0';
+SET "trackDefaultBranches" = true, "isStatic" = true
+WHERE uuid = 'dev-0';
 ```
 
-## Key Features
+## Key Behaviors
 
-**🏗️ Fallback for Optional Services**
+| Behavior                | Description                                                          |
+| ----------------------- | -------------------------------------------------------------------- |
+| **Fallback resolution** | Ephemeral environments use `dev-0` for services not explicitly built |
+| **Auto-rebuild**        | Merges to `main` trigger automatic rebuild and redeploy              |
+| **No TTL cleanup**      | `isStatic = true` prevents automatic deletion                        |
 
-- When optional services are not explicitly built in an ephemeral environment, Lifecycle defaults to using the latest build from `dev-0`.
+### Manual Rebuild Triggers
 
-**💪 Based on a Persistent PR**
+- Push commit to static environment branch
+- Edit mission control comment
+- Toggle service checkboxes
 
-- Similar to ephemeral environments, `dev-0` is based on a PR, but it remains open and continuously updates.
+### Additional Static Environments
 
-**👣 Tracks Changes on Default Branch Merges**
+Create multiple static environments with unique UUIDs:
 
-- Whenever a service has a new change merged to its `main` branch, `dev-0` will **automatically pull, build, and redeploy** the latest changes.
-- This ensures `dev-0` always contains **the freshest version** of all services.
+- `staging-0` - staging services
+- `integration-0` - integration testing
+- `demo-0` - demonstrations
+
+## Troubleshooting
+
+| Problem                        | Solution                                                         |
+| ------------------------------ | ---------------------------------------------------------------- |
+| Services not updating on merge | Verify `trackDefaultBranches = true` and GitHub App is installed |
+| UUID conflict                  | Delete old `dev-0` record; check for soft-deleted records        |
+| Branch mismatch                | Ensure config branch name matches repository default branch      |
+
+## Checklist
+
+- [ ] Deleted bootstrap `dev-0` record
+- [ ] Created `lifecycle-static-env` repository
+- [ ] Installed Lifecycle GitHub App
+- [ ] Created PR with `lifecycle.yaml` from `dev-0` branch
+- [ ] Added `lifecycle-deploy!` label
+- [ ] Set UUID to `dev-0` in mission control
+- [ ] Enabled `trackDefaultBranches` and `isStatic` flags

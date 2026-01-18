@@ -1,5 +1,5 @@
 ---
-title: Configure Application
+title: Create GitHub App
 tags:
   - github
   - app
@@ -8,34 +8,44 @@ tags:
 ---
 
 import { Callout } from "nextra/components";
-import { Image } from "@lifecycle-docs/components";
+import { Image, Mermaid } from "@lifecycle-docs/components";
 
-## Configure BuildKit Endpoint
+## Quick Reference
 
-Before creating the GitHub app, you need to configure the BuildKit endpoint in the database:
+| Item              | Value                                           |
+| ----------------- | ----------------------------------------------- |
+| **Setup URL**     | `https://app.<your_domain>/setup`               |
+| **Webhook URL**   | `https://app.<your_domain>/api/webhooks/github` |
+| **BuildKit Port** | `1234`                                          |
+| **Namespace**     | `lifecycle-app`                                 |
+
+<Mermaid
+  chart={`
+flowchart LR
+    A["1. Configure BuildKit<br/>(DB)"] --> B["2. Create App<br/>(Wizard)"] --> C["3. Install<br/>(Repos)"]
+`}
+/>
+
+---
+
+## Step 1: Configure BuildKit Endpoint
+
+BuildKit builds container images for your services. Configure the endpoint before creating the GitHub App.
 
 <Callout type="warning">
-  Set the `HELM_RELEASE` environment variable to your actual Helm release name
-  before running the commands below.
+  Set `HELM_RELEASE` to your actual Helm release name before running commands.
 </Callout>
 
-<Callout type="info">
-  The following commands will create the `buildkit` object and `endpoint`
-  configuration if they don't exist, or update them if they do.
-</Callout>
-
-### Option 1: Using kubectl exec with psql
-
-Execute the following commands to connect to the PostgreSQL pod and run the query:
+### Option A: kubectl + psql
 
 ```bash
-# Set your Helm release name (replace with your actual release name)
+# Set your Helm release name
 export HELM_RELEASE=<YOUR-HELM-RELEASE>
 
-# Get the database password from the secret
+# Get database password
 export PGPASSWORD=$(kubectl get secret ${HELM_RELEASE}-postgres -n lifecycle-app -o jsonpath='{.data.POSTGRES_USER_PASSWORD}' | base64 -d)
 
-# Run the query
+# Update BuildKit endpoint
 kubectl exec -it ${HELM_RELEASE}-postgres-0 -n lifecycle-app -- env PGPASSWORD=$PGPASSWORD psql -U lifecycle -d lifecycle -c "
 UPDATE global_config
 SET config = jsonb_set(
@@ -53,9 +63,7 @@ SET config = jsonb_set(
 WHERE key = 'buildDefaults';"
 ```
 
-### Option 2: Direct SQL query
-
-If you have direct database access, run the following SQL query (replace `<YOUR-HELM-RELEASE>` with your actual Helm release name):
+### Option B: Direct SQL
 
 ```sql
 UPDATE global_config
@@ -74,59 +82,153 @@ SET config = jsonb_set(
 WHERE key = 'buildDefaults';
 ```
 
-### Refresh Configuration Cache
-
-After running either option above, refresh the configuration cache:
+### Refresh Cache
 
 ```bash
-curl -X 'PUT' \
-  'https://app.<your_domain>/api/v1/config/cache' \
-  -H 'accept: application/json'
+curl -X 'PUT' 'https://app.<your_domain>/api/v1/config/cache' -H 'accept: application/json'
 ```
-
-Replace `<your_domain>` with your actual domain (e.g., `0env.com`).
-
-## Create GitHub App
-
-To create a Github app that will send events to the Lifecycle with necessary permissions, follow these steps:
-
-<Callout type="info">
-  Make sure you have admin access to the Github organization or account where
-  you want to create the app.
-</Callout>
-
-- Navigate to your installed Lifecycle app at `https://app.<your_domain>/setup` (replace `<your_domain>` with your actual domain. e.g. `https://app.0env.com/setup`).
-  <Image src="/setup/github-app-setup.png" width={1872} height={1068} />
-- Select `Personal` or `Organization` based on your needs.
-- Fill in the required fields:
-
-  - **Github App Name**: A name for your app. (should be unique, use a prefix with your name or organization. Refer Github app naming convention [here](https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/)
-  - **Organization Name**: Github organization name where the app will be created. Required if you selected `Organization`.
-
-- Click `Create App`
-- On the Github app creation page, confirm the app name and click `Create`
-- Once the app is created, you will be redirected to the app installation page where you can choose one or more repositories to install the the newly minted app.
-
-  <Callout type="info">
-    Make sure to select the repositories you want the app to have access to. You
-    can always change this later in the app settings but **adding atleast one
-    repository is required to proceed with the setup**.
-  </Callout>
-
-  <br />
-
-- Voila! 🎉 Your Github app is now created and installed.
-
-<Image src="/setup/github-app-installed.png" width={1902} height={1088} />
-
-- Click `Configure and Restart` to apply the changes and start using the app.
-
-<Callout type="info">
-  The step above, sets up the global config values that Lifecycle app will use
-  creating ephemeral environments and processing pull requests. And restarts the
-  `deployment` for the github app secrets to take effect.
-</Callout>
 
 ---
 
-Let's move on the final step where we will configure the Lifecycle app config for processing pull requests and creating ephemeral environments.
+## Step 2: Create GitHub App
+
+<Callout type="info">
+  Requires admin access to the target GitHub organization or account.
+</Callout>
+
+### Using the Setup Wizard
+
+1. Navigate to `https://app.<your_domain>/setup`
+
+<Image src="/setup/github-app-setup.png" width={1872} height={1068} />
+
+2. Select **Personal** or **Organization**
+
+3. Fill in required fields:
+
+| Field             | Description                                                                                                              | Example               |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------ | --------------------- |
+| GitHub App Name   | Unique identifier ([naming conventions](https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/)) | `myorg-lifecycle-dev` |
+| Organization Name | GitHub org (required for Organization type)                                                                              | `myorg`               |
+
+4. Click **Create App** → Confirm on GitHub → Select repositories
+
+<Callout type="warning">
+  You must select at least one repository to proceed with setup.
+</Callout>
+
+5. Click **Configure and Restart** to apply changes
+
+<Image src="/setup/github-app-installed.png" width={1902} height={1088} />
+
+---
+
+## Permissions & Events
+
+### Repository Permissions
+
+| Permission    | Access | Purpose                        |
+| ------------- | ------ | ------------------------------ |
+| Contents      | Read   | Access `lifecycle.yaml` config |
+| Deployments   | Write  | Manage environment deployments |
+| Issues        | Write  | Comment on pull requests       |
+| Metadata      | Read   | Repository metadata            |
+| Pull Requests | Write  | Read PR data, create comments  |
+| Statuses      | Read   | Read commit status checks      |
+
+### Organization Permissions
+
+| Permission | Access | Purpose                      |
+| ---------- | ------ | ---------------------------- |
+| Members    | Read   | Organization membership info |
+
+### Webhook Events
+
+| Event           | Trigger                                   |
+| --------------- | ----------------------------------------- |
+| `pull_request`  | PR opened, closed, reopened, synchronized |
+| `push`          | Commits pushed to branch                  |
+| `issue_comment` | Comments on issues/PRs                    |
+| `label`         | Labels added/removed                      |
+| `issues`        | Issues opened, edited, closed             |
+| `repository`    | Repo created, deleted, modified           |
+| `membership`    | Org membership changes                    |
+| `organization`  | Org settings changes                      |
+| `team`          | Teams created, deleted, modified          |
+| `public`        | Repo made public                          |
+
+---
+
+## Manual Setup (Alternative)
+
+<details>
+<summary>Click to expand manual GitHub App creation steps</summary>
+
+1. Go to **GitHub Settings** → **Developer settings** → **GitHub Apps** → **New GitHub App**
+
+2. Configure:
+
+   - **Homepage URL**: `https://app.<your_domain>`
+   - **Webhook URL**: `https://app.<your_domain>/api/webhooks/github`
+   - **Webhook secret**: Generate secure random string
+
+3. Set permissions and events per tables above
+
+4. After creation, collect these values:
+
+   - App ID
+   - Client ID
+   - Client secret
+   - Private key (`.pem` file)
+   - Webhook secret
+   - Installation ID
+
+5. Create Kubernetes secret:
+
+```sh
+kubectl create secret generic app-secrets \
+  --namespace lifecycle-app \
+  --from-literal=GITHUB_APP_ID=<app-id> \
+  --from-literal=GITHUB_CLIENT_ID=<client-id> \
+  --from-literal=GITHUB_CLIENT_SECRET=<client-secret> \
+  --from-literal=GITHUB_WEBHOOK_SECRET=<webhook-secret> \
+  --from-literal=GITHUB_PRIVATE_KEY="$(cat <path-to-private-key.pem>)" \
+  --from-literal=GITHUB_APP_INSTALLATION_ID=<installation-id> \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
+
+6. Restart deployments:
+
+```sh
+kubectl rollout restart deployment -n lifecycle-app
+```
+
+</details>
+
+---
+
+## Troubleshooting
+
+| Problem                        | Solution                                               |
+| ------------------------------ | ------------------------------------------------------ |
+| BuildKit endpoint not updating | Verify `HELM_RELEASE` matches your actual release name |
+| Cache refresh fails            | Check that app domain is correct and accessible        |
+| App creation fails             | Ensure admin access to GitHub org/account              |
+| No repositories shown          | Install app on at least one repository                 |
+| Webhooks not received          | Verify webhook URL and secret match configuration      |
+
+---
+
+## Checklist
+
+- [ ] Set `HELM_RELEASE` environment variable
+- [ ] Configure BuildKit endpoint in database
+- [ ] Refresh configuration cache
+- [ ] Create GitHub App via setup wizard
+- [ ] Select repositories for app installation
+- [ ] Click "Configure and Restart"
+- [ ] Verify app appears in GitHub settings
+
+---
+
+Proceed to configure additional Lifecycle settings.

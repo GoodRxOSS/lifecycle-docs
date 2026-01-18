@@ -1,17 +1,320 @@
 ---
-title: Troubleshooting Build Issues
-description: Understand how to handle common build issues with environments
+title: Build Issues
+description: Diagnose and resolve common build issues in Lifecycle environments
 tags:
   - build
   - issues
   - error
-  - codefresh
-navtext: Build Issues
+  - troubleshooting
+  - docker
+  - buildkit
+  - kaniko
+date: "2025-01-29"
 ---
 
-import { Callout } from "nextra/components";
+import { Callout, Steps, Tabs } from "nextra/components";
+import { Mermaid } from "@lifecycle-docs/components";
 
-<Callout type="info">
-  TODO: This document will cover common build issues that you may encounter when
-  working with Lifecycle environments.
-</Callout>
+## Quick Reference
+
+| Error Type                 | First Check     | Quick Fix                             |
+| -------------------------- | --------------- | ------------------------------------- |
+| `config_error`             | YAML syntax     | Run `yamllint lifecycle.yaml`         |
+| `build_failed`             | Dockerfile path | Verify `dockerfilePath` exists        |
+| Registry push failed       | Credentials     | Check IAM/service account permissions |
+| Service stuck on `waiting` | Dependencies    | Check `dependsOn` services status     |
+| OOMKilled                  | Memory limits   | Increase pod memory or use Buildkit   |
+
+---
+
+## Build Status Flow
+
+<Mermaid
+  chart={`
+flowchart LR
+    pending --> queued --> building --> built --> deploying --> deployed
+    building --> error["error / build_failed / config_error"]
+`}
+/>
+
+| Status         | Description                      |
+| -------------- | -------------------------------- |
+| `pending`      | Waiting to be processed          |
+| `queued`       | Queued for processing            |
+| `building`     | Container images being built     |
+| `built`        | Images successfully built        |
+| `deploying`    | Services being deployed          |
+| `deployed`     | Environment fully deployed       |
+| `error`        | Error during build or deployment |
+| `config_error` | Invalid lifecycle.yaml           |
+
+---
+
+## Configuration Errors
+
+**Symptom:** Status shows `config_error`, PR comment displays "Configuration Error"
+
+### YAML Syntax
+
+<Tabs items={['WRONG', 'CORRECT']}>
+<Tabs.Tab>
+```yaml
+# Missing colon after services
+services
+  - name: my-service
+
+# Bad indentation
+
+services:
+
+- name: my-service
+  github:
+  repository: org/repo
+
+````
+</Tabs.Tab>
+<Tabs.Tab>
+```yaml
+services:
+  - name: my-service
+    github:
+      repository: org/repo
+      branchName: main
+````
+
+</Tabs.Tab>
+</Tabs>
+
+**Fix:** Run `yamllint lifecycle.yaml` to catch syntax errors.
+
+### Missing Required Fields
+
+<Tabs items={["WRONG", "CORRECT"]}>
+  <Tabs.Tab>
+    ```yaml version: "1.0.0" services: - name: my-service # Missing
+    github.repository ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+    ```yaml version: "1.0.0" services: - name: my-service github: repository:
+    org/repo branchName: main ```
+  </Tabs.Tab>
+</Tabs>
+
+**Fix:** Review your configuration against the [schema reference](/docs/schema).
+
+---
+
+## Dockerfile Issues
+
+### Missing Dockerfile
+
+**Error:** `Git: SHA fetch failed` or empty build output
+
+<Tabs items={["WRONG", "CORRECT"]}>
+  <Tabs.Tab>
+    ```yaml services: - name: my-service github: docker: app: dockerfilePath:
+    ./docker/Dockerfile # File doesn't exist ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+    ```yaml services: - name: my-service github: docker: app: dockerfilePath:
+    ./Dockerfile # Verified to exist in repo ```
+  </Tabs.Tab>
+</Tabs>
+
+**Checklist:**
+
+- [ ] File exists at specified path
+- [ ] File is committed to the branch
+- [ ] Path is relative to repository root
+
+### Build Context Errors
+
+**Error:** `COPY failed` or `file not found`
+
+| Problem             | Solution                                             |
+| ------------------- | ---------------------------------------------------- |
+| File not in context | Ensure files are relative to build context           |
+| File excluded       | Check `.dockerignore` isn't excluding required files |
+| Wrong path          | Use paths relative to Dockerfile location            |
+
+---
+
+## Registry Issues
+
+### ECR Authentication
+
+**Error:** `AWS credentials not configured`
+
+| Check                       | Command/Action                      |
+| --------------------------- | ----------------------------------- |
+| Service account permissions | Verify IAM role has ECR push access |
+| Repository exists           | `aws ecr describe-repositories`     |
+| Region configured           | Check cluster configuration         |
+
+### Push Failures
+
+**Error:** `failed to push` or timeout
+
+| Cause         | Solution                                  |
+| ------------- | ----------------------------------------- |
+| Network issue | Check registry accessibility from cluster |
+| Invalid tag   | Verify image tag format                   |
+| Rate limiting | Wait and retry, or use private registry   |
+
+---
+
+## Build Engine Issues
+
+<Tabs items={['Buildkit', 'Kaniko']}>
+<Tabs.Tab>
+
+### Buildkit
+
+**Connection Errors**
+
+Error: `failed to solve` or connection timeout
+
+| Cause               | Fix                            |
+| ------------------- | ------------------------------ |
+| Service not running | Verify Buildkit service status |
+| Network blocked     | Check network policies         |
+| Bad endpoint        | Verify `BUILDKIT_HOST` env var |
+
+**Cache Issues**
+
+Error: Slow builds or cache import failures
+
+| Cause              | Fix                                  |
+| ------------------ | ------------------------------------ |
+| Cache inaccessible | Verify cache registry is reachable   |
+| Stale cache        | Force rebuild by updating Dockerfile |
+
+</Tabs.Tab>
+<Tabs.Tab>
+
+### Kaniko
+
+**Docker Config Issues**
+
+Error: `error checking push permissions`
+
+| Cause               | Fix                                             |
+| ------------------- | ----------------------------------------------- |
+| Config not mounted  | Verify registry login init container completed  |
+| Missing credentials | Check Docker config generation                  |
+| Permission denied   | Ensure service account has required permissions |
+
+**Memory Issues**
+
+Error: Build pod `OOMKilled` or hangs
+
+| Cause                  | Fix                              |
+| ---------------------- | -------------------------------- |
+| Large image layers     | Increase memory limits           |
+| Inefficient Dockerfile | Optimize with multi-stage builds |
+| Persistent issues      | Consider switching to Buildkit   |
+
+</Tabs.Tab>
+</Tabs>
+
+---
+
+## Accessing Build Logs
+
+### Quick Access Methods
+
+| Method    | Steps                                               |
+| --------- | --------------------------------------------------- |
+| GitHub PR | Click build logs link in Lifecycle comment          |
+| Dashboard | Navigate to environment → Click service → View logs |
+| kubectl   | See commands below                                  |
+
+### kubectl Commands
+
+```bash
+# List build jobs
+kubectl get jobs -n env-<build-uuid> -l app.kubernetes.io/component=build
+
+# View build logs
+kubectl logs -n env-<build-uuid> job/<job-name>
+
+# View init container logs (git clone step)
+kubectl logs -n env-<build-uuid> job/<job-name> -c git-clone
+```
+
+---
+
+## Dependency Issues
+
+### Service Stuck on `waiting`
+
+**Checklist:**
+
+- [ ] Dependent service status is not `error` or `build_failed`
+- [ ] No circular dependencies in `dependsOn`
+- [ ] Dependent service exists in configuration
+
+### Environment Variable Resolution Failed
+
+**Error:** Missing values from dependent builds
+
+| Check               | Action                            |
+| ------------------- | --------------------------------- |
+| Extraction pattern  | Verify regex matches build output |
+| Dependency output   | Review build logs of dependency   |
+| Order of operations | Ensure dependency builds first    |
+
+---
+
+## Troubleshooting Steps
+
+<Steps>
+### Check PR Comment
+
+Review the Lifecycle comment for status and error messages.
+
+### Validate Configuration
+
+```bash
+yamllint lifecycle.yaml
+```
+
+### Review Build Logs
+
+Access logs via GitHub, Dashboard, or kubectl.
+
+### Check Dependencies
+
+Verify all `dependsOn` services completed successfully.
+
+### Retry Build
+
+Push a new commit or remove/re-add the lifecycle label.
+
+</Steps>
+
+---
+
+## Common Errors Reference
+
+| Error                            | Cause                        | Fix                           |
+| -------------------------------- | ---------------------------- | ----------------------------- |
+| `Config file is empty`           | No content in lifecycle.yaml | Add valid configuration       |
+| `Build not found`                | Build record missing         | Re-trigger the build          |
+| `Git: SHA fetch failed`          | Branch not found             | Verify branch name and access |
+| `ECR: config missing`            | Registry config incomplete   | Check global configuration    |
+| `Unsupported builder engine`     | Invalid engine               | Use `buildkit` or `kaniko`    |
+| `Namespace did not become ready` | K8s creation timeout         | Check cluster resources       |
+
+---
+
+## Getting Help
+
+Include when reporting issues:
+
+- Build UUID
+- Service name
+- Error messages from logs
+- Steps to reproduce
+
+See [Lifecycle GitHub repository](https://github.com/GoodRxOSS/lifecycle) for known issues.

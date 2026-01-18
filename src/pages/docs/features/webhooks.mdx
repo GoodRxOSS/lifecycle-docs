@@ -1,183 +1,351 @@
 ---
 title: Webhooks
+description: Trigger automated tasks when build states change
 tags:
   - webhook
   - automation
   - codefresh
   - deployment
-  - lifecycle
   - docker
   - command
-date: "2025-02-16"
+date: "2025-01-29"
 ---
 
-import { Callout } from "nextra/components";
+import { Callout, Tabs } from "nextra/components";
+import { Mermaid } from "@lifecycle-docs/components";
 
-Lifecycle can invoke **third-party services** when a build state changes.
+# Webhooks
 
-Webhooks allow users to automate external processes such as running tests, performing cleanup tasks, or sending notifications based on environment build states.
+Automate external processes when your build state changes—run tests, send notifications, or perform cleanup tasks.
 
-## Supported Types
+## Quick Reference
 
-Lifecycle supports three types of webhooks:
+| Type        | Best For                        | Key Config                        |
+| ----------- | ------------------------------- | --------------------------------- |
+| `codefresh` | Existing CI/CD pipelines        | `pipelineId`, `trigger`           |
+| `docker`    | Custom containers, full control | `docker.image`, `docker.command`  |
+| `command`   | Quick scripts, notifications    | `command.image`, `command.script` |
 
-1. **`codefresh`** - Trigger Codefresh pipelines
-2. **`docker`** - Execute Docker images as Kubernetes jobs
-3. **`command`** - Run shell commands in a specified Docker image
+**Trigger States:** `deployed` | `error` | `torn_down`
 
-## Common Use Cases
+<Callout type="info">
+  Webhook failures do **not** affect your build status—failures are recorded but
+  deployments continue.
+</Callout>
 
-- When a build status is `deployed`, trigger **end-to-end tests**.
-- When a build status is `error`, trigger **infrastructure cleanup** or alert the team.
-- Run **security scans** on built containers.
-- Execute **database migrations** after deployment.
-- Send **notifications** to Slack, Discord, or other communication channels.
-- Perform **smoke tests** using custom test containers.
+---
 
-## Configuration
+## How It Works
 
-Webhooks are defined in the `lifecycle.yaml` under the `environment.webhooks` section.
+<Mermaid chart={`
+flowchart TB
+    A["Build State Changes<br/>(deployed / error / torn_down)"]
+    B["Lifecycle checks for webhooks<br/>matching that state"]
+    C["Webhooks execute serially in order"]
+    D["Results recorded<br/>(view at /builds/[uuid]/webhooks)"]
 
-Below is an example configuration for triggering end-to-end tests when the `deployed` state is reached.
+    A --> B
+    B --> C
+    C --> D
 
-## Examples
+`} />
 
-### `codefresh`
+---
 
-The `codefresh` type triggers existing Codefresh pipelines when build states change.
+## Configuration by Type
+
+### Codefresh Webhook
+
+Trigger existing Codefresh CI/CD pipelines.
 
 ```yaml
-# Trigger End-to-End Tests on Deployment
 environment:
-  # ...
-  defaultServices:
-    - name: "frontend"
-  optionalServices:
-    - name: "backend"
-      repository: "lifecycle/backend"
-      branch: "main"
   webhooks:
-    - state: deployed
+    - name: "E2E Tests"
+      state: deployed
       type: codefresh
-      name: "End to End Tests"
       pipelineId: 64598362453cc650c0c9cd4d
       trigger: tests
       env:
         branch: "{{frontend_branchName}}"
         TEST_URL: "https://{{frontend_publicUrl}}"
-  # ...
 ```
 
-- **`state: deployed`** → Triggers the webhook when the build reaches the `deployed` state.
-- **`type: codefresh`** → Specifies that this webhook triggers a **Codefresh pipeline**.
-- **`name`** → A human-readable name for the webhook.
-- **`pipelineId`** → The unique Codefresh pipeline ID.
-- **`trigger`** → Codefresh pipeline's trigger to execute.
-- **`env`** → Passes relevant environment variables (e.g., `branch` and `TEST_URL`).
+| Field        | Required | Description            |
+| ------------ | -------- | ---------------------- |
+| `pipelineId` | Yes      | Codefresh pipeline ID  |
+| `trigger`    | Yes      | Codefresh trigger name |
 
----
+### Docker Webhook
 
-```yaml
-# Trigger Cleanup on Build Error
-environment:
-  # ...
-  webhooks:
-    - state: error
-      type: codefresh
-      name: "Cleanup Failed Deployment"
-      pipelineId: 74283905723ff650c0d9ab7e
-      trigger: cleanup
-      env:
-        branch: "{{frontend_branchName}}"
-        CLEANUP_TARGET: "frontend"
-  # ...
-```
-
-- **`state: error`** → Triggers the webhook when the build fails.
-- **`type: codefresh`** → Invokes a Codefresh cleanup pipeline.
-- **`trigger: cleanup`** → Codefresh pipeline's trigger to execute.
-- **`env`** → Includes necessary variables, such as `branch` and `CLEANUP_TARGET`.
-
-### `docker`
-
-The `docker` type allows you to execute any Docker image as a Kubernetes job when build states change.
-
-<Callout type="info">
-  Docker webhooks run as Kubernetes jobs in the same namespace as your build.
-  They have a default timeout of 30 minutes and resource limits of 200m CPU and
-  1Gi memory.
-</Callout>
+Execute a Docker image as a Kubernetes job—best for custom containers.
 
 ```yaml
-# Run E2E Tests in Custom Container
 environment:
-  # ...
   webhooks:
     - name: "E2E Test Suite"
-      description: "Execute comprehensive E2E tests"
       state: deployed
       type: docker
       docker:
         image: "myorg/e2e-tests:latest"
         command: ["npm", "run", "e2e"]
-        timeout: 1200 # 1 hour (optional, default: 1800 seconds)
+        args: ["--headless", "--ci"]
+        timeout: 3600
       env:
         BASE_URL: "https://{{frontend_publicUrl}}"
-        ENVIRONMENT: "ephemeral"
 ```
 
-- **`docker.image`** → Docker image to execute (required)
-- **`docker.command`** → Override the default entrypoint (optional)
-- **`docker.args`** → Arguments to pass to the command (optional)
-- **`docker.timeout`** → Maximum execution time in seconds (optional, default: 1800)
+| Field            | Required | Default | Description                   |
+| ---------------- | -------- | ------- | ----------------------------- |
+| `docker.image`   | Yes      | —       | Docker image to execute       |
+| `docker.command` | No       | —       | Override container entrypoint |
+| `docker.args`    | No       | —       | Arguments for the command     |
+| `docker.timeout` | No       | 1800s   | Max execution time            |
 
-### `command`
+### Command Webhook
 
-The `command` type is a simplified version of Docker webhooks, ideal for running shell scripts or simple commands.
+Run a shell script in a container—ideal for quick tasks.
 
 ```yaml
-# Slack Notification Example
 environment:
-  # ...
   webhooks:
-    - name: "Deployment Notification"
-      description: "Notify team of successful deployment"
+    - name: "Slack Notification"
       state: deployed
       type: command
       command:
-        image: "alpine:latest"
+        image: "curlimages/curl:latest"
         script: |
-          apk add --no-cache curl
-          curl -X POST "$WEBHOOK_URL" \
+          curl -X POST "$SLACK_WEBHOOK" \
             -H "Content-Type: application/json" \
-            -d "{\"text\":\"🚀 Deployed $SERVICE_NAME to $DEPLOY_URL\"}"
-        timeout: 300 # 5 minutes (optional)
+            -d "{\"text\":\"Deployed $SERVICE to $URL\"}"
+        timeout: 60
       env:
-        WEBHOOK_URL: "https://hooks.slack.com/services/XXX/YYY/ZZZ"
-        SERVICE_NAME: "{{frontend_internalHostname}}"
-        DEPLOY_URL: "https://{{frontend_publicUrl}}"
+        SLACK_WEBHOOK: "https://hooks.slack.com/services/XXX"
+        SERVICE: "{{frontend_internalHostname}}"
+        URL: "https://{{frontend_publicUrl}}"
 ```
 
-<Callout type="warning">
-  Make sure to replace placeholder values like webhook URLs and pipeline IDs
-  with your actual values.
-</Callout>
+| Field             | Required | Default | Description                       |
+| ----------------- | -------- | ------- | --------------------------------- |
+| `command.image`   | Yes      | —       | Docker image for script execution |
+| `command.script`  | Yes      | —       | Shell script to execute           |
+| `command.timeout` | No       | 1800s   | Max execution time                |
 
-- **`command.image`** → Docker image to run the script in (required)
-- **`command.script`** → Shell script to execute (required)
-- **`command.timeout`** → Maximum execution time in seconds (optional, default: 1800)
+---
 
-## Trigger states
+## Common Fields (All Types)
 
-Webhooks can be triggered on the following build states:
+| Field         | Required | Description                         |
+| ------------- | -------- | ----------------------------------- |
+| `name`        | No       | Human-readable identifier           |
+| `description` | No       | What the webhook does               |
+| `state`       | Yes      | `deployed`, `error`, or `torn_down` |
+| `type`        | Yes      | `codefresh`, `docker`, or `command` |
+| `env`         | Yes      | Environment variables (can be `{}`) |
 
-- **`deployed`** → Service successfully deployed and running
-- **`error`** → Build or deployment failed
-- **`torn_down`** → Environment has been destroyed
+---
 
-## Note
+## Template Variables
 
-- All webhooks for the same state are executed **serially** in the order defined.
-- Webhook failures do not affect the build status.
-- Webhook invocations can be viewed at `/builds/[uuid]/webhooks` page(latest 20 invocations). Use the API to view all invocations.
-- `docker` and `command` type's logs are not streamed when the job is still in progress and are available only after the job completes.
+Inject build-specific values using `{{variable}}` syntax:
+
+| Variable                           | Example Output                         |
+| ---------------------------------- | -------------------------------------- |
+| `{{serviceName_publicUrl}}`        | `my-service-abc123.example.com`        |
+| `{{serviceName_branchName}}`       | `feature/my-branch`                    |
+| `{{serviceName_internalHostname}}` | `my-service.namespace.svc`             |
+| `{{serviceName_dockerImage}}`      | `myorg/service:sha-abc123`             |
+| `{{serviceName_sha}}`              | `abc123def456`                         |
+| `{{buildUUID}}`                    | `550e8400-e29b-41d4-a716-446655440000` |
+| `{{namespace}}`                    | `lifecycle-pr-123`                     |
+| `{{pullRequestNumber}}`            | `123`                                  |
+
+Replace `serviceName` with your actual service name from the Lifecycle config.
+
+---
+
+## Common Mistakes
+
+### Wrong: Missing env field
+
+```yaml
+# WRONG - env field is required even if empty
+environment:
+  webhooks:
+    - name: "Test"
+      state: deployed
+      type: docker
+      docker:
+        image: "myorg/tests:latest"
+```
+
+```yaml
+# CORRECT - include env: {} if no variables needed
+environment:
+  webhooks:
+    - name: "Test"
+      state: deployed
+      type: docker
+      docker:
+        image: "myorg/tests:latest"
+      env: {}
+```
+
+### Wrong: Template variable typo
+
+```yaml
+# WRONG - service name doesn't match config
+env:
+  URL: "https://{{frontEnd_publicUrl}}" # Wrong: "frontEnd" vs "frontend"
+```
+
+```yaml
+# CORRECT - use exact service name from your lifecycle.yaml
+env:
+  URL: "https://{{frontend_publicUrl}}"
+```
+
+### Wrong: No timeout for long-running jobs
+
+```yaml
+# WRONG - E2E tests may exceed 30-minute default
+docker:
+  image: "mcr.microsoft.com/playwright:latest"
+  command: ["npx", "playwright", "test"]
+```
+
+```yaml
+# CORRECT - set appropriate timeout
+docker:
+  image: "mcr.microsoft.com/playwright:latest"
+  command: ["npx", "playwright", "test"]
+  timeout: 3600 # 1 hour for comprehensive E2E suite
+```
+
+---
+
+## Practical Patterns
+
+### E2E Tests After Deployment
+
+```yaml
+environment:
+  webhooks:
+    - name: "Playwright E2E Tests"
+      state: deployed
+      type: docker
+      docker:
+        image: "mcr.microsoft.com/playwright:v1.40.0"
+        command: ["npx", "playwright", "test"]
+        timeout: 1800
+      env:
+        BASE_URL: "https://{{frontend_publicUrl}}"
+        CI: "true"
+```
+
+### Slack + Discord Notifications
+
+```yaml
+environment:
+  webhooks:
+    - name: "Slack Deploy Alert"
+      state: deployed
+      type: command
+      command:
+        image: "curlimages/curl:8.5.0"
+        script: |
+          curl -X POST "$SLACK_WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d '{"text":"Deployed: '"$URL"'"}'
+        timeout: 30
+      env:
+        SLACK_WEBHOOK: "https://hooks.slack.com/services/XXX"
+        URL: "https://{{frontend_publicUrl}}"
+
+    - name: "Discord Error Alert"
+      state: error
+      type: command
+      command:
+        image: "curlimages/curl:8.5.0"
+        script: |
+          curl -X POST "$DISCORD_WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d '{"content":"Build failed for PR #'"$PR"'"}'
+        timeout: 30
+      env:
+        DISCORD_WEBHOOK: "https://discord.com/api/webhooks/XXX"
+        PR: "{{pullRequestNumber}}"
+```
+
+### Database Migrations
+
+```yaml
+environment:
+  webhooks:
+    - name: "Run Migrations"
+      state: deployed
+      type: docker
+      docker:
+        image: "myorg/db-migrator:latest"
+        command: ["./migrate.sh", "up"]
+        timeout: 600
+      env:
+        DATABASE_URL: "postgres://{{db_internalHostname}}:5432/app"
+```
+
+### Cleanup on Teardown
+
+```yaml
+environment:
+  webhooks:
+    - name: "Cleanup External Resources"
+      state: torn_down
+      type: docker
+      docker:
+        image: "myorg/cleanup-tool:latest"
+        timeout: 300
+      env:
+        BUILD_UUID: "{{buildUUID}}"
+```
+
+---
+
+## Resource Limits
+
+| Resource | Request | Limit |
+| -------- | ------- | ----- |
+| CPU      | 200m    | 200m  |
+| Memory   | 1Gi     | 1Gi   |
+
+| Timeout        | Default              | Maximum  |
+| -------------- | -------------------- | -------- |
+| Docker/Command | 30 min               | 24 hours |
+| Codefresh      | Managed by Codefresh | N/A      |
+
+---
+
+## Troubleshooting
+
+| Problem                            | Solution                                                      |
+| ---------------------------------- | ------------------------------------------------------------- |
+| Webhook not triggering             | Verify `state` matches the build state (check spelling)       |
+| Template variable empty            | Confirm service name matches exactly in your `lifecycle.yaml` |
+| Timeout exceeded                   | Increase `timeout` value; check if job is stuck               |
+| Image pull error                   | Verify image exists and is accessible from cluster            |
+| Script syntax error                | Test script locally before deploying                          |
+| Webhook failed but build succeeded | Expected—webhook failures don't affect builds                 |
+
+View webhook history at `/builds/[uuid]/webhooks` to debug failures.
+
+---
+
+## Summary: When to Use Each Type
+
+| Use Case                    | Recommended Type | Why                                  |
+| --------------------------- | ---------------- | ------------------------------------ |
+| Run existing CI/CD pipeline | `codefresh`      | Native integration, managed timeouts |
+| Custom test suite           | `docker`         | Full control over image and commands |
+| Send notifications          | `command`        | Quick, lightweight scripts           |
+| Database migrations         | `docker`         | Reliable execution with custom tools |
+| Cleanup external resources  | `docker`         | Access to custom tooling             |
+| Health checks               | `command`        | Simple curl/wget scripts             |

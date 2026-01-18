@@ -1,5 +1,5 @@
 /**
- * Copyright 2025 GoodRx, Inc.
+ * Copyright 2026 GoodRx, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ export default {
     "title": "Build Issues"
   },
   "deploy-issues": {
-    "title": "Deploy Issues"
+    "title": "Deployment Issues"
   },
   "github-app-webhooks": {
-    "title": "Missing PR comment"
+    "title": "GitHub App Webhooks"
   }
 };

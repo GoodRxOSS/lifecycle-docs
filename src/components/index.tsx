@@ -16,6 +16,8 @@
 
 import Image from "@lifecycle-docs/components/image";
 import Iframe from "@lifecycle-docs/components/iframe";
+import Mermaid from "@lifecycle-docs/components/mermaid";
+import ExcalidrawDiagram from "@lifecycle-docs/components/excalidraw";
 import { buttonVariants, Button } from "@/components/ui/button";
 import { Callout, Steps, Tabs, FileTree, Cards } from "nextra/components";
 import {
@@ -53,6 +55,8 @@ export {
   Cards,
   Image,
   Iframe,
+  Mermaid,
+  ExcalidrawDiagram,
   Card,
   CardContent,
   CardDescription,

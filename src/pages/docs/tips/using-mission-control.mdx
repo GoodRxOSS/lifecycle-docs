@@ -1,91 +1,215 @@
 ---
-title: Mission Control comment
-description: >-
-  Use the Mission Control PR Comment to modify and customize your environment
-  directly from the pull request comment.
+title: Mission Control Comment
+description: Understanding and using the Lifecycle PR comment interface
 tags:
-  - pull request
-  - comment
-  - mission control
-  - environment
-  - pr
+  - mission-control
+  - pr-comment
+  - github
+  - status
+date: "2025-01-29"
 ---
 
 import { Callout } from "nextra/components";
+import { Mermaid } from "@lifecycle-docs/components";
 
-Lifecycle uses **Mission Control PR Comments** to allow users to modify and customize their environments directly from the pull request comment. This enables easy **service selection**, **branch customization**, and **environment variable overrides** without modifying `lifecycle.yaml`.
+# Mission Control
+
+Mission Control is the PR comment interface for monitoring and managing ephemeral environments directly from GitHub.
+
+## Quick Reference
+
+| What You Want          | How To Do It                           |
+| ---------------------- | -------------------------------------- |
+| Deploy environment     | Add `lifecycle-deploy!` label to PR    |
+| Enable status comments | Add `lifecycle-status-comments!` label |
+| Disable a service      | Uncheck its checkbox in the comment    |
+| Change service branch  | Edit the branch name in parentheses    |
+| Set env variable       | Add `ENV:KEY:value` line               |
+| Custom URL             | Add `url: my-subdomain` line           |
+| Redeploy everything    | Check `[ ] Redeploy Environment`       |
 
 ---
 
-## Selecting and Deselecting Services
+## Comment Types
 
-Each pull request environment includes **default services** and optional additional services. You can enable or disable services using the checkboxes.
+<Mermaid
+  chart={`
+flowchart TB
+    subgraph MC["Mission Control Comment (default)"]
+        MC1["Environment status, service URLs, configuration"]
+        MC2["Action checkboxes for redeploy, cache purge"]
+    end
+    subgraph SC["Status Comment (opt-in via label)"]
+        SC1["Real-time build/deploy progress per service"]
+        SC2["Enable with: lifecycle-status-comments! label"]
+    end
+`}
+/>
 
-- **Enabled Services** are marked with `[x]`.
-- **Disabled Services** are marked with `[ ]`.
+---
 
-**Example:**
+## Environment Status
 
-```md
-// Default Services
+| Status                        | Meaning                          |
+| ----------------------------- | -------------------------------- |
+| **is pending**                | Waiting to process or torn down  |
+| **is building**               | Docker images being created      |
+| **is deploying**              | Services deploying to Kubernetes |
+| **is ready to deploy**        | Built, waiting for deploy label  |
+| **is deployed**               | All services live and accessible |
+| **deployed with an Error**    | Some services failed             |
+| **has a configuration error** | Invalid `lifecycle.yaml`         |
 
-- [x] frontend: dev-default
-- [x] fastly: main
+## Service Status
 
-// Optional Additional Services
+| Status            | Meaning                     |
+| ----------------- | --------------------------- |
+| **Queued**        | Waiting to be processed     |
+| **Cloning**       | Source code being fetched   |
+| **Building**      | Docker image building       |
+| **Built**         | Image ready                 |
+| **Waiting**       | Waiting for dependencies    |
+| **Deploying**     | Rolling out to cluster      |
+| **Ready**         | Live and healthy            |
+| **Build Failed**  | Docker build error          |
+| **Deploy Failed** | Kubernetes deployment error |
 
-- [ ] backend-service: main
-- [ ] backend-db: main
-- [ ] backend-cache: main
+---
+
+## Configuring Services
+
+### Enable/Disable Services
+
+```
+[x] api-service (main)      ← Enabled
+[x] database                ← Enabled
+[ ] redis-cache             ← Disabled (won't deploy)
 ```
 
-To **enable** a service, change `[ ]` to `[x]`. To **disable** a service, change `[x]` to `[ ]`. As simple as that!
+### Change Branch
+
+```diff
+- [x] api-service (main)
++ [x] api-service (feature-branch)
+```
+
+### Set Environment Variables
+
+```
+ENV:API_KEY:my-secret-value
+ENV:DEBUG:true
+ENV:LOG_LEVEL:verbose
+```
+
+### Custom URL
+
+```
+url: my-feature
+```
+
+Result: `my-feature.lifecycle.example.com`
+
+---
+
+## Actions
+
+| Action                                       | Effect                             |
+| -------------------------------------------- | ---------------------------------- |
+| `[ ] Redeploy Environment`                   | Tear down and rebuild all services |
+| `[ ] Purge Fastly Service Cache`             | Clear CDN cache (if using Fastly)  |
+| `[ ] Redeploy on pushes to default branches` | Auto-sync with main/master updates |
 
 <Callout type="warning">
-  If you need to make multiple selections or deselections at once, use the
-  **Edit Comment** option instead of clicking checkboxes individually. This
-  prevents multiple back-to-back builds, as each selection triggers an event in
-  Lifecycle without deduplication.
+  Redeploy tears down the entire environment first. Save any ephemeral data
+  before triggering.
 </Callout>
-
-## Choosing a Branch
-
-To deploy a specific branch for a service, modify the branch name after the service name.
-
-**Example:**
-
-```md
-- [x] frontend: feature-branch
-- [x] fastly: main
-```
-
-This will deploy `frontend` using the `feature-branch` instead of the default branch.
-
-## Overriding Environment Variables
-
-To set additional environment variables, use the **Override Environment Variables** section in the PR comment.
-
-**Example:**
-
-```md
-// **Override Environment Variables:** _ENV:[KEY]:[VALUE]_
-ENV:API_URL:https://api.custom.dev.0env.com
-ENV:CHIEF_INTERN:ICEYCAKE
-```
-
-This sets `API_URL` and `CHIEF_INTERN` in the environment without modifying the service configuration.
-
-## Override UUID
-
-To set a custom UUID (subdomain) for the environment, use the **Override UUID** section in the PR comment.
-
-```md
-// UUID (Pick your own custom subdomain)
-url: wagon-builder-060825
-```
-
-Replace `wagon-builder-060825` with your desired subdomain. This allows you to customize the environment URL without changing the underlying service configuration.
 
 ---
 
-Using the **Mission Control PR Comment**, you can easily customize your environment **without modifying code**, making it a flexible way to test and deploy changes dynamically.
+## Common Mistakes
+
+### WRONG: Editing without submitting
+
+```
+[ ] Redeploy Environment   ← Checked but not submitted
+```
+
+**CORRECT:** After checking a box, click "Update comment" to trigger the action.
+
+### WRONG: Setting env vars with spaces
+
+```
+ENV:MY_VAR: some value     ← Space after colon breaks parsing
+```
+
+**CORRECT:**
+
+```
+ENV:MY_VAR:some value      ← No space after second colon
+```
+
+### WRONG: Expecting disabled service URLs
+
+```
+[ ] redis-cache            ← Disabled service has no URL
+```
+
+**CORRECT:** Only enabled services with `public: true` get accessible URLs.
+
+---
+
+## Example Comment
+
+```
+## Lifecycle Environment
+
+**Status:** is deployed
+
+### Services
+
+| Service  | Status | URL                                      |
+|----------|--------|------------------------------------------|
+| api      | Ready  | https://api-abc123.lifecycle.example.com |
+| web      | Ready  | https://web-abc123.lifecycle.example.com |
+| database | Ready  | (internal only)                          |
+
+### Configuration
+
+[x] api (main)
+[x] web (main)
+[x] database
+
+ENV:DEBUG:false
+
+url: abc123
+
+### Actions
+
+[ ] Redeploy Environment
+[ ] Purge Fastly Service Cache
+```
+
+---
+
+## Troubleshooting
+
+| Problem                     | Solution                                                                  |
+| --------------------------- | ------------------------------------------------------------------------- |
+| Comment not appearing       | Verify `lifecycle-deploy!` label is on PR                                 |
+| Comment not updating        | Refresh page (GitHub caches); check webhook config                        |
+| Action checkbox not working | Submit the comment after checking; verify environment state allows action |
+| Service URL not accessible  | Confirm status is "Ready" and service has `public: true`                  |
+| Status comment missing      | Add `lifecycle-status-comments!` label to PR                              |
+
+---
+
+## Summary
+
+| Task                  | Action                                            |
+| --------------------- | ------------------------------------------------- |
+| Monitor environment   | Check Mission Control comment header              |
+| Debug failed service  | Look for "Build Failed" or "Deploy Failed" status |
+| Test different branch | Edit branch name in service checkbox line         |
+| Share environment     | Copy URL from Services table or set custom `url:` |
+| Fresh start           | Check "Redeploy Environment" and submit           |
+| Stay synced with main | Check "Redeploy on pushes to default branches"    |

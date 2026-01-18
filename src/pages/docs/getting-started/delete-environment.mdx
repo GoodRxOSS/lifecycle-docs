@@ -11,27 +11,110 @@ tags:
 ---
 
 import { Callout } from "nextra/components";
+import { Mermaid } from "@lifecycle-docs/components";
 
-To **tear down** an environment, you can do one of the following:
+## Quick Reference
 
-1. **Merge or close the pull request**: This will automatically clean up the environment.
-2. **Apply the `lifecycle-disabled!` label**: This will immediately trigger the environment deletion process.
+| Action               | Method                                                | Result             |
+| -------------------- | ----------------------------------------------------- | ------------------ |
+| Delete now           | Add `lifecycle-disabled!` label                       | Immediate teardown |
+| Delete on merge      | Merge/close PR                                        | Auto cleanup       |
+| Remove manual deploy | Remove `lifecycle-deploy!` label                      | Triggers deletion  |
+| Prevent auto-cleanup | Add `lifecycle-keep!` label                           | Exempts from TTL   |
+| Redeploy             | Remove `lifecycle-disabled!`, add `lifecycle-deploy!` | New environment    |
 
----
+## Deletion Flow
 
-The **`lifecycle-disabled!`** label is useful in scenarios where:
+<Mermaid
+  chart={`
+flowchart TB
+    subgraph triggers["DELETION TRIGGERS"]
+        direction LR
+        subgraph manual["Manual"]
+            M1["Merge/close PR"]
+            M2["Add lifecycle-disabled!"]
+            M3["Remove lifecycle-deploy!"]
+        end
+        subgraph automatic["Automatic"]
+            A1["TTL expiration (14 days)"]
+        end
+    end
+    triggers --> tearing
+    subgraph tearing["Status: tearing_down"]
+        T1["Removes deployments, services, pods, ingress"]
+        T2["Deletes env-uuid namespace"]
+        T3["Removes Helm releases"]
+    end
+    tearing --> torn
+    subgraph torn["Status: torn_down"]
+        D1["Environment fully deleted"]
+    end
+`}
+/>
 
-- The environment infrastructure is **experiencing issues**.
-- The data within the environment is **corrupt**.
-- You need to **restart or rebuild** the environment from scratch without waiting for a PR to be merged or closed.
+## Manual Deletion
 
-Simply apply the label to the **PR associated with the environment**, and Lifecycle will automatically tear it down.
+### Merge or Close the PR
+
+Closing the PR automatically triggers cleanup of all deployed services, namespace, and resources.
+
+### Add `lifecycle-disabled!` Label
+
+Use when:
+
+- Environment has infrastructure issues
+- Data is corrupt
+- Need a fresh rebuild without closing PR
+
+### Remove `lifecycle-deploy!` Label
+
+Only applies when `autoDeploy` is disabled. See [auto-deployment](/docs/features/auto-deployment).
+
+## Automatic TTL Cleanup
+
+| Setting           | Default |
+| ----------------- | ------- |
+| Inactivity period | 14 days |
+| Check interval    | 4 hours |
+
+When TTL expires, Lifecycle:
+
+1. Posts cleanup comment on PR
+2. Adds `lifecycle-disabled!` label
+3. Removes `lifecycle-deploy!` label
+4. Tears down environment
 
 <Callout type="info">
-  Read more about how pull request labels control auto deploy in repositories
-  [here](/docs/features/auto-deployment)
+  Add the `lifecycle-keep!` label to prevent TTL cleanup for long-running or
+  demo environments.
 </Callout>
 
----
+## What Gets Deleted vs Preserved
 
-Using these methods, you can efficiently manage and clean up environments to ensure smooth development and testing workflows. 🧹
+| Deleted                                        | Preserved                           |
+| ---------------------------------------------- | ----------------------------------- |
+| Kubernetes resources (pods, services, ingress) | Static environments (e.g., `dev-0`) |
+| `env-<uuid>` namespace                         | PR history in GitHub                |
+| Helm releases                                  | Build records in database           |
+| Container images (per registry policy)         |                                     |
+
+## Troubleshooting
+
+| Problem                    | Solution                                                                   |
+| -------------------------- | -------------------------------------------------------------------------- |
+| Environment won't delete   | Check for `lifecycle-keep!` label and remove it                            |
+| Accidental deletion        | Remove `lifecycle-disabled!`, add `lifecycle-deploy!` to redeploy          |
+| TTL deleted my environment | Add `lifecycle-keep!` label before next deploy                             |
+| Need fresh environment     | Add `lifecycle-disabled!`, wait for teardown, then add `lifecycle-deploy!` |
+
+<Callout type="warning">
+  Redeployed environments get a new UUID. Previous environment data is not
+  restored.
+</Callout>
+
+## Checklist
+
+- [ ] Decide deletion method: manual (label/PR close) or wait for TTL
+- [ ] For long-running environments, add `lifecycle-keep!` to prevent auto-cleanup
+- [ ] To redeploy: remove `lifecycle-disabled!`, add `lifecycle-deploy!`
+- [ ] Verify status shows `torn_down` after deletion completes

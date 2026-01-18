@@ -8,119 +8,208 @@ tags:
   - first environment
 ---
 
-import { Callout } from "nextra/components";
-import { Info, Settings } from "lucide-react";
+import { Callout, Steps } from "nextra/components";
+import { Info, Settings, CheckCircle, AlertTriangle } from "lucide-react";
 
-In this walk through, we will make a simple change to an example frontend repository and create our first ephemeral environment using Lifecycle.
+## Quick Reference
 
-## 1. Fork the Repository
+Create your first ephemeral environment in 5 steps:
 
-Fork the [`lifecycle-examples`](https://github.com/GoodRxOSS/lifecycle-examples) repository to your org or personal account and install your newly minted GitHub App to the forked repository.
+1. **Fork** the `lifecycle-examples` repository
+2. **Install** your GitHub App on the forked repo
+3. **Update** `lifecycle.yaml` with your GitHub username
+4. **Open PR** from a new branch to `main`
+5. **Wait** for Lifecycle to deploy (check PR comment for status)
 
-- Navigate to `https://github.com/settings/apps` (for personal accounts) or `https://github.com/organizations/<org>/settings/apps` (for org accounts).
-- Find the **Lifecycle GitHub App** and click on **Edit**.
-- Choose `Install App` from sidebar and click the Settings <Settings className="inline" /> icon.
-- Select the forked repository from the list and select **Save**.
+**Time to complete**: ~10 minutes
 
-## 2. Create a New Branch
+---
 
-Clone the repo and create a branch named `lfc-config`:
+## Prerequisites
+
+Before starting, ensure you have:
+
+- Lifecycle installed and running in your Kubernetes cluster ([Setup Guide](/docs/setup/install-lifecycle))
+- A GitHub App configured for Lifecycle ([Create GitHub App](/docs/setup/create-github-app))
+- Git CLI installed locally
+
+---
+
+## Step-by-Step Instructions
+
+<Steps>
+
+### Fork and Configure the Repository
+
+Fork the [`lifecycle-examples`](https://github.com/GoodRxOSS/lifecycle-examples) repository to your GitHub account or organization.
+
+Then install your Lifecycle GitHub App on the forked repository:
+
+1. Navigate to your GitHub Apps settings:
+   - **Personal account**: `https://github.com/settings/apps`
+   - **Organization**: `https://github.com/organizations/<org>/settings/apps`
+2. Find your **Lifecycle GitHub App** and click **Edit**
+3. Select **Install App** from the sidebar
+4. Click the <Settings className="inline h-4 w-4" /> Settings icon next to your account
+5. Select your forked `lifecycle-examples` repository
+6. Click **Save**
+
+### Create a Branch and Update Configuration
+
+Clone your forked repository and create a new branch:
 
 ```sh
+git clone https://github.com/<your-username>/lifecycle-examples.git
+cd lifecycle-examples
 git checkout -b lfc-config
 ```
 
-or if you are using GitHub Desktop, you can create a new branch from the UI.
-
-## 3. Update Lifecycle Configuration
-
-Open the `lifecycle.yaml` file in the root of the repository and update the `frontend` service's repository to your github username or org.
-
-**Before:**
+Open `lifecycle.yaml` and update the repository path to match your fork:
 
 ```yaml filename="lifecycle.yaml"
+# Change this line:
 github:
   repository: "GoodRxOSS/lifecycle-examples"
-```
 
-**After:**
-
-```yaml filename="lifecycle.yaml"
+# To this (replace with your username or org):
 github:
   repository: "<your-github-username>/lifecycle-examples"
 ```
 
-## 4. Commit & Push Your Changes
+### Commit and Push
 
 ```sh
-git add .
-git commit -m "update config"
+git add lifecycle.yaml
+git commit -m "Update repository to forked location"
 git push origin lfc-config
 ```
 
-## 5. Create a Pull Request
+### Open a Pull Request
 
-1. Open a **Pull Request (PR)** from `lfc-config` to `main` in the forked repository.
-2. Submit the PR.
+1. Go to your forked repository on GitHub
+2. Click **Compare & pull request** (or create a new PR from `lfc-config` to `main`)
+3. Submit the pull request
 
-## 6. Lifecycle PR Comment
+### Monitor Deployment
 
-After submitting the PR, you’ll see a **GitHub comment from Lifecycle** on your pull request.
+After opening the PR, Lifecycle posts a comment that serves as your **mission control**:
 
-🔹 This PR comment is the **mission control** for your ephemeral environment. It provides:
+```
++--------------------------------------------------+
+|  Lifecycle Environment Status                     |
++--------------------------------------------------+
+|  Status: deploying                               |
+|  Services: frontend                              |
+|  Dashboard: [link]                               |
++--------------------------------------------------+
+```
 
-- A **status update** of the build and deploy process.
-- A **list of services** configured for the environment.
-- A **link to the Lifecycle UI** where you can view logs, deployments, and environment details.
+The comment provides:
 
-<Callout type="error">
-  If there is no comment from Lifecycle, it means the app is not configured
-  correctly or the GitHub App is not installed in the repository. Please refer
-  to the [Missing Comment](/docs/troubleshooting/github-app-webhooks) page for
-  more information.
+- **Build/deploy status** - Current state of your environment
+- **Service list** - All configured services
+- **Dashboard link** - Access logs, deployments, and details
+
+<Callout type="info">
+  **Auto-deploy enabled?** If `autoDeploy: true` in your `lifecycle.yaml`, deployment starts automatically when you open the PR.
+
+**Auto-deploy disabled?** Add the `lifecycle-deploy!` label to your PR to trigger deployment.
+
 </Callout>
 
-## 7. Add `lifecycle-status-comments!` label
+**Optional**: Add the `lifecycle-status-comments!` label for detailed status updates including environment URLs and telemetry links.
 
-The additional label `lifecycle-status-comments!` provides more detailed information about the environment status and links to access the running application.
+</Steps>
 
-🔹 The comments provides insights into:
+---
 
-- **Build & Deploy Status**: Track when your environment is ready.
-- **Environment URLs**: Access the running frontend app.
-- **Telemetry Links**: Links to telemetry, build and deploy logs. (if enabled)
+## Environment States
 
-## 8. Wait for Deployment
+Track your environment through these build statuses:
 
-Wait for the **builds & deploys** to complete. Once the status updates to **`deployed`**, your environment is live! 🚀
+| Status         | Description                            |
+| -------------- | -------------------------------------- |
+| `queued`       | Build waiting to be processed          |
+| `pending`      | Build being prepared                   |
+| `building`     | Docker images being built              |
+| `built`        | All images built successfully          |
+| `deploying`    | Services deploying to Kubernetes       |
+| `deployed`     | Environment live and accessible        |
+| `error`        | Build or deploy failed                 |
+| `config_error` | Invalid `lifecycle.yaml` configuration |
 
-When a new commit is pushed to your pull request Lifecycle automatically builds and deploys again so you always have the latest version of the application.
+---
 
-<Callout type="info" icon={Info}>
-  If there are any errors during the build or deploy process, the environment
-  will not be created, and you will see an error message in the Lifecycle
-  comment.
-  <br />
-  <div>
-    You can check the logs from `lifecycle-worker` pods in your cluster to debug
-    the issue: <br /> `kubectl logs deploy/lifecycle-worker -n lifecycle-app -f
-    `
-  </div>
-</Callout>
+## Access Your Application
 
-## 9. Checkout the deployed application
+Once status shows `deployed`, click the **frontend** link in the Lifecycle PR comment to open your application.
 
-Once the deployment is complete, you can access your environment at the URL provided in the Lifecycle comment on your pull request. Click on the `frontend` link to open your application in a new tab.
+The example application includes two pages:
 
-The application has two simple pages:
+| Page         | Description                              |
+| ------------ | ---------------------------------------- |
+| `/tasks`     | Simple to-do list demo                   |
+| `/variables` | Displays container environment variables |
 
-- **`/tasks`** – A simple to-do list.
-- **`/variables`** – Displays all environment variables from the container.
+---
+
+## Troubleshooting
+
+### No Lifecycle comment on PR
+
+**Problem**: No comment appears after opening the pull request.
+
+**Solution**: The GitHub App may not be configured correctly.
+
+- Verify the app is installed on the repository
+- Check webhook delivery in GitHub App settings
+- See [Missing Comment Troubleshooting](/docs/troubleshooting/github-app-webhooks)
+
+### Build or deploy errors
+
+**Problem**: Status shows `error` and environment is not created.
+
+**Solution**: Check the worker logs for details:
+
+```sh
+kubectl logs deploy/lifecycle-worker -n lifecycle-app -f
+```
+
+Common causes:
+
+- Invalid Dockerfile or build configuration
+- Missing environment variables
+- Resource constraints in the cluster
+
+### Environment stuck in `pending` or `building`
+
+**Problem**: Status does not progress past initial states.
+
+**Solution**:
+
+- Verify your Kubernetes cluster has available resources
+- Check that the Lifecycle worker pods are running
+- Review worker logs for queue processing issues
+
+---
+
+## What Happens on New Commits?
+
+When you push new commits to your PR branch, Lifecycle automatically:
+
+1. Detects the change via GitHub webhook
+2. Rebuilds affected Docker images
+3. Redeploys updated services
+4. Updates the PR comment with new status
+
+Your environment always reflects the latest code in your PR.
+
+---
 
 ## Next Steps
 
-Now that your first ephemeral environment is ready, move on to the next section where we:
+Your first ephemeral environment is running. Continue to:
 
-🧪 Test the environment.<br />
-🧭 Explore the comments and logs.<br />
-⚙️ Customize the configuration.
+- [Explore Environment](/docs/getting-started/explore-environment) - View logs, test services, and navigate the dashboard
+- [Configure Environment](/docs/getting-started/configure-environment) - Customize your `lifecycle.yaml` configuration
+- [Delete Environment](/docs/getting-started/delete-environment) - Clean up when you are done

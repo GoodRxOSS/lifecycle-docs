@@ -1,5 +1,5 @@
 /**
- * Copyright 2025 GoodRx, Inc.
+ * Copyright 2026 GoodRx, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,5 +20,23 @@ export default {
   },
   "full": {
     "title": "All at once"
+  },
+  "webhooks": {
+    "title": "Webhooks Configuration"
+  },
+  "helm-services": {
+    "title": "Helm Services"
+  },
+  "deployment-config": {
+    "title": "Deployment Config"
+  },
+  "environment": {
+    "title": "Environment"
+  },
+  "docker-services": {
+    "title": "Docker Services"
+  },
+  "github-services": {
+    "title": "GitHub Services"
   }
 };

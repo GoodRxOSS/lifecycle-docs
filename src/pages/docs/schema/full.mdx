@@ -1,349 +1,746 @@
 ---
 title: Lifecycle Full Schema
-description: Lifecycle Schema documentation; this page contains the full schema as defined in lifecycle core—all at once.
+description: Complete annotated schema reference for lifecycle.yaml with all configuration options, defaults, and descriptions.
 navtext: All at once
 tags:
   - schema
   - lifecycle
-date: "2025-05-31"
+  - reference
+date: "2025-01-17"
 ---
+
+import { Callout } from "nextra/components";
 
 ## Full Lifecycle Schema
 
-Below is the full Lifecycle schema as defined in the `lifecycle.yaml` file with basic comments for each item.
+Below is the complete `lifecycle.yaml` schema with detailed comments explaining each field, its type, whether it's required, and default values.
+
+<Callout type="info">
+  This is a comprehensive reference. For topic-specific documentation, see the
+  individual schema pages for [Environment](/docs/schema/environment), [Docker
+  Services](/docs/schema/docker-services), [GitHub
+  Services](/docs/schema/github-services), and [Helm
+  Services](/docs/schema/helm-services).
+</Callout>
 
 ```yaml
-# @section environment
+# ============================================================================
+# LIFECYCLE SCHEMA v1.0.0
+# Complete configuration reference for lifecycle.yaml
+# ============================================================================
+
+# Schema version (required)
+# Type: string
+# Valid values: "1.0.0"
+version: "1.0.0"
+
+# ============================================================================
+# ENVIRONMENT CONFIGURATION
+# Controls global deployment behavior and service selection
+# ============================================================================
 environment:
-  # @param environment.autoDeploy
+  # Automatically deploy when a PR is opened or reopened
+  # Type: boolean | Required: No | Default: false
+  # When true: environments deploy immediately when PRs are opened
+  # When false: must manually add lifecycle-deploy! label
   autoDeploy: false
-  # @param environment.useGithubStatusComment
+
+  # Create GitHub Deployments for tracking in GitHub UI
+  # Type: boolean | Required: No | Default: false
+  # Enables deployment status in PR timeline and Environments page
+  githubDeployments: false
+
+  # Post status comments on pull requests
+  # Type: boolean | Required: No | Default: false
+  # Includes deployment progress, service URLs, and checkboxes
+  # Can also enable per-PR with lifecycle-status-comments! label
   useGithubStatusComment: false
-  # @param environment.defaultServices
+
+  # Feature flags to enable special behaviors
+  # Type: array of strings | Required: No | Default: []
+  # Available flags:
+  #   - "no-default-env-resolve": Prevents resolution to default UUIDs
+  #   - "hack-force-pull-request-branch": Forces services to use PR branch
+  #   - "hack-force-pull-request-service-<name>": Per-service PR branch hack
+  enabledFeatures:
+    - "no-default-env-resolve"
+
+  # Services that always deploy with the environment
+  # Type: array | Required: No
   defaultServices:
-    # @param environment.defaultServices[]
-    - # @param environment.defaultServices.name (required)
+    - # Service name (must match a defined service)
+      # Type: string | Required: Yes
       name: ""
-      # @param environment.defaultServices.repository
+      # GitHub repository for external services (org/repo format)
+      # Type: string | Required: No (only for external services)
       repository: ""
-      # @param environment.defaultServices.branch
+      # Branch for external services
+      # Type: string | Required: No (only for external services)
       branch: ""
-  # @param environment.optionalServices
+
+  # Services that can be optionally enabled through PR interface
+  # Type: array | Required: No
   optionalServices:
-    # @param environment.optionalServices[]
-    - # @param environment.optionalServices.name (required)
+    - # Same structure as defaultServices
       name: ""
-      # @param environment.optionalServices.repository
       repository: ""
-      # @param environment.optionalServices.branch
       branch: ""
 
-# @section services
-services:
-  # @param services[]
-  - # @param services.name (required)
-    name: ""
-    # @param services.appShort
-    appShort: ""
-    # @param services.defaultUUID
-    defaultUUID: ""
-    # @param services.github
-    github:
-      # @param services.github.repository (required)
-      repository: ""
-      # @param services.github.branchName (required)
-      branchName: ""
-      # @param services.github.docker (required)
+  # Webhooks for custom automation on deployment events
+  # Type: array | Required: No
+  webhooks:
+    - # Webhook identifier for logging
+      # Type: string | Required: No
+      name: ""
+
+      # Human-readable description
+      # Type: string | Required: No
+      description: ""
+
+      # When the webhook fires
+      # Type: string | Required: Yes
+      # Valid values: "deployed", "error", "torn_down"
+      state: "deployed"
+
+      # How the webhook executes
+      # Type: string | Required: Yes
+      # Valid values: "docker", "command", "codefresh"
+      type: "docker"
+
+      # Docker webhook configuration (when type: "docker")
       docker:
-        # @param services.github.docker.defaultTag (required)
+        # Docker image to run
+        # Type: string | Required: Yes
+        image: ""
+        # Command to execute (overrides entrypoint)
+        # Type: array | Required: No
+        command: []
+        # Arguments passed to command
+        # Type: array | Required: No
+        args: []
+        # Maximum execution time in seconds
+        # Type: number | Required: No | Default: 1800
+        # Min: 1, Max: 86400 (24 hours)
+        timeout: 1800
+
+      # Command webhook configuration (when type: "command")
+      command:
+        # Container image to run script in
+        # Type: string | Required: Yes
+        image: ""
+        # Shell script to execute
+        # Type: string | Required: Yes
+        script: ""
+        # Maximum execution time in seconds
+        # Type: number | Required: No | Default: 1800
+        timeout: 1800
+
+      # Codefresh webhook configuration (when type: "codefresh")
+      # Type: string | Required: Yes (for codefresh type)
+      pipelineId: ""
+      # Type: string | Required: Yes (for codefresh type)
+      trigger: ""
+
+      # Environment variables passed to the webhook
+      # Type: object | Required: Yes
+      # Supports template variables: {{service_publicUrl}}, {{build_uuid}}
+      env: {}
+
+# ============================================================================
+# SERVICES CONFIGURATION
+# Define individual services in your environment
+# ============================================================================
+services:
+  # --------------------------------------------------------------------------
+  # GITHUB SERVICE TYPE
+  # Build and deploy from GitHub source code
+  # --------------------------------------------------------------------------
+  - # Unique service identifier
+    # Type: string | Required: Yes
+    name: ""
+
+    # Short identifier for registry organization
+    # Type: string | Required: No
+    # Used for image path: {registry}/{appShort}/lfc
+    appShort: ""
+
+    # Fallback UUID for inactive services
+    # Type: string | Required: No
+    defaultUUID: ""
+
+    # Services that must be included when this service deploys
+    # Type: array | Required: No
+    requires:
+      - name: ""
+
+    # Services that must deploy before this one
+    # Type: array of strings | Required: No
+    # Only affects order, doesn't auto-include services
+    deploymentDependsOn:
+      - ""
+
+    # GitHub-specific configuration
+    github:
+      # GitHub repository (org/repo format)
+      # Type: string | Required: Yes
+      repository: ""
+
+      # Branch to build from
+      # Type: string | Required: Yes
+      branchName: ""
+
+      # Docker build configuration
+      docker:
+        # Default image tag when not building from commit
+        # Type: string | Required: Yes
         defaultTag: ""
-        # @param services.github.docker.pipelineId
+
+        # External CI/CD pipeline ID (for Codefresh)
+        # Type: string | Required: No
         pipelineId: ""
-        # @param services.github.docker.ecr
+
+        # Custom ECR repository URL
+        # Type: string | Required: No
         ecr: ""
-        # @param services.github.docker.app (required)
-        app:
-          # @param services.github.docker.app.afterBuildPipelineConfig
-          afterBuildPipelineConfig:
-            # @param services.github.docker.app.afterBuildPipelineConfig.afterBuildPipelineId
-            afterBuildPipelineId: ""
-            # @param services.github.docker.app.afterBuildPipelineConfig.detatchAfterBuildPipeline
-            detatchAfterBuildPipeline: false
-            # @param services.github.docker.app.afterBuildPipelineConfig.description
-            description: ""
-          # @param services.github.docker.app.dockerfilePath (required)
-          dockerfilePath: ""
-          # @param services.github.docker.app.command
-          command: ""
-          # @param services.github.docker.app.arguments
-          arguments: ""
-          # @param services.github.docker.app.env
-          env:
 
-          # @param services.github.docker.app.ports
-          ports:
-            # @param services.github.docker.app.ports[]
-            - ""
-        # @param services.github.docker.init
-        init:
-          # @param services.github.docker.init.dockerfilePath (required)
-          dockerfilePath: ""
-          # @param services.github.docker.init.command
-          command: ""
-          # @param services.github.docker.init.arguments
-          arguments: ""
-          # @param services.github.docker.init.env
-          env:
-
-        # @param services.github.docker.builder
+        # Build engine configuration
         builder:
-          # @param services.github.docker.builder.engine
-          engine: ""
-      # @param services.github.deployment
+          # Build engine to use
+          # Type: string | Required: No
+          # Valid values: "buildkit", "kaniko"
+          # buildkit: Faster with better caching (recommended)
+          # kaniko: Builds without Docker daemon
+          engine: "buildkit"
+
+        # Main application container configuration
+        app:
+          # Path to Dockerfile (relative to repo root)
+          # Type: string | Required: Yes
+          dockerfilePath: ""
+
+          # Override container entrypoint
+          # Type: string | Required: No
+          command: ""
+
+          # Arguments passed to command
+          # Type: string | Required: No
+          # Use %%SPLIT%% delimiter for multiple args
+          arguments: ""
+
+          # Environment variables for the container
+          # Type: object | Required: No
+          # Supports template variables: {{service_internalHostname}}
+          env: {}
+
+          # Ports exposed by the container
+          # Type: array | Required: No | Default: ["8080"]
+          ports:
+            - "8080"
+
+          # Post-build pipeline configuration
+          afterBuildPipelineConfig:
+            # Pipeline ID to run after build
+            # Type: string | Required: No
+            afterBuildPipelineId: ""
+            # Run pipeline asynchronously
+            # Type: boolean | Required: No | Default: false
+            detatchAfterBuildPipeline: false
+            # Pipeline description
+            # Type: string | Required: No
+            description: ""
+
+        # Init container configuration (runs before main app)
+        init:
+          # Path to init container Dockerfile
+          # Type: string | Required: Yes (if using init)
+          dockerfilePath: ""
+          # Init container command
+          # Type: string | Required: No
+          command: ""
+          # Init container arguments
+          # Type: string | Required: No
+          arguments: ""
+          # Init container environment variables
+          # Type: object | Required: No
+          env: {}
+
+      # Deployment configuration
+      # NOTE: This entire block only applies to docker and github services
+      # Helm services configure deployment settings through chart values instead
       deployment:
-        # @param services.github.deployment.helm
-        helm:
-          # @param services.github.deployment.helm.enabled
-          enabled: false
-          # @param services.github.deployment.helm.chartName
-          chartName: ""
-          # @param services.github.deployment.helm.chartRepoUrl
-          chartRepoUrl: ""
-          # @param services.github.deployment.helm.chartVersion
-          chartVersion: ""
-          # @param services.github.deployment.helm.cmdPs
-          cmdPs: ""
-          # @param services.github.deployment.helm.action
-          action: ""
-          # @param services.github.deployment.helm.customValues
-          customValues:
-            # @param services.github.deployment.helm.customValues[]
-            - ""
-          # @param services.github.deployment.helm.customValueFiles
-          customValueFiles:
-            # @param services.github.deployment.helm.customValueFiles[]
-            - ""
-          # @param services.github.deployment.helm.helmVersion
-          helmVersion: ""
-          # @param services.github.deployment.helm.attachPvc
-          attachPvc:
-            # @param services.github.deployment.helm.attachPvc.enabled
-            enabled: false
-            # @param services.github.deployment.helm.attachPvc.mountPath
-            mountPath: ""
-        # @param services.github.deployment.public
+        # Create Kubernetes Ingress for hostname access
+        # Type: boolean | Required: No | Default: false
+        # Applies to: docker and github services only (not helm)
+        # true: Lifecycle creates Ingress, service accessible via hostname
+        # false: No Ingress, service only accessible within cluster
+        # Note: For helm services, ingress is managed by the chart itself
         public: false
-        # @param services.github.deployment.capacityType
-        capacityType: ""
-        # @param services.github.deployment.resource
+
+        # Compute capacity type
+        # Type: string | Required: No | Default: "SPOT"
+        # Valid values: "ON_DEMAND", "SPOT"
+        # ON_DEMAND: Standard instances (production, databases)
+        # SPOT: Cost-savings, may be interrupted (fault-tolerant workloads)
+        capacityType: "SPOT"
+
+        # CPU and memory resource allocation
         resource:
-          # @param services.github.deployment.resource.cpu
           cpu:
-            # @param services.github.deployment.resource.cpu.request
+            # Minimum CPU guaranteed
+            # Type: string | Required: No
+            # Format: "100m", "0.5", "2" (Kubernetes CPU units)
             request: ""
-            # @param services.github.deployment.resource.cpu.limit
+            # Maximum CPU allowed
+            # Type: string | Required: No
             limit: ""
-          # @param services.github.deployment.resource.memory
           memory:
-            # @param services.github.deployment.resource.memory.request
+            # Minimum memory guaranteed
+            # Type: string | Required: No
+            # Format: "128Mi", "512Mi", "1Gi", "2Gi"
             request: ""
-            # @param services.github.deployment.resource.memory.limit
+            # Maximum memory allowed
+            # Type: string | Required: No
             limit: ""
-        # @param services.github.deployment.readiness
+
+        # Health check configuration
         readiness:
-          # @param services.github.deployment.readiness.disabled
+          # Disable readiness checks entirely
+          # Type: boolean | Required: No | Default: false
           disabled: false
-          # @param services.github.deployment.readiness.tcpSocketPort
+
+          # TCP socket health check port
+          # Type: number | Required: No
+          # Use either tcpSocketPort OR httpGet, not both
           tcpSocketPort: 0
-          # @param services.github.deployment.readiness.httpGet
+
+          # HTTP health check configuration
           httpGet:
-            # @param services.github.deployment.readiness.httpGet.path
+            # Health check endpoint path
+            # Type: string | Required: No
             path: ""
-            # @param services.github.deployment.readiness.httpGet.port
+            # Health check port
+            # Type: number | Required: No
             port: 0
-          # @param services.github.deployment.readiness.initialDelaySeconds
+
+          # Seconds before first health check
+          # Type: number | Required: No | Default: 0
           initialDelaySeconds: 0
-          # @param services.github.deployment.readiness.periodSeconds
-          periodSeconds: 0
-          # @param services.github.deployment.readiness.timeoutSeconds
-          timeoutSeconds: 0
-          # @param services.github.deployment.readiness.successThreshold
-          successThreshold: 0
-          # @param services.github.deployment.readiness.failureThreshold
-          failureThreshold: 0
-        # @param services.github.deployment.hostnames
+
+          # Seconds between health checks
+          # Type: number | Required: No | Default: 10
+          periodSeconds: 10
+
+          # Seconds to wait for response
+          # Type: number | Required: No | Default: 1
+          timeoutSeconds: 1
+
+          # Consecutive successes before healthy
+          # Type: number | Required: No | Default: 1
+          successThreshold: 1
+
+          # Consecutive failures before unhealthy
+          # Type: number | Required: No | Default: 3
+          failureThreshold: 3
+
+        # Custom hostname configuration
         hostnames:
-          # @param services.github.deployment.hostnames.host
+          # Custom hostname domain suffix
+          # Type: string | Required: No
           host: ""
-          # @param services.github.deployment.hostnames.acmARN
+          # AWS ACM certificate ARN for TLS
+          # Type: string | Required: No
           acmARN: ""
-          # @param services.github.deployment.hostnames.defaultInternalHostname
+          # Internal DNS hostname fallback
+          # Type: string | Required: No
           defaultInternalHostname: ""
-          # @param services.github.deployment.hostnames.defaultPublicUrl
+          # Default public URL fallback
+          # Type: string | Required: No
           defaultPublicUrl: ""
-        # @param services.github.deployment.network
+
+        # Network and routing configuration
         network:
-          # @param services.github.deployment.network.ipWhitelist
+          # IP addresses/CIDR ranges allowed to access service
+          # Type: array | Required: No
           ipWhitelist:
-            # @param services.github.deployment.network.ipWhitelist[]
             - ""
-          # @param services.github.deployment.network.pathPortMapping
-          pathPortMapping:
 
-          # @param services.github.deployment.network.hostPortMapping
-          hostPortMapping:
+          # Map URL paths to container ports
+          # Type: object | Required: No
+          # Example: "/api": "8080", "/metrics": "9090"
+          pathPortMapping: {}
 
-          # @param services.github.deployment.network.grpc
+          # Map external ports to container ports
+          # Type: object | Required: No
+          # Example: "80": "8080", "443": "8443"
+          hostPortMapping: {}
+
+          # gRPC configuration
           grpc:
-            # @param services.github.deployment.network.grpc.enable
+            # Enable gRPC support
+            # Type: boolean | Required: No | Default: false
             enable: false
-            # @param services.github.deployment.network.grpc.host
+            # gRPC hostname
+            # Type: string | Required: No
             host: ""
-            # @param services.github.deployment.network.grpc.defaultHost
+            # Default gRPC hostname
+            # Type: string | Required: No
             defaultHost: ""
-        # @param services.github.deployment.serviceDisks
+
+        # Persistent storage volumes
         serviceDisks:
-          # @param services.github.deployment.serviceDisks[]
-          - # @param services.github.deployment.serviceDisks.name (required)
+          - # Unique volume identifier
+            # Type: string | Required: Yes
             name: ""
-            # @param services.github.deployment.serviceDisks.mountPath (required)
+            # Container mount path
+            # Type: string | Required: Yes
             mountPath: ""
-            # @param services.github.deployment.serviceDisks.accessModes
-            accessModes: ""
-            # @param services.github.deployment.serviceDisks.storageSize (required)
+            # Volume size (e.g., "10Gi", "20Gi")
+            # Type: string | Required: Yes
             storageSize: ""
-            # @param services.github.deployment.serviceDisks.medium
+            # Volume access mode
+            # Type: string | Required: No | Default: "ReadWriteOnce"
+            # Valid values: "ReadWriteOnce", "ReadOnlyMany", "ReadWriteMany"
+            accessModes: "ReadWriteOnce"
+            # Storage medium
+            # Type: string | Required: No
+            # Valid values: "EBS", "DISK", "MEMORY"
+            # Note: EBS switches deployment to Recreate strategy
             medium: ""
-    # @param services.docker
+
+        # Helm-based deployment for this service
+        helm:
+          # Enable Helm deployment
+          # Type: boolean | Required: No | Default: false
+          enabled: false
+          # Helm chart name
+          # Type: string | Required: No
+          chartName: ""
+          # Chart repository URL
+          # Type: string | Required: No
+          chartRepoUrl: ""
+          # Chart version
+          # Type: string | Required: No
+          chartVersion: ""
+          # Command to check status
+          # Type: string | Required: No
+          cmdPs: ""
+          # Helm action
+          # Type: string | Required: No | Default: "install"
+          # Valid values: "install", "upgrade"
+          action: "install"
+          # Custom values (key=value format)
+          # Type: array | Required: No
+          customValues:
+            - ""
+          # Custom value files
+          # Type: array | Required: No
+          customValueFiles:
+            - ""
+          # Helm CLI version
+          # Type: string | Required: No
+          helmVersion: ""
+          # PVC attachment configuration
+          attachPvc:
+            # Enable PVC attachment
+            # Type: boolean | Required: No | Default: false
+            enabled: false
+            # PVC mount path
+            # Type: string | Required: No
+            mountPath: ""
+
+        # Node selector labels for scheduling
+        # Type: object | Required: No
+        node_selector: {}
+
+        # Advanced node affinity rules (Kubernetes spec)
+        # Type: object | Required: No
+        node_affinity: {}
+
+  # --------------------------------------------------------------------------
+  # DOCKER SERVICE TYPE
+  # Deploy pre-built container images
+  # --------------------------------------------------------------------------
+  - name: ""
+    appShort: ""
+    defaultUUID: ""
+    requires: []
+    deploymentDependsOn: []
+
+    # Docker-specific configuration
     docker:
-      # @param services.docker.dockerImage (required)
+      # Docker image to deploy
+      # Type: string | Required: Yes
+      # Examples: "redis", "postgres", "123456789.dkr.ecr.us-east-1.amazonaws.com/my-app"
       dockerImage: ""
-      # @param services.docker.defaultTag (required)
+
+      # Default image tag
+      # Type: string | Required: Yes
+      # Examples: "latest", "7-alpine", "15-alpine"
       defaultTag: ""
-      # @param services.docker.command
+
+      # Override container entrypoint
+      # Type: string | Required: No
       command: ""
-      # @param services.docker.arguments
+
+      # Arguments passed to command
+      # Type: string | Required: No
+      # Use %%SPLIT%% delimiter for multiple args
       arguments: ""
-      # @param services.docker.env
-      env:
 
-      # @param services.docker.ports
+      # Environment variables
+      # Type: object | Required: No
+      env: {}
+
+      # Exposed ports
+      # Type: array | Required: No | Default: ["8080"]
       ports:
-        # @param services.docker.ports[]
         - ""
-      # @param services.docker.deployment
+
+      # Deployment configuration (same as github.deployment)
       deployment:
-        # @param services.docker.deployment.helm
-        helm:
-          # @param services.docker.deployment.helm.enabled
-          enabled: false
-          # @param services.docker.deployment.helm.chartName
-          chartName: ""
-          # @param services.docker.deployment.helm.chartRepoUrl
-          chartRepoUrl: ""
-          # @param services.docker.deployment.helm.chartVersion
-          chartVersion: ""
-          # @param services.docker.deployment.helm.cmdPs
-          cmdPs: ""
-          # @param services.docker.deployment.helm.action
-          action: ""
-          # @param services.docker.deployment.helm.customValues
-          customValues:
-            # @param services.docker.deployment.helm.customValues[]
-            - ""
-          # @param services.docker.deployment.helm.customValueFiles
-          customValueFiles:
-            # @param services.docker.deployment.helm.customValueFiles[]
-            - ""
-          # @param services.docker.deployment.helm.helmVersion
-          helmVersion: ""
-          # @param services.docker.deployment.helm.attachPvc
-          attachPvc:
-            # @param services.docker.deployment.helm.attachPvc.enabled
-            enabled: false
-            # @param services.docker.deployment.helm.attachPvc.mountPath
-            mountPath: ""
-        # @param services.docker.deployment.public
         public: false
-        # @param services.docker.deployment.capacityType
-        capacityType: ""
-        # @param services.docker.deployment.resource
+        capacityType: "SPOT"
         resource:
-          # @param services.docker.deployment.resource.cpu
           cpu:
-            # @param services.docker.deployment.resource.cpu.request
             request: ""
-            # @param services.docker.deployment.resource.cpu.limit
             limit: ""
-          # @param services.docker.deployment.resource.memory
           memory:
-            # @param services.docker.deployment.resource.memory.request
             request: ""
-            # @param services.docker.deployment.resource.memory.limit
             limit: ""
-        # @param services.docker.deployment.readiness
         readiness:
-          # @param services.docker.deployment.readiness.disabled
           disabled: false
-          # @param services.docker.deployment.readiness.tcpSocketPort
           tcpSocketPort: 0
-          # @param services.docker.deployment.readiness.httpGet
           httpGet:
-            # @param services.docker.deployment.readiness.httpGet.path
             path: ""
-            # @param services.docker.deployment.readiness.httpGet.port
             port: 0
-          # @param services.docker.deployment.readiness.initialDelaySeconds
           initialDelaySeconds: 0
-          # @param services.docker.deployment.readiness.periodSeconds
-          periodSeconds: 0
-          # @param services.docker.deployment.readiness.timeoutSeconds
-          timeoutSeconds: 0
-          # @param services.docker.deployment.readiness.successThreshold
-          successThreshold: 0
-          # @param services.docker.deployment.readiness.failureThreshold
-          failureThreshold: 0
-        # @param services.docker.deployment.hostnames
+          periodSeconds: 10
+          timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 3
         hostnames:
-          # @param services.docker.deployment.hostnames.host
           host: ""
-          # @param services.docker.deployment.hostnames.acmARN
           acmARN: ""
-          # @param services.docker.deployment.hostnames.defaultInternalHostname
           defaultInternalHostname: ""
-          # @param services.docker.deployment.hostnames.defaultPublicUrl
           defaultPublicUrl: ""
-        # @param services.docker.deployment.network
         network:
-          # @param services.docker.deployment.network.ipWhitelist
-          ipWhitelist:
-            # @param services.docker.deployment.network.ipWhitelist[]
-            - ""
-          # @param services.docker.deployment.network.pathPortMapping
-          pathPortMapping:
-
-          # @param services.docker.deployment.network.hostPortMapping
-          hostPortMapping:
-
-          # @param services.docker.deployment.network.grpc
+          ipWhitelist: []
+          pathPortMapping: {}
+          hostPortMapping: {}
           grpc:
-            # @param services.docker.deployment.network.grpc.enable
             enable: false
-            # @param services.docker.deployment.network.grpc.host
             host: ""
-            # @param services.docker.deployment.network.grpc.defaultHost
             defaultHost: ""
-        # @param services.docker.deployment.serviceDisks
-        serviceDisks:
-          # @param services.docker.deployment.serviceDisks[]
-          - # @param services.docker.deployment.serviceDisks.name (required)
-            name: ""
-            # @param services.docker.deployment.serviceDisks.mountPath (required)
+        serviceDisks: []
+        helm:
+          enabled: false
+          chartName: ""
+          chartRepoUrl: ""
+          chartVersion: ""
+          cmdPs: ""
+          action: "install"
+          customValues: []
+          customValueFiles: []
+          helmVersion: ""
+          attachPvc:
+            enabled: false
             mountPath: ""
-            # @param services.docker.deployment.serviceDisks.accessModes
-            accessModes: ""
-            # @param services.docker.deployment.serviceDisks.storageSize (required)
-            storageSize: ""
-            # @param services.docker.deployment.serviceDisks.medium
-            medium: ""
+        node_selector: {}
+        node_affinity: {}
+
+  # --------------------------------------------------------------------------
+  # HELM SERVICE TYPE
+  # Deploy using Helm charts (public, organization, or local)
+  # --------------------------------------------------------------------------
+  - name: ""
+    appShort: ""
+    defaultUUID: ""
+    requires: []
+    deploymentDependsOn: []
+
+    # Helm-specific configuration
+    helm:
+      # Deployment method
+      # Type: string | Required: No
+      # Valid values: "native", "ci"
+      # native: Kubernetes jobs (recommended, real-time logs)
+      # ci: External CI/CD system (legacy)
+      deploymentMethod: "native"
+
+      # Helm CLI version
+      # Type: string | Required: Yes (for native)
+      # Example: "3.12.0", "3.14.0"
+      version: "3.12.0"
+
+      # Additional Helm arguments
+      # Type: string | Required: No
+      # Example: "--wait --timeout 30m --atomic"
+      args: ""
+
+      # GitHub repository for local charts or value files
+      # Type: string | Required: Conditional
+      # Required for: local charts, org charts with images, public charts with valueFiles
+      repository: ""
+
+      # Branch to clone
+      # Type: string | Required: When repository is specified
+      branchName: ""
+
+      # Chart configuration
+      chart:
+        # Chart name or path
+        # Type: string | Required: Yes
+        # Public: "postgresql", "redis"
+        # Local: "./charts/my-app" or "../shared/chart"
+        # Organization: matches configured org chart name
+        name: ""
+
+        # Chart repository URL
+        # Type: string | Required: For public charts
+        # Standard: "https://charts.bitnami.com/bitnami"
+        # OCI: "oci://registry.example.com/charts"
+        repoUrl: ""
+
+        # Chart version
+        # Type: string | Required: Recommended
+        version: ""
+
+        # Custom values (key=value format)
+        # Type: array | Required: No
+        # Supports template variables and nested paths
+        values:
+          - "auth.username=admin"
+          - "persistence.enabled=true"
+
+        # Value files (relative to repo root)
+        # Type: array | Required: No
+        # Note: Completely replaces any defaults (no merging)
+        valueFiles:
+          - "helm/values/base.yaml"
+
+      # Environment variable mapping for Helm values
+      envMapping:
+        # App container env mapping
+        app:
+          # Format for transformation
+          # Type: string | Required: Yes (when envMapping.app specified)
+          # "array": path[0].name=KEY, path[0].value=VALUE
+          # "map": path.KEY=VALUE
+          format: "array"
+          # Helm value path for env vars
+          # Type: string | Required: Yes
+          path: "deployment.env"
+        # Init container env mapping (same structure)
+        init:
+          format: "array"
+          path: "deployment.initContainers[0].env"
+
+      # Docker build configuration (for org/local charts)
+      docker:
+        # Default image tag
+        # Type: string | Required: Yes (when docker specified)
+        defaultTag: "latest"
+
+        # Build engine
+        builder:
+          # Type: string | Valid values: "buildkit", "kaniko"
+          engine: "buildkit"
+
+        # App container configuration
+        app:
+          dockerfilePath: ""
+          command: ""
+          arguments: ""
+          env: {}
+          ports: []
+
+        # Init container configuration
+        init:
+          dockerfilePath: ""
+          command: ""
+          arguments: ""
+          env: {}
+
+      # Resource type for deployment
+      # Type: string | Required: No | Default: "deployment"
+      # Valid values: "deployment", "statefulset", "daemonset"
+      type: "deployment"
+
+      # Enable gRPC support
+      # Type: boolean | Required: No | Default: false
+      grpc: false
+
+      # Disable automatic ingress host
+      # Type: boolean | Required: No | Default: false
+      disableIngressHost: false
+
+      # Enable environment lens banner
+      # Type: boolean | Required: No | Default: false
+      envLens: false
+# ============================================================================
+# TEMPLATE VARIABLES REFERENCE
+# Use in env values: {{variable_name}} or {{{variable_name}}}
+# Triple braces {{{ }}} recommended to prevent URL encoding issues
+# ============================================================================
+# Build Variables:
+#   {{build_uuid}}              - Unique environment identifier
+#   {{build_namespace}}         - Kubernetes namespace
+#   {{build_publicUrl}}         - Environment's public URL
+#
+# Service Variables (replace 'service' with actual service name):
+#   {{service_internalHostname}} - Internal DNS hostname
+#   {{service_publicUrl}}        - Public URL (if public: true)
+#   {{service_port}}             - First exposed port
+#
+# GitHub Variables:
+#   {{github_repository}}        - Repository name
+#   {{github_branch}}            - Branch name
+#   {{github_commit}}            - Commit SHA
+#   {{github_pr_number}}         - Pull request number
 ```
+
+---
+
+## Schema Quick Reference
+
+### Environment Section
+
+| Field                    | Type    | Required | Default | Description               |
+| ------------------------ | ------- | -------- | ------- | ------------------------- |
+| `autoDeploy`             | boolean | No       | `false` | Auto-deploy on PR open    |
+| `githubDeployments`      | boolean | No       | `false` | Create GitHub Deployments |
+| `useGithubStatusComment` | boolean | No       | `false` | Post PR comments          |
+| `enabledFeatures`        | array   | No       | `[]`    | Feature flags             |
+| `defaultServices`        | array   | No       | `[]`    | Always-deployed services  |
+| `optionalServices`       | array   | No       | `[]`    | On-demand services        |
+| `webhooks`               | array   | No       | `[]`    | Event automation          |
+
+### Service Types
+
+| Type     | Use Case                 | Uses `deployment` block |
+| -------- | ------------------------ | ----------------------- |
+| `github` | Build from source code   | Yes                     |
+| `docker` | Deploy pre-built images  | Yes                     |
+| `helm`   | Deploy using Helm charts | No (use chart values)   |
+
+### Capacity Types
+
+| Value       | Description                           |
+| ----------- | ------------------------------------- |
+| `ON_DEMAND` | Standard instances (production)       |
+| `SPOT`      | Cost-savings, interruptible (default) |
+
+### Webhook States
+
+| State       | Trigger                            |
+| ----------- | ---------------------------------- |
+| `deployed`  | All services successfully deployed |
+| `error`     | Build or deployment failed         |
+| `torn_down` | Environment cleaned up             |
+
+### Build Engines
+
+| Engine     | Description                                   |
+| ---------- | --------------------------------------------- |
+| `buildkit` | Fast, efficient, better caching (recommended) |
+| `kaniko`   | No Docker daemon required                     |

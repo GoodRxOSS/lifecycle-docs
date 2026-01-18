@@ -7,12 +7,52 @@ tags:
 ---
 
 import { Callout } from "nextra/components";
+import { Mermaid } from "@lifecycle-docs/components";
 
-Now that we've created and deployed our first Lifecycle environment, let's learn how to customize it by configuring services and dependencies.
+Learn how to customize your Lifecycle environment by configuring services and dependencies.
 
-## Understanding Configuration
+## Quick Reference
 
-First, let's take a look at the `lifecycle.yaml` configuration file at the root dir of [lifecycle-examples](https://github.com/GoodRxOSS/lifecycle-examples/blob/main/lifecycle.yaml) repository:
+| Option             | Purpose                       | Default                  |
+| ------------------ | ----------------------------- | ------------------------ |
+| `autoDeploy`       | Auto-deploy on PR open/update | `true`                   |
+| `defaultServices`  | Always built and deployed     | Required                 |
+| `optionalServices` | Built on demand only          | Falls back to static env |
+| `defaultUUID`      | Static environment fallback   | `dev-0`                  |
+| `requires`         | Service dependencies          | None                     |
+
+## Configuration File Structure
+
+<Mermaid chart={`
+flowchart TB
+    root["lifecycle.yaml"]
+    env["environment"]
+    autoDeploy["autoDeploy<br/><i>true/false</i>"]
+    defaultServices["defaultServices<br/><i>Always deployed</i>"]
+    optionalServices["optionalServices<br/><i>On-demand only</i>"]
+    services["services[]"]
+    name["name"]
+    defaultUUID["defaultUUID<br/><i>Fallback static env</i>"]
+    requires["requires[]<br/><i>Dependencies</i>"]
+    github["github"]
+    docker["docker"]
+    dockerEnv["env<br/><i>Template variables</i>"]
+
+    root --> env
+    root --> services
+    env --> autoDeploy
+    env --> defaultServices
+    env --> optionalServices
+    services --> name
+    services --> defaultUUID
+    services --> requires
+    services --> github
+    github --> docker
+    docker --> dockerEnv
+
+`} />
+
+### Example Configuration
 
 ```yaml filename="lifecycle.yaml"
 environment:
@@ -38,107 +78,99 @@ services:
           ports:
             - 3000
           env:
-            COMPONENT: "app"
-            ENV: "lifecycle"
             API_URL: "https://{{{backend_publicUrl}}}"
             CACHE_URL: "{{{cache_internalHostname}}}"
-            WES_IS: "GOAT"
   - name: "backend"
     requires:
       - name: "db"
     defaultUUID: "dev-0"
     # ...
-  - name: "db"
-    defaultUUID: "dev-0"
-    # ...
-  - name: "cache"
-    defaultUUID: "dev-0"
-    # ...
 ```
 
-### Default and Optional Services
+## Service Types
 
-We have our dependencies defined in **`defaultServices`** and **`optionalServices`**:
+| Type         | Behavior                  | Use Case                                  |
+| ------------ | ------------------------- | ----------------------------------------- |
+| **Default**  | Always built and deployed | Core services (frontend, backend)         |
+| **Optional** | Built only when selected  | Non-critical services (cache, monitoring) |
 
-- **`defaultServices`** – These services are always **built and deployed** with the environment. They form the core foundation of the environment and are required for it to function correctly.
-- **`optionalServices`** – These services **can be built on demand**, only when explicitly needed. If they are not selected during a PR, they default to using a **static environment** (e.g., `dev-0`).
+**Optional services** use a static environment (`dev-0`) as fallback when not explicitly enabled.
 
-### Template Variables
+## Template Variables
 
-Notice how there are template variables defined in service named `frontend` > `github.docker.env`:
+Template variables are dynamically resolved at build and deploy time:
 
 ```yaml
-API_URL: "https://{{{backend_publicUrl}}}"
-CACHE_URL: "{{{cache_internalHostname}}}"
+env:
+  API_URL: "https://{{{backend_publicUrl}}}"
+  CACHE_URL: "{{{cache_internalHostname}}}"
 ```
 
-This `API_URL` and `CACHE_URL` variables are dynamically templated by Lifecycle and provided during the **build** and **deploy** steps for the frontend service.
+**Resulting values:**
+
+| Variable    | When Optional NOT Selected                | When Optional Selected                      |
+| ----------- | ----------------------------------------- | ------------------------------------------- |
+| `API_URL`   | `https://backend-<uuid>.<domain>`         | `https://backend-<uuid>.<domain>`           |
+| `CACHE_URL` | `cache-dev-0.env-dev-0.svc.cluster.local` | `cache-<uuid>.env-<uuid>.svc.cluster.local` |
 
 <Callout type="info">
-  Read more about supported template variables
-  [here](/docs/features/template-variables)
+  See all supported template variables in the [Template Variables
+  guide](/docs/features/template-variables).
 </Callout>
 
-## Static Environment as a Fallback
+## Auto Deploy
 
-Since `cache` is an **optional service**, this service defaulted to using a **static environment**(`dev-0`) as a fallback. This allows us to reuse existing environments instead of rebuilding everything from scratch when there are no changes.
+| Setting             | Behavior                                       |
+| ------------------- | ---------------------------------------------- |
+| `autoDeploy: true`  | Builds trigger automatically on PR open/update |
+| `autoDeploy: false` | Requires `lifecycle-deploy!` label to trigger  |
 
-### Check Template Variables
+## Service Dependencies
 
-To view how the fallback URL works,
+Use `requires` to declare dependencies:
 
-1. Open your **Tasks App**(frontend) from the deployed environment.
-2. Navigate to the `Variables` page.
-3. Search for `_URL` and check its value.
-   - It should look like:
-     ```
-     API_URL: https://backend-<build_uuid>.<your_domain>
-     CACHE_URL: cache-dev-0.env-dev-0.svc.cluster.local
-     ```
-   - Notice how `CACHE_URL` defaults to the `dev-0`(static) environment for the optional cache.
+```yaml
+services:
+  - name: "backend"
+    requires:
+      - name: "db"
+```
 
-## Configuring Services
+Lifecycle automatically:
 
-Now, let's say you also want to the `cache` component to **test, build and deploy it in your environment**.
+1. Resolves the dependency graph
+2. Builds services in correct order
+3. Ensures dependencies are running before dependents start
 
-### Enable Cache Deployment
+## Enable Optional Services
 
-1. Navigate to the **Lifecycle PR comment** on GitHub.
-2. Select the `cache` checkbox in the comment. That's it!
-3. Lifecycle will now start **building and deploying the cache service** for your specific environment.
-4. Wait for the build to complete. You can monitor the progress in the **status comment**.
+To enable an optional service (e.g., `cache`):
 
-### Confirm the New Cache URL
+1. Go to the **Lifecycle PR comment** on GitHub
+2. Check the service checkbox
+3. Wait for build to complete
 
-5. Once the cache is deployed, go back to your **frontend app’s Variables page**.
-6. Check the `CACHE_URL` value.
-   - It should now look like:
-     ```
-     cache-<build_uuid>.env-<build_uuid>.svc.cluster.local
-     ```
-7. Now, you're running your cache **from your own environment** instead of an existing static deploy!
-8. Check the application’s **Tasks** page while you’re here and observe the completely different data, as this environment uses a freshly built and seeded database.
-
-## Build Flexible Environments
-
-With this approach, you can:
-
-- Build **any combination** of frontend and backend services.
-- Use **custom branches** for different services.
-- Test **different versions** of your app.
+Verify by checking your app's Variables page - the URL should now include your environment UUID instead of `dev-0`.
 
 <Callout type="info">
-  Check how to use Mission Control comments for configuring your environment
-  [here](/docs/tips/using-mission-control)
+  Learn more about the PR interface in [Using Mission
+  Control](/docs/tips/using-mission-control).
 </Callout>
 
-This gives you a **custom, isolated testing environment** that mirrors your
-production setup while allowing flexibility in development and validation.
+## Troubleshooting
 
-## Summary
+| Problem                           | Solution                                                    |
+| --------------------------------- | ----------------------------------------------------------- |
+| Optional service using static env | Enable service checkbox in PR comment                       |
+| Deployment not triggering         | Check `autoDeploy` setting or add `lifecycle-deploy!` label |
+| Service failing to start          | Verify all `requires` dependencies are enabled              |
+| Wrong template variable value     | Confirm service is enabled and built successfully           |
 
-- Services marked as **optional** in `lifecycle.yaml` will default to static environments unless explicitly built.
-- You can enable/disable any service directly from the **Lifecycle PR comment**.
-- Lifecycle automates dependency management, ensuring your services deploy in the correct order.
+## Checklist
 
-**Now you're ready to customize your Lifecycle environments like a pro!** 👩‍💻
+- [ ] `defaultServices` includes all core services
+- [ ] `optionalServices` includes on-demand services
+- [ ] `autoDeploy` set according to team workflow
+- [ ] `defaultUUID` configured for static fallback
+- [ ] `requires` defined for services with dependencies
+- [ ] Template variables use correct syntax: `{{{service_variable}}}`

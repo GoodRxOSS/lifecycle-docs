@@ -8,64 +8,178 @@ tags:
 ---
 
 import { Callout } from "nextra/components";
+import { Mermaid } from "@lifecycle-docs/components";
 
-We are in the final step of the setup process.
+## Quick Reference
 
-**This step is Optional but highly recommended to ensure the default IP Whitelist is set for the environments created by the Lifecycle app.** This will help in securing the environments and restricting access to only the specified IPs or CIDR blocks.
+| Task                 | Command/Action                                                                                                     |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Get DB credentials   | `kubectl get secret app-postgres -n lifecycle-app -o jsonpath='{.data}' \| jq 'with_entries(.value \|= @base64d)'` |
+| Refresh config cache | `curl -X PUT https://app.<your_domain>/api/v1/config/cache`                                                        |
+| Access UI            | `https://app.<your_domain>`                                                                                        |
+
+---
 
 ## Set Default IP Whitelist
 
-- Connect to the `postgres` database using the `psql` command line tool or any other database client.
+<Callout type="error" emoji="">
+  **Security Warning:** Infrastructure setup opens your cluster to the world
+  (`0.0.0.0/0`). Replace `defaultIPWhiteList` with your actual CIDR blocks
+  immediately after setup.
+</Callout>
 
-  <Callout type="info">
+### Configuration Flow
 
-  Database password was auto generated during the infra setup and can be found
-  retrieved from the `app-postgres` secret in the `lifecycle-app`
-  namespace.
+<Mermaid
+  chart={`
+flowchart LR
+    A[Get DB Creds] --> B[Run SQL Query] --> C[Refresh Cache]
+`}
+/>
 
-  </Callout>
-
-- Retrieve the database password:
+### Step 1: Get Database Credentials
 
 ```sh
-   kubectl get secret app-postgres --namespace lifecycle-app \
-      -o jsonpath='{.data}' | jq 'with_entries(.value |= @base64d)'
+kubectl get secret app-postgres --namespace lifecycle-app \
+   -o jsonpath='{.data}' | jq 'with_entries(.value |= @base64d)'
 ```
 
-- Run the following SQL commands to update the configuration:
+### Step 2: Update IP Whitelist
+
+Connect to the `postgres` database and run:
 
 ```sql
--- provide a default IP whitelist for the environments, default is open to all IPs
 UPDATE public.global_config
 SET
-    config = (
-        config::jsonb ||
-        '{
-            "defaultIPWhiteList": "{ 0.0.0.0/0 }"
-         }'::jsonb
-    )::json,
+    config = (config::jsonb || '{"defaultIPWhiteList": "{ 10.0.0.0/8, 192.168.1.0/24 }"}'::jsonb)::json,
     "updatedAt" = NOW()
 WHERE "key" = 'serviceDefaults';
 ```
 
-<Callout type="error" emoji="⚠️">
-  Note that the infra setup with the OpenTofu modules below will **open your
-  cluster to the world.** <br />
-  🛡️ Make sure to **<a href="https://translate.google.com/details?sl=auto&tl=hy&text=shield&op=translate">shield</a>** your cluster by implementing appropriate network policies
-  and access controls after the initial setup.
+| Example CIDR      | Access Level           |
+| ----------------- | ---------------------- |
+| `0.0.0.0/0`       | Open to all (insecure) |
+| `10.0.0.0/8`      | Private network        |
+| `203.0.113.50/32` | Single IP              |
 
-Replace the `defaultIPWhiteList` under `global_config.serviceDefaults` with your actual IP whitelist or CIDR block to restrict access to the deployed environments.
-
-</Callout>
-
----
-
-## Refresh config cache
+### Step 3: Refresh Configuration Cache
 
 ```sh
 curl -X PUT https://app.<your_domain>/api/v1/config/cache
 ```
 
-This will refresh the configuration cache and apply the changes you made to the database for the Lifecycle app.
+---
 
-We are all set! 🎉 And ready to create our first PR based ephemeral environment.
+## Environment Variables
+
+### Database
+
+| Variable          | Description     | Default     |
+| ----------------- | --------------- | ----------- |
+| `APP_DB_HOST`     | PostgreSQL host | `localhost` |
+| `APP_DB_PORT`     | PostgreSQL port | `5432`      |
+| `APP_DB_USER`     | Username        | `lifecycle` |
+| `APP_DB_PASSWORD` | Password        | -           |
+| `APP_DB_NAME`     | Database name   | `lifecycle` |
+| `APP_DB_SSL`      | Enable SSL      | `false`     |
+
+### Redis
+
+| Variable             | Description | Default     |
+| -------------------- | ----------- | ----------- |
+| `APP_REDIS_HOST`     | Redis host  | `localhost` |
+| `APP_REDIS_PORT`     | Redis port  | `6379`      |
+| `APP_REDIS_PASSWORD` | Password    | -           |
+| `APP_REDIS_TLS`      | Enable TLS  | `false`     |
+
+### GitHub
+
+| Variable                      | Description                   | Default |
+| ----------------------------- | ----------------------------- | ------- |
+| `GITHUB_APP_ID`               | GitHub App ID                 | -       |
+| `GITHUB_CLIENT_ID`            | Client ID                     | -       |
+| `GITHUB_CLIENT_SECRET`        | Client secret                 | -       |
+| `GITHUB_PRIVATE_KEY`          | Private key (PEM)             | -       |
+| `GITHUB_WEBHOOK_SECRET`       | Webhook secret                | -       |
+| `GITHUB_APP_INSTALLATION_ID`  | Installation ID               | -       |
+| `MAX_GITHUB_API_REQUEST`      | Max API requests per interval | `40`    |
+| `GITHUB_API_REQUEST_INTERVAL` | Rate limit interval (ms)      | `10000` |
+
+### Application
+
+| Variable                            | Description                | Default       |
+| ----------------------------------- | -------------------------- | ------------- |
+| `APP_ENV`                           | Environment                | `development` |
+| `LIFECYCLE_MODE`                    | Mode (`web`, `job`, `all`) | `all`         |
+| `PORT`                              | HTTP port                  | `3000`        |
+| `LOG_LEVEL`                         | Log level                  | `debug`       |
+| `LIFECYCLE_UI_HOSTHAME_WITH_SCHEME` | Public UI URL              | -             |
+
+### Observability (Datadog)
+
+| Variable     | Description     | Default         |
+| ------------ | --------------- | --------------- |
+| `DD_ENV`     | Environment tag | `prd`           |
+| `DD_SERVICE` | Service name    | `lifecycle-job` |
+| `DD_VERSION` | Version tag     | `lifecycle`     |
+
+### Authentication (Optional)
+
+| Variable             | Description                            |
+| -------------------- | -------------------------------------- |
+| `KEYCLOAK_ISSUER`    | Keycloak issuer URL                    |
+| `KEYCLOAK_CLIENT_ID` | Keycloak client ID                     |
+| `KEYCLOAK_JWKS_URL`  | Keycloak JWKS URL                      |
+| `ALLOWED_ORIGINS`    | Allowed CORS origins (comma-separated) |
+
+---
+
+## Global Configuration (Database)
+
+Configuration stored in `global_config` table:
+
+### Service Defaults (`serviceDefaults`)
+
+| Setting                        | Description                        |
+| ------------------------------ | ---------------------------------- |
+| `defaultIPWhiteList`           | IP whitelist for deployed services |
+| `cpuRequest` / `memoryRequest` | Default resource requests          |
+| `readinessInitialDelaySeconds` | Readiness probe initial delay      |
+| `readinessPeriodSeconds`       | Readiness probe period             |
+| `readinessTimeoutSeconds`      | Readiness probe timeout            |
+| `readinessSuccessThreshold`    | Success threshold                  |
+| `readinessFailureThreshold`    | Failure threshold                  |
+
+### Build Defaults (`buildDefaults`)
+
+| Setting             | Description               |
+| ------------------- | ------------------------- |
+| `buildkit.endpoint` | BuildKit service endpoint |
+
+### Feature Flags (`features`)
+
+| Setting    | Description              | Default |
+| ---------- | ------------------------ | ------- |
+| `webhooks` | Enable webhook execution | `true`  |
+
+---
+
+## Troubleshooting
+
+| Problem                    | Solution                                                        |
+| -------------------------- | --------------------------------------------------------------- |
+| Config changes not applied | Run `curl -X PUT https://app.<your_domain>/api/v1/config/cache` |
+| Cannot get DB credentials  | Verify `lifecycle-app` namespace exists and secret is present   |
+| UI not accessible          | Check ingress configuration and DNS settings                    |
+
+---
+
+## Verification Checklist
+
+- [ ] Access Lifecycle UI at `https://app.<your_domain>`
+- [ ] GitHub App shows connected
+- [ ] Create test PR with `lifecycle.yaml` file
+- [ ] Add `lifecycle-deploy!` label to PR
+- [ ] Environment creation visible in UI
+
+Setup complete. You're ready to create ephemeral environments.

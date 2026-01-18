@@ -8,22 +8,27 @@ tags:
 
 import { Callout } from "nextra/components";
 import { Info } from "lucide-react";
-import { Image } from "@lifecycle-docs/components";
+import { Image, Mermaid } from "@lifecycle-docs/components";
 
-Now that we've deployed our first Lifecycle environment, let’s take a tour of the PR comments to understand how to interact with our ephemeral environment.
+## Quick Reference
+
+| Component           | Purpose                            | Access                                 |
+| ------------------- | ---------------------------------- | -------------------------------------- |
+| **Mission Control** | Manage services, trigger redeploys | PR comment (pinned)                    |
+| **Status Comment**  | Real-time build/deploy progress    | Add `lifecycle-status-comments!` label |
+| **Service URLs**    | Access deployed services           | Links in PR comments                   |
+| **Logs**            | Debug build/runtime issues         | Status comment or dashboard            |
 
 ## Test Your Application
 
-Let's navigate to the deployed `frontend` app from the PR comment.
-
-1. Click on the `frontend` link in the PR comment to navigate to your deployed application.
-2. Add a task and complete few tasks to update data in backend.
-3. Navigate to the `variables` page and checkout the variables in your application's container.
-4. Thats it! You have successfully deployed and tested the best todo app in the world! 🎉
+1. Click the `frontend` link in the PR comment
+2. Add/complete tasks to verify backend connectivity
+3. Visit the `variables` page to inspect container environment
+4. Confirm everything works as expected
 
 ## Mission Control Comment
 
-The **Lifecycle PR comment** in your pull request serves as the **mission control** for your ephemeral environment.
+The PR comment is your **command center** for the ephemeral environment.
 
 <Image
   src="/getting-started/pr-comment.png"
@@ -32,22 +37,22 @@ The **Lifecycle PR comment** in your pull request serves as the **mission contro
   ratio={2106 / 2278}
 />
 
-### What You Can Do in the PR Comment
+### Available Actions
 
-- **Editable Checkboxes**: Select or deselect services to include in your environment.
-- **Redeploy Checkbox**: Triggers a redeploy (useful for transient issues).
-- **Deployment Section**: Provides URLs to your **deployed services**.
+| Control            | Function                                           |
+| ------------------ | -------------------------------------------------- |
+| Service checkboxes | Enable/disable services in your environment        |
+| Redeploy checkbox  | Reset environment or recover from transient issues |
+| Deployment links   | Direct URLs to running services                    |
 
 <Callout type="info" emoji={<Info />}>
-  Read more about [Mission Control comment
-  here](/docs/tips/using-mission-control.mdx)
+  See [Mission Control guide](/docs/tips/using-mission-control.mdx) for advanced
+  usage.
 </Callout>
 
 ## Status Comment
 
-When we add the `lifecycle-status-comments!` label to our pull request, Lifecycle will automatically add a **status comment** to the PR.
-
-This comment provides real-time updates on the status, links to your deployments including the build progress and service statuses.
+Add the `lifecycle-status-comments!` label to enable real-time deployment updates.
 
 <Image
   src="/getting-started/status-comment.png"
@@ -56,11 +61,11 @@ This comment provides real-time updates on the status, links to your deployments
   ratio={1902 / 894}
 />
 
-Notice the following while the environment is being built:
+**Features:**
 
-- The status comment is **updated in real-time**.
-- The **status** of each service is displayed.
-- The **build logs** are available for each service.
+- Live status updates for each service
+- Build log links
+- Deployment progress tracking
 
 <Image
   src="/getting-started/status-comment-building.png"
@@ -69,11 +74,68 @@ Notice the following while the environment is being built:
   ratio={1894 / 1222}
 />
 
-### Next Steps
+## Deploy Status Reference
 
-In the next section, we will:
+<Mermaid
+  chart={`
+flowchart LR
+    pending --> queued --> cloning --> building --> built --> deploying --> ready
+    cloning --> error
+    building --> build_failed
+    deploying --> deploy_failed
+`}
+/>
 
-⚙️ Customize our configuration<br />
-☑️ Enable and build an optional service(`cache`) support your application<br />
+| Status          | Meaning                     |
+| --------------- | --------------------------- |
+| `pending`       | Waiting to be processed     |
+| `queued`        | In deployment queue         |
+| `cloning`       | Fetching source code        |
+| `building`      | Building Docker image       |
+| `built`         | Image built successfully    |
+| `deploying`     | Rolling out to Kubernetes   |
+| `ready`         | Healthy and serving traffic |
+| `waiting`       | Waiting for dependencies    |
+| `build_failed`  | Docker build error          |
+| `deploy_failed` | Kubernetes deployment error |
+| `error`         | Unexpected failure          |
+| `torn_down`     | Service removed             |
 
-**Ready to level up your ephemeral environment? Let\'s go!** 🏃‍➡️
+## Viewing Logs
+
+Access logs from the status comment or Lifecycle dashboard.
+
+| Log Type           | Shows                                                       |
+| ------------------ | ----------------------------------------------------------- |
+| **Build logs**     | Dockerfile execution, dependency installation, build errors |
+| **Container logs** | Application startup, runtime errors, request handling       |
+
+## Dashboard Integration
+
+When configured, your environment includes links to:
+
+- **Datadog Logs** - Centralized logging
+- **Fastly Dashboard** - CDN config (if enabled)
+- **Custom Dashboards** - Organization-specific telemetry
+
+## Troubleshooting
+
+| Problem                     | Solution                                       |
+| --------------------------- | ---------------------------------------------- |
+| Service stuck in `building` | Check build logs for errors                    |
+| `build_failed` status       | Review Dockerfile and dependencies             |
+| `deploy_failed` status      | Check resource limits and health checks        |
+| Service not appearing       | Verify checkbox is selected in Mission Control |
+| Stale environment           | Check the Redeploy checkbox                    |
+
+## Summary Checklist
+
+- [ ] Accessed frontend via PR comment link
+- [ ] Tested application functionality
+- [ ] Reviewed Mission Control options
+- [ ] Enabled status comments (optional)
+- [ ] Understand deploy status flow
+
+## Next Steps
+
+Continue to customize your configuration and enable optional services like `cache`.

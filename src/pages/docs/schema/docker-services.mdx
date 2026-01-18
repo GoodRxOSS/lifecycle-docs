@@ -1,0 +1,618 @@
+---
+title: Docker Services Schema
+description: Complete reference for configuring Docker-type services in Lifecycle, including all deployment options, resource limits, readiness probes, and networking configuration.
+navtext: Docker Services
+tags:
+  - schema
+  - lifecycle
+  - docker
+date: "2025-03-28"
+---
+
+import { Callout, Tabs } from "nextra/components";
+import { Info, TriangleAlert, CircleCheck } from "lucide-react";
+
+# Docker Services
+
+Deploy pre-built container images from any registry (Docker Hub, ECR, GCR) into your Lifecycle environment without building from source.
+
+## Quick Reference
+
+| Field                            | Required | Description                            |
+| -------------------------------- | -------- | -------------------------------------- |
+| `name`                           | Yes      | Unique service identifier              |
+| `docker.dockerImage`             | Yes      | Image name (e.g., `redis`, `postgres`) |
+| `docker.defaultTag`              | Yes      | Image tag (e.g., `7-alpine`, `15`)     |
+| `docker.ports`                   | No       | Exposed ports (default: `[8080]`)      |
+| `docker.env`                     | No       | Environment variables                  |
+| `docker.deployment.public`       | No       | Create Ingress (default: `false`)      |
+| `docker.deployment.capacityType` | No       | `SPOT`, `ON_DEMAND`, or `FARGATE`      |
+
+### Minimal Example
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "redis-cache"
+    docker:
+      dockerImage: "redis"
+      defaultTag: "7-alpine"
+      ports:
+        - 6379
+```
+
+---
+
+## Docker vs GitHub Services
+
+| Aspect                  | Docker Services                              | GitHub Services        |
+| ----------------------- | -------------------------------------------- | ---------------------- |
+| **Source**              | Pre-built images from registries             | Built from source code |
+| **Use case**            | Third-party tools (Redis, Postgres, Grafana) | Your application code  |
+| **Build step**          | None                                         | Dockerfile in repo     |
+| **Configuration block** | `docker:`                                    | `github:`              |
+
+---
+
+## Common Patterns
+
+### Database with Persistent Storage
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "postgres-db"
+    docker:
+      dockerImage: "postgres"
+      defaultTag: "15-alpine"
+      ports:
+        - 5432
+      env:
+        POSTGRES_USER: "app_user"
+        POSTGRES_PASSWORD: "secure_password"
+        POSTGRES_DB: "myapp"
+        PGDATA: "/var/lib/postgresql/data/pgdata"
+      deployment:
+        capacityType: "ON_DEMAND" # Don't use SPOT for databases
+        readiness:
+          tcpSocketPort: 5432
+          initialDelaySeconds: 15
+        serviceDisks:
+          - name: "postgres-data"
+            mountPath: "/var/lib/postgresql/data"
+            storageSize: "20Gi"
+```
+
+### Cache Service (Redis)
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "redis-cache"
+    docker:
+      dockerImage: "redis"
+      defaultTag: "7-alpine"
+      ports:
+        - 6379
+      command: "redis-server"
+      arguments: "--maxmemory%%SPLIT%%512mb%%SPLIT%%--maxmemory-policy%%SPLIT%%allkeys-lru"
+      deployment:
+        capacityType: "SPOT" # OK for caches
+        readiness:
+          tcpSocketPort: 6379
+```
+
+### Public Web Service
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "grafana"
+    docker:
+      dockerImage: "grafana/grafana"
+      defaultTag: "10.0.0"
+      ports:
+        - 3000
+      env:
+        GF_SECURITY_ADMIN_PASSWORD: "admin"
+      deployment:
+        public: true
+        readiness:
+          httpGet:
+            path: "/api/health"
+            port: 3000
+```
+
+---
+
+## WRONG vs CORRECT Examples
+
+### Arguments Syntax
+
+<Tabs items={["WRONG", "CORRECT"]}>
+  <Tabs.Tab>
+    ```yaml # WRONG: Space-separated arguments arguments: "--maxmemory 512mb
+    --maxmemory-policy allkeys-lru" ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+    ```yaml # CORRECT: Use %%SPLIT%% delimiter arguments:
+    "--maxmemory%%SPLIT%%512mb%%SPLIT%%--maxmemory-policy%%SPLIT%%allkeys-lru"
+    ```
+  </Tabs.Tab>
+</Tabs>
+
+### Database Capacity Type
+
+<Tabs items={["WRONG", "CORRECT"]}>
+  <Tabs.Tab>
+    ```yaml # WRONG: SPOT instances can be interrupted - name: "postgres-db"
+    docker: dockerImage: "postgres" deployment: capacityType: "SPOT" # Data loss
+    risk! ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+    ```yaml # CORRECT: Use ON_DEMAND for stateful services - name: "postgres-db"
+    docker: dockerImage: "postgres" deployment: capacityType: "ON_DEMAND" ```
+  </Tabs.Tab>
+</Tabs>
+
+### Health Check Configuration
+
+<Tabs items={['WRONG', 'CORRECT']}>
+<Tabs.Tab>
+```yaml
+# WRONG: Using both tcpSocketPort AND httpGet
+readiness:
+  tcpSocketPort: 6379
+  httpGet:
+    path: "/health"
+    port: 8080
+```
+</Tabs.Tab>
+<Tabs.Tab>
+```yaml
+# CORRECT: Use ONE health check type
+# For TCP services (Redis, Postgres):
+readiness:
+  tcpSocketPort: 6379
+
+# For HTTP services (APIs, web apps):
+
+readiness:
+httpGet:
+path: "/health"
+port: 8080
+
+````
+</Tabs.Tab>
+</Tabs>
+
+---
+
+## Service-Level Properties
+
+### `name` (required)
+
+Unique identifier for the service. Used in deployment configs, environment variables, and hostnames.
+
+```yaml
+services:
+  - name: "redis-cache"  # Must be unique across all services
+````
+
+### `requires`
+
+Services that must be deployed together with this service.
+
+```yaml
+services:
+  - name: "my-app"
+    requires:
+      - name: "redis-cache"
+      - name: "postgres-db"
+```
+
+### `deploymentDependsOn`
+
+Controls deployment order without creating hard dependencies.
+
+```yaml
+services:
+  - name: "api-server"
+    deploymentDependsOn:
+      - "database" # Deploy database first
+      - "cache" # Then cache
+        # Then api-server
+```
+
+**Difference from `requires`:**
+
+- `requires`: Auto-includes services AND controls order
+- `deploymentDependsOn`: Only controls order (services must be explicitly deployed)
+
+### `appShort` and `defaultUUID`
+
+| Property      | Purpose                                                           |
+| ------------- | ----------------------------------------------------------------- |
+| `appShort`    | Short identifier for registry paths (`{registry}/{appShort}/lfc`) |
+| `defaultUUID` | Fallback UUID for hostnames when not deployed                     |
+
+---
+
+## Docker Configuration
+
+### `docker.dockerImage` and `docker.defaultTag` (required)
+
+```yaml
+docker:
+  # Public Docker Hub image
+  dockerImage: "redis"
+  defaultTag: "7-alpine"
+
+  # Private ECR image
+  dockerImage: "123456789.dkr.ecr.us-east-1.amazonaws.com/my-app"
+  defaultTag: "v1.2.3"
+
+  # Google Container Registry
+  dockerImage: "gcr.io/my-project/my-image"
+  defaultTag: "latest"
+```
+
+### `docker.command` and `docker.arguments`
+
+Override the container's entrypoint and arguments.
+
+```yaml
+docker:
+  dockerImage: "redis"
+  defaultTag: "7-alpine"
+  command: "redis-server"
+  arguments: "--maxmemory%%SPLIT%%512mb%%SPLIT%%--port%%SPLIT%%6380"
+```
+
+<Callout type="warning" emoji={<TriangleAlert size={18} />}>
+  Use `%%SPLIT%%` to separate arguments. Each segment becomes a separate
+  argument passed to the container.
+</Callout>
+
+### `docker.env`
+
+Environment variables as key-value pairs.
+
+```yaml
+docker:
+  dockerImage: "postgres"
+  defaultTag: "15-alpine"
+  env:
+    POSTGRES_USER: "myuser"
+    POSTGRES_PASSWORD: "mypassword"
+    POSTGRES_DB: "mydatabase"
+```
+
+### `docker.ports`
+
+Exposed container ports. First port is used for health checks and routing.
+
+```yaml
+docker:
+  ports:
+    - 8080 # Primary port
+    - 8443 # HTTPS
+    - 9090 # Metrics
+```
+
+Default: `[8080]`
+
+---
+
+## Deployment Configuration
+
+### `deployment.public`
+
+| Value             | Behavior                                       |
+| ----------------- | ---------------------------------------------- |
+| `false` (default) | Internal cluster access only                   |
+| `true`            | Creates Kubernetes Ingress for external access |
+
+<Callout type="info" emoji={<Info size={18} />}>
+  External reachability depends on your cluster's network configuration (VPN,
+  firewall, load balancer).
+</Callout>
+
+### `deployment.capacityType`
+
+| Type             | Cost     | Availability       | Best For                     |
+| ---------------- | -------- | ------------------ | ---------------------------- |
+| `SPOT` (default) | Lowest   | May be interrupted | Stateless workers, caches    |
+| `ON_DEMAND`      | Standard | Guaranteed         | Databases, critical services |
+| `FARGATE`        | Variable | Serverless         | Burst workloads              |
+
+---
+
+## Resource Configuration
+
+```
++------------------+     +------------------+
+|   CPU Units      |     |  Memory Units    |
++------------------+     +------------------+
+| 100m  = 0.1 CPU  |     | 128Mi = 128 MB   |
+| 500m  = 0.5 CPU  |     | 512Mi = 512 MB   |
+| 1000m = 1 CPU    |     | 1Gi   = 1 GB     |
+| 2000m = 2 CPUs   |     | 2Gi   = 2 GB     |
++------------------+     +------------------+
+```
+
+```yaml
+deployment:
+  resource:
+    cpu:
+      request: "250m" # Guaranteed minimum
+      limit: "1000m" # Maximum allowed
+    memory:
+      request: "512Mi"
+      limit: "2Gi"
+```
+
+---
+
+## Readiness Configuration
+
+Health checks determine when the service is ready for traffic.
+
+### TCP Health Check (for databases, caches)
+
+```yaml
+deployment:
+  readiness:
+    tcpSocketPort: 6379
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    failureThreshold: 3
+```
+
+### HTTP Health Check (for web services)
+
+```yaml
+deployment:
+  readiness:
+    httpGet:
+      path: "/health"
+      port: 8080
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    successThreshold: 1
+    failureThreshold: 3
+```
+
+### Readiness Properties
+
+| Property              | Description                           | Default        |
+| --------------------- | ------------------------------------- | -------------- |
+| `disabled`            | Skip health checks entirely           | `false`        |
+| `initialDelaySeconds` | Wait before first check               | System default |
+| `periodSeconds`       | Interval between checks               | System default |
+| `timeoutSeconds`      | Timeout per check                     | System default |
+| `successThreshold`    | Consecutive successes needed          | System default |
+| `failureThreshold`    | Consecutive failures before unhealthy | System default |
+
+---
+
+## Hostname Configuration
+
+```yaml
+deployment:
+  public: true
+  hostnames:
+    host: "api.example.com"
+    acmARN: "arn:aws:acm:us-east-1:123456789:certificate/abc-123"
+    defaultInternalHostname: "api-gateway-default"
+    defaultPublicUrl: "https://api-default.example.com"
+```
+
+| Property                  | Purpose                                  |
+| ------------------------- | ---------------------------------------- |
+| `host`                    | Base domain for the service              |
+| `acmARN`                  | AWS ACM certificate for HTTPS            |
+| `defaultInternalHostname` | Fallback internal hostname when inactive |
+| `defaultPublicUrl`        | Fallback public URL when inactive        |
+
+---
+
+## Network Configuration
+
+### IP Whitelisting
+
+```yaml
+deployment:
+  network:
+    ipWhitelist:
+      - "10.0.0.0/8" # Private network
+      - "192.168.1.0/24" # Specific subnet
+      - "203.0.113.50/32" # Single IP
+```
+
+### Path-to-Port Mapping
+
+Route different URL paths to different container ports.
+
+```yaml
+docker:
+  ports:
+    - 8080
+    - 9090
+deployment:
+  network:
+    pathPortMapping:
+      "/api": "8080"
+      "/metrics": "9090"
+```
+
+### gRPC Support
+
+```yaml
+deployment:
+  network:
+    grpc:
+      enable: true
+      host: "grpc.example.com"
+```
+
+---
+
+## Persistent Storage
+
+```yaml
+deployment:
+  serviceDisks:
+    - name: "postgres-data"
+      mountPath: "/var/lib/postgresql/data"
+      storageSize: "20Gi"
+      accessModes: "ReadWriteOnce"
+      medium: "gp2"
+```
+
+### Access Modes
+
+| Mode            | Description                      |
+| --------------- | -------------------------------- |
+| `ReadWriteOnce` | Single node read-write (default) |
+| `ReadOnlyMany`  | Multi-node read-only             |
+| `ReadWriteMany` | Multi-node read-write            |
+
+---
+
+## Node Selection (Advanced)
+
+### Simple Node Selector
+
+```yaml
+deployment:
+  node_selector:
+    gpu: "true"
+    instance-type: "p3.2xlarge"
+```
+
+### Node Affinity Rules
+
+```yaml
+deployment:
+  node_affinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: "topology.kubernetes.io/zone"
+              operator: "In"
+              values:
+                - "us-east-1a"
+                - "us-east-1b"
+```
+
+---
+
+## Troubleshooting
+
+| Problem                           | Solution                                                             |
+| --------------------------------- | -------------------------------------------------------------------- |
+| Service not accessible externally | Set `deployment.public: true` and verify cluster network config      |
+| Container keeps restarting        | Check `readiness` probe settings; increase `initialDelaySeconds`     |
+| Arguments not parsed correctly    | Use `%%SPLIT%%` delimiter between each argument                      |
+| Database data lost on restart     | Add `serviceDisks` with persistent storage                           |
+| Pod scheduled on wrong node type  | Check `capacityType` or add `node_selector`                          |
+| Health check failing              | Verify port matches exposed port; check if service needs warmup time |
+
+---
+
+## When to Use What
+
+| Scenario                      | Configuration                                        |
+| ----------------------------- | ---------------------------------------------------- |
+| **Redis/Memcached cache**     | `capacityType: SPOT`, TCP readiness probe            |
+| **PostgreSQL/MySQL database** | `capacityType: ON_DEMAND`, TCP probe, `serviceDisks` |
+| **Public API gateway**        | `public: true`, HTTP probe, `hostnames`              |
+| **Internal microservice**     | `public: false`, HTTP probe                          |
+| **GPU workload**              | `node_selector` with GPU labels                      |
+| **gRPC service**              | `network.grpc.enable: true`                          |
+| **Multi-port service**        | `pathPortMapping` for routing                        |
+
+---
+
+## Complete Field Reference
+
+### Service-Level
+
+| Field                 | Required | Type   | Default     |
+| --------------------- | -------- | ------ | ----------- |
+| `name`                | Yes      | string | -           |
+| `appShort`            | No       | string | -           |
+| `defaultUUID`         | No       | string | System UUID |
+| `requires`            | No       | array  | `[]`        |
+| `deploymentDependsOn` | No       | array  | `[]`        |
+
+### Docker Block
+
+| Field                | Required | Type   | Default       |
+| -------------------- | -------- | ------ | ------------- |
+| `docker.dockerImage` | Yes      | string | -             |
+| `docker.defaultTag`  | Yes      | string | -             |
+| `docker.command`     | No       | string | Image default |
+| `docker.arguments`   | No       | string | -             |
+| `docker.env`         | No       | object | `{}`          |
+| `docker.ports`       | No       | array  | `[8080]`      |
+
+### Deployment Block
+
+| Field                                | Required | Type    | Default        |
+| ------------------------------------ | -------- | ------- | -------------- |
+| `deployment.public`                  | No       | boolean | `false`        |
+| `deployment.capacityType`            | No       | string  | `"SPOT"`       |
+| `deployment.resource.cpu.request`    | No       | string  | System default |
+| `deployment.resource.cpu.limit`      | No       | string  | -              |
+| `deployment.resource.memory.request` | No       | string  | System default |
+| `deployment.resource.memory.limit`   | No       | string  | -              |
+
+### Readiness Block
+
+| Field                           | Required | Type    | Default        |
+| ------------------------------- | -------- | ------- | -------------- |
+| `readiness.disabled`            | No       | boolean | `false`        |
+| `readiness.tcpSocketPort`       | No       | number  | System default |
+| `readiness.httpGet.path`        | No       | string  | System default |
+| `readiness.httpGet.port`        | No       | number  | System default |
+| `readiness.initialDelaySeconds` | No       | number  | System default |
+| `readiness.periodSeconds`       | No       | number  | System default |
+| `readiness.timeoutSeconds`      | No       | number  | System default |
+| `readiness.successThreshold`    | No       | number  | System default |
+| `readiness.failureThreshold`    | No       | number  | System default |
+
+### Hostnames Block
+
+| Field                               | Required | Type   | Default        |
+| ----------------------------------- | -------- | ------ | -------------- |
+| `hostnames.host`                    | No       | string | System domain  |
+| `hostnames.acmARN`                  | No       | string | System default |
+| `hostnames.defaultInternalHostname` | No       | string | Auto-generated |
+| `hostnames.defaultPublicUrl`        | No       | string | Auto-generated |
+
+### Network Block
+
+| Field                      | Required | Type    | Default            |
+| -------------------------- | -------- | ------- | ------------------ |
+| `network.ipWhitelist`      | No       | array   | System default     |
+| `network.pathPortMapping`  | No       | object  | `{}`               |
+| `network.hostPortMapping`  | No       | object  | `{}`               |
+| `network.grpc.enable`      | No       | boolean | `false`            |
+| `network.grpc.host`        | No       | string  | System gRPC domain |
+| `network.grpc.defaultHost` | No       | string  | Auto-generated     |
+
+### Service Disks
+
+| Field                        | Required | Type   | Default           |
+| ---------------------------- | -------- | ------ | ----------------- |
+| `serviceDisks[].name`        | Yes      | string | -                 |
+| `serviceDisks[].mountPath`   | Yes      | string | -                 |
+| `serviceDisks[].storageSize` | Yes      | string | -                 |
+| `serviceDisks[].accessModes` | No       | string | `"ReadWriteOnce"` |
+| `serviceDisks[].medium`      | No       | string | -                 |
+
+### Node Scheduling
+
+| Field           | Required | Type   | Default |
+| --------------- | -------- | ------ | ------- |
+| `node_selector` | No       | object | `null`  |
+| `node_affinity` | No       | object | `null`  |

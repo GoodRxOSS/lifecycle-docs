@@ -1,0 +1,492 @@
+---
+title: Helm Services
+description: Complete schema documentation for helm-type services in Lifecycle, including native helm deployments, chart configuration, and environment variable mapping.
+navtext: Helm Services
+tags:
+  - schema
+  - lifecycle
+  - helm
+date: "2025-01-17"
+---
+
+import Link from "next/link";
+import { Callout } from "nextra/components";
+import { Info, TriangleAlert, Notebook } from "lucide-react";
+import { Mermaid } from "@lifecycle-docs/components";
+
+## Quick Reference
+
+| Field                   | Required          | Description                                     |
+| ----------------------- | ----------------- | ----------------------------------------------- |
+| `helm.deploymentMethod` | No                | `"native"` (recommended) or `"ci"`              |
+| `helm.version`          | Yes\*             | Helm CLI version (e.g., `"3.12.0"`)             |
+| `helm.chart.name`       | Yes               | Chart name, path (`./charts/app`), or `"local"` |
+| `helm.chart.repoUrl`    | For public        | Repository URL (e.g., Bitnami)                  |
+| `helm.chart.version`    | Recommended       | Chart version for reproducibility               |
+| `helm.chart.values`     | No                | Array of `"key=value"` overrides                |
+| `helm.chart.valueFiles` | No                | Array of value file paths                       |
+| `helm.repository`       | For local/files   | GitHub repo (`"org/repo"`)                      |
+| `helm.branchName`       | With repository   | Branch to clone                                 |
+| `helm.envMapping`       | For local         | How to pass env vars to chart                   |
+| `helm.docker`           | For custom images | Docker build configuration                      |
+
+<Callout type="info">
+  Helm services do **not** use the `deployment` block. All resources, probes,
+  and networking are configured through `chart.values` and `chart.valueFiles`.
+</Callout>
+
+---
+
+## Chart Types at a Glance
+
+<Mermaid
+  chart={`
+flowchart TB
+    subgraph public["PUBLIC CHART"]
+        p1["name: 'redis'"]
+        p2["repoUrl: 'https://bitnami...'"]
+        p3["docker: none"]
+    end
+    subgraph local["LOCAL CHART"]
+        l1["name: './charts'"]
+        l2["repository: required"]
+        l3["branchName: required"]
+        l4["envMapping: optional"]
+    end
+    subgraph org["ORG CHART"]
+        o1["name: 'org-chart'"]
+        o2["docker: required"]
+    end
+`}
+/>
+
+| Use Case                                  | Chart Type | Key Requirements                         |
+| ----------------------------------------- | ---------- | ---------------------------------------- |
+| Third-party databases (PostgreSQL, Redis) | Public     | `repoUrl`, `chart.version`               |
+| Custom app in your repo                   | Local      | `repository`, `branchName`, chart path   |
+| Org standard chart + custom Docker image  | Org        | `docker.app.dockerfilePath`              |
+| Public chart + custom value files         | Public     | `repository`, `branchName`, `valueFiles` |
+
+---
+
+## Common Patterns
+
+### Public Chart (PostgreSQL)
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "postgres-db"
+    appShort: "pgdb"
+    helm:
+      deploymentMethod: "native"
+      version: "3.12.0"
+      chart:
+        name: "postgresql"
+        repoUrl: "https://charts.bitnami.com/bitnami"
+        version: "12.9.0"
+        values:
+          - "auth.username=lifecycle_user"
+          - "auth.password=secretpassword"
+          - "auth.database=lifecycle_db"
+          - "persistence.enabled=true"
+          - "persistence.size=10Gi"
+```
+
+### Local Chart with Docker Build
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "my-application"
+    appShort: "myapp"
+    helm:
+      deploymentMethod: "native"
+      version: "3.14.0"
+      repository: "my-org/my-repo"
+      branchName: "main"
+      args: "--atomic --wait --timeout 30m"
+      chart:
+        name: "./charts/my-app"
+        values:
+          - "replicaCount=2"
+      envMapping:
+        app:
+          format: "array"
+          path: "deployment.env"
+      docker:
+        defaultTag: "latest"
+        app:
+          dockerfilePath: "Dockerfile"
+          env:
+            NODE_ENV: "production"
+          ports:
+            - "3000"
+```
+
+---
+
+## Common Mistakes
+
+### Wrong: `envMapping` inside `chart`
+
+```yaml
+# WRONG - envMapping will be ignored
+services:
+  - name: "my-app"
+    helm:
+      chart:
+        name: "./charts/my-app"
+        envMapping: # Wrong location!
+          app:
+            format: "array"
+            path: "deployment.env"
+```
+
+### Correct: `envMapping` under `helm`
+
+```yaml
+# CORRECT - envMapping at helm level
+services:
+  - name: "my-app"
+    helm:
+      chart:
+        name: "./charts/my-app"
+      envMapping: # Correct location
+        app:
+          format: "array"
+          path: "deployment.env"
+```
+
+### Wrong: Missing `repository` for value files
+
+```yaml
+# WRONG - valueFiles won't be found
+services:
+  - name: "redis"
+    helm:
+      chart:
+        name: "redis"
+        repoUrl: "https://charts.bitnami.com/bitnami"
+        valueFiles:
+          - "helm/values/redis.yaml" # Where is this file?
+```
+
+### Correct: Include `repository` and `branchName`
+
+```yaml
+# CORRECT - repository specified for valueFiles
+services:
+  - name: "redis"
+    helm:
+      repository: "my-org/my-repo"
+      branchName: "main"
+      chart:
+        name: "redis"
+        repoUrl: "https://charts.bitnami.com/bitnami"
+        valueFiles:
+          - "helm/values/redis.yaml"
+```
+
+### Wrong: `envMapping` with public chart
+
+```yaml
+# WRONG - envMapping only works with local charts
+services:
+  - name: "postgres"
+    helm:
+      chart:
+        name: "postgresql"
+        repoUrl: "https://charts.bitnami.com/bitnami"
+      envMapping: # Ignored for public charts!
+        app:
+          format: "array"
+          path: "env"
+```
+
+---
+
+## Schema Reference
+
+### Deployment Configuration
+
+#### `deploymentMethod`
+
+| Property    | Value                                                  |
+| ----------- | ------------------------------------------------------ |
+| **Type**    | `string`                                               |
+| **Default** | Determined by `nativeHelm.enabled` or falls back to CI |
+| **Values**  | `"native"` or `"ci"`                                   |
+
+- **`native`**: Runs in Kubernetes jobs within the ephemeral namespace. Provides real-time deploy logs in the UI.
+- **`ci`**: Legacy method using external CI/CD (e.g., Codefresh).
+
+#### `version`
+
+| Property     | Value                           |
+| ------------ | ------------------------------- |
+| **Type**     | `string`                        |
+| **Required** | Yes (for native deployment)     |
+| **Default**  | `"3.12.0"` (from global config) |
+
+Specifies the Helm CLI version (must match `alpine/helm` Docker image tags).
+
+<Callout type="warning">
+  Missing version causes: "Helm version is required" error.
+</Callout>
+
+#### `args`
+
+| Property    | Value                                 |
+| ----------- | ------------------------------------- |
+| **Type**    | `string`                              |
+| **Default** | None (global `defaultArgs` may apply) |
+
+Common arguments:
+
+- `--wait` - Wait for resources to be ready
+- `--timeout 30m` - Set deployment timeout
+- `--atomic` - Roll back on failure
+- `--force` - Force resource updates
+
+Service-level `args` take precedence over global `defaultArgs` for conflicting flags.
+
+#### `repository` and `branchName`
+
+| Property     | Type                    | Required                              |
+| ------------ | ----------------------- | ------------------------------------- |
+| `repository` | `string` (`"org/repo"`) | When using local charts or valueFiles |
+| `branchName` | `string`                | When `repository` is specified        |
+
+---
+
+### Chart Configuration
+
+#### `chart.name`
+
+Determines the chart type based on format:
+
+| Format                           | Type   | Example                   |
+| -------------------------------- | ------ | ------------------------- |
+| Simple name                      | Public | `"postgresql"`, `"redis"` |
+| Path starting with `./` or `../` | Local  | `"./charts/my-app"`       |
+| `"local"`                        | Local  | `"local"`                 |
+| Org chart name + `docker` config | Org    | `"org-chart"`             |
+
+#### `chart.repoUrl`
+
+Required for public charts. Supports:
+
+- **Standard repos**: `https://charts.bitnami.com/bitnami`
+- **OCI registries**: `oci://registry.example.com/charts`
+
+Built-in aliases: `bitnami`, `stable`, `prometheus-community`, `grafana`
+
+#### `chart.version`
+
+<Callout type="warning">
+  Always specify versions in production for reproducible deployments. Without a
+  version, Helm uses latest.
+</Callout>
+
+#### `chart.values`
+
+Array of `"key=value"` strings passed via `--set` flags.
+
+| Syntax                | Example                          |
+| --------------------- | -------------------------------- |
+| Simple                | `"replicas=3"`                   |
+| Nested (dot notation) | `"auth.username=admin"`          |
+| Arrays (brackets)     | `"tolerations[0].key=dedicated"` |
+| Template variables    | `"buildId={{build.uuid}}"`       |
+
+#### `chart.valueFiles`
+
+Array of file paths relative to repository root. Applied in order (later files override earlier).
+
+<Callout type="info">
+  Service-level `valueFiles` **completely replace** global defaults (no
+  merging).
+</Callout>
+
+---
+
+### Environment Variable Mapping
+
+<Callout type="warning">
+  `envMapping` only works with **LOCAL** chart types (paths starting with `./`
+  or `../`).
+</Callout>
+
+#### `envMapping.app` and `envMapping.init`
+
+| Property | Type                 | Required |
+| -------- | -------------------- | -------- |
+| `format` | `"array"` or `"map"` | Yes      |
+| `path`   | `string`             | Yes      |
+
+**Array format** (for Kubernetes env spec):
+
+```yaml
+envMapping:
+  app:
+    format: "array"
+    path: "deployment.env"
+# Generates:
+# deployment.env[0].name=MY_VAR
+# deployment.env[0].value=my-value
+```
+
+**Map format** (flat key-value):
+
+```yaml
+envMapping:
+  app:
+    format: "map"
+    path: "env"
+# Generates:
+# env.MY__VAR=my-value  (underscores escaped as __)
+```
+
+---
+
+### Docker Configuration
+
+Required for org charts; optional for local charts.
+
+#### `docker.app` (required when using `docker`)
+
+| Property         | Type       | Required | Description                   |
+| ---------------- | ---------- | -------- | ----------------------------- |
+| `dockerfilePath` | `string`   | Yes      | Path relative to repo root    |
+| `command`        | `string`   | No       | Override Dockerfile CMD       |
+| `arguments`      | `string`   | No       | Args separated by `%%SPLIT%%` |
+| `env`            | `object`   | No       | Environment variables         |
+| `ports`          | `string[]` | No       | Exposed ports                 |
+
+#### `docker.init` (optional)
+
+Same structure as `docker.app` for init containers (database migrations, setup tasks).
+
+#### `docker.builder.engine`
+
+| Value        | Description                         |
+| ------------ | ----------------------------------- |
+| `"buildkit"` | Faster builds with advanced caching |
+| `"kaniko"`   | No privileged access required       |
+
+---
+
+### Additional Options
+
+| Option               | Type      | Default        | Description                                             |
+| -------------------- | --------- | -------------- | ------------------------------------------------------- |
+| `type`               | `string`  | `"deployment"` | Resource type: `deployment`, `statefulset`, `daemonset` |
+| `grpc`               | `boolean` | `false`        | Configure ingress for gRPC traffic                      |
+| `disableIngressHost` | `boolean` | `false`        | No external ingress (internal services)                 |
+| `envLens`            | `boolean` | `false`        | Inject environment identification banner                |
+
+---
+
+## Configuration Precedence
+
+Values merge from lowest to highest priority:
+
+<Mermaid
+  chart={`
+flowchart TB
+    A["3. Service YAML (highest priority)\nYour lifecycle.yaml"] --> B["2. Chart-specific global config\nPer-chart defaults"]
+    B --> C["1. Global helmDefaults (lowest priority)\nOrganization defaults"]
+`}
+/>
+
+**Merging behavior:**
+
+- `values` arrays: Merged (service overrides duplicates)
+- `valueFiles` arrays: **Not merged** (service replaces entirely)
+- Scalar values (`version`, `args`): Overridden entirely
+
+---
+
+## Troubleshooting
+
+| Problem                     | Solution                                             |
+| --------------------------- | ---------------------------------------------------- |
+| "Helm version is required"  | Add `helm.version: "3.12.0"`                         |
+| Value files not found       | Add `repository` and `branchName`                    |
+| Env vars not passed to pods | Move `envMapping` under `helm`, not `chart`          |
+| Env vars ignored            | `envMapping` only works with local charts            |
+| Chart not found             | Verify `repoUrl` for public charts or path for local |
+| Deployment timeout          | Add `args: "--timeout 30m"`                          |
+
+---
+
+## Complete Examples
+
+### Public Chart with Custom Value Files
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "redis-cache"
+    appShort: "redis"
+    helm:
+      deploymentMethod: "native"
+      version: "3.12.0"
+      repository: "my-org/my-repo"
+      branchName: "main"
+      chart:
+        name: "redis"
+        repoUrl: "https://charts.bitnami.com/bitnami"
+        version: "17.11.3"
+        valueFiles:
+          - "helm/values/redis-base.yaml"
+          - "helm/values/redis-lifecycle.yaml"
+```
+
+### Organization Chart with Init Container
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "my-service"
+    appShort: "mysvc"
+    helm:
+      deploymentMethod: "native"
+      version: "3.12.0"
+      repository: "my-org/my-service"
+      branchName: "main"
+      type: "deployment"
+      envLens: true
+      chart:
+        name: "org-chart"
+        values:
+          - "deployment.replicas=3"
+      docker:
+        defaultTag: "latest"
+        app:
+          dockerfilePath: "Dockerfile"
+          command: "python"
+          arguments: "-m%%SPLIT%%uvicorn%%SPLIT%%main:app%%SPLIT%%--host%%SPLIT%%0.0.0.0"
+          env:
+            DATABASE_URL: "postgres://db:5432/app"
+          ports:
+            - "8000"
+        init:
+          dockerfilePath: "Dockerfile.migrations"
+          command: "python"
+          arguments: "manage.py%%SPLIT%%migrate"
+          env:
+            DATABASE_URL: "postgres://db:5432/app"
+```
+
+---
+
+## When to Use What
+
+| Scenario                            | Configuration                               |
+| ----------------------------------- | ------------------------------------------- |
+| Deploy PostgreSQL/Redis/etc.        | Public chart with `repoUrl`                 |
+| Custom app with your own chart      | Local chart (`./charts/...`) + `repository` |
+| Org standard deployment             | Org chart + `docker` config                 |
+| Need custom values for public chart | Add `repository` + `valueFiles`             |
+| Pass env vars to local chart        | Use `envMapping` with `format` and `path`   |
+| Internal service (no ingress)       | Set `disableIngressHost: true`              |
+| gRPC service                        | Set `grpc: true`                            |
+| Database with persistent storage    | `type: "statefulset"`                       |

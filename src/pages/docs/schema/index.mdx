@@ -264,7 +264,7 @@ services:
 <div className="flex-col">
 
 - `docker.deployment`: The deployment configuration for the Docker service.
-- `deployment.public`: If true, the service will be publicly accessible.
+- `deployment.public`: If true, an Ingress is created for external hostname access.
 - `deployment.capacityType`: The capacity type to use for the service.
 - `deployment.resource`: The resource requirements for the service.
 - `deployment.resource.cpu.request`: The CPU request for the service.
@@ -295,7 +295,7 @@ services:
       ...
       deployment:
         public: false
-        capacityType: 'FARGATE'
+        capacityType: 'SPOT'
         resource:
           cpu:
             request: '256'
@@ -647,7 +647,7 @@ services:
 <div className="sticky top-20">
 
 - `github.deployment`: The deployment configuration for the Github service.
-- `github.deployment.public`: If true, the service will be publicly accessible.
+- `github.deployment.public`: If true, an Ingress is created for external hostname access.
 - `github.deployment.capacityType`: The capacity type to use for the service.
 - `github.deployment.resource`: The resource requirements for the service.
 - `github.deployment.resource.cpu.request`: The CPU request for the service.
@@ -677,7 +677,7 @@ services:
       branchName: "main"
       deployment:
         public: false
-        capacityType: "FARGATE"
+        capacityType: "SPOT"
         resource:
           cpu:
             request: "256"

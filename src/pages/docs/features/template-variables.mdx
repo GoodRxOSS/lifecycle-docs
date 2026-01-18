@@ -1,69 +1,244 @@
 ---
 title: Template Variables
+description: Use dynamic template variables to reference service URLs, build metadata, and more
 tags:
   - template
   - variables
   - buildUUID
   - publicUrl
+  - internalHostname
   - sha
   - branchName
-  - UUID
-  - internalHostname
-  - review
+date: "2025-01-29"
 ---
 
 import { Callout } from "nextra/components";
+import { Mermaid } from "@lifecycle-docs/components";
 
-## Overview
+## Quick Reference
 
-Lifecycle uses [Mustache](https://github.com/janl/mustache.js) as the template rendering engine.
+| Variable                           | Example                              | Use For                          |
+| ---------------------------------- | ------------------------------------ | -------------------------------- |
+| `{{{buildUUID}}}`                  | `lively-down-881123`                 | Unique environment ID            |
+| `{{{<service>_publicUrl}}}`        | `api-lively-down-881123.example.com` | External service URLs            |
+| `{{{<service>_internalHostname}}}` | `api-abc123.ns.svc.cluster.local`    | Service-to-service communication |
+| `{{{<service>_sha}}}`              | `0f6892`                             | Git commit reference             |
 
-## Available Template Variables
+**Syntax**: Always use triple curly braces `{{{ }}}` for raw output. Double braces HTML-escape values.
 
-The following template variables are available for use within your configuration. Variables related to specific services should use the service name as a prefix.
+**Service names**: Replace hyphens with underscores (e.g., `my-api` becomes `my_api_publicUrl`).
 
-### General Variables
+---
 
-- **`{{{buildUUID}}}`** - The unique identifier for the Lifecycle environment, e.g., `lively-down-881123`.
-- **`{{{namespace}}}`** - Namespace for the deployments, e.g., `env-lively-down-881123`.
-- **`{{{pullRequestNumber}}}`** - The GitHub pull request number associated with the environment.
+## Common Patterns
 
-### Service-Specific Variables
-
-For service-specific variables, replace `<service_name>` with the actual service name.
-
-- **`{{{<service_name>_internalHostname}}}`** - The internal hostname of the deployed service. If the service is optional and not deployed, it falls back to `defaultInternalHostname`.
-
-  <Callout type="info">
-    `service_internalHostname` will be substituted with local cluster full
-    domain name like `service.namespace.svc.cluster.local` to be able to work
-    with deployments across namespaces.
-  </Callout>
-
-- **`{{{<service_name>_publicUrl}}}`** - The public URL of the deployed service. If optional and not deployed, it defaults to `defaultPublicUrl` under the `services` table.
-- **`{{{<service_name>_sha}}}`** - The GitHub SHA that triggered the Lifecycle build.
-- **`{{{<service_name>_branchName}}}`** - The branch name of the pull request that deployed the environment.
-- **`{{{<service_name>_UUID}}}`** - The build UUID of the service. If listed under `optionalServices` or `defaultServices`, its value depends on whether the service is selected:
-  - If selected, it is equal to `buildUUID`.
-  - If not selected (or if service not part of deploys created), it defaults to **`dev-0`**.
-
-## Usage Example
+### Frontend Connecting to Backend API
 
 ```yaml
 services:
-  frontend:
-    # ...
-    env:
-      API_URL: "{{{backend_publicUrl}}}"
-      UUID: "{{{buildUUID}}}"
+  - name: frontend
+    github:
+      docker:
+        app:
+          env:
+            API_URL: "{{{backend_publicUrl}}}"
 ```
 
-This ensures the `PUBLIC_URL` and `INTERNAL_HOST` variables are dynamically assigned based on the ephemeral environment deployment.
+### Backend Connecting to Database
 
- <Callout>
-- Undefined variables will result in an empty string unless handled explicitly.
-- Use triple curly braces (`{{{ }}}`) to prevent unwanted HTML escaping.
-- Ensure service names are correctly referenced in the template without any spaces.
+```yaml
+services:
+  - name: backend
+    github:
+      docker:
+        app:
+          env:
+            DATABASE_URL: "postgresql://{{{postgres_internalHostname}}}:5432/mydb"
+            REDIS_URL: "redis://{{{redis_internalHostname}}}:6379"
+```
+
+### Helm Values with Variables
+
+```yaml
+services:
+  - name: myapp
+    helm:
+      chart:
+        values:
+          - "config.databaseUrl=postgresql://{{{postgres_internalHostname}}}:5432/mydb"
+```
+
+---
+
+## Wrong vs Correct Examples
+
+### Service Name with Hyphens
+
+```yaml
+# WRONG - uses hyphens in variable name
+env:
+  API_URL: "{{{my-api_publicUrl}}}"
+
+# CORRECT - replace hyphens with underscores
+env:
+  API_URL: "{{{my_api_publicUrl}}}"
+```
+
+### Double vs Triple Braces
+
+```yaml
+# WRONG - double braces HTML-escape special characters
+env:
+  URL: "{{backend_publicUrl}}"
+
+# CORRECT - triple braces output raw values
+env:
+  URL: "{{{backend_publicUrl}}}"
+```
+
+### Missing Protocol in URLs
+
+```yaml
+# WRONG - publicUrl doesn't include protocol
+env:
+  ENDPOINT: "{{{backend_publicUrl}}}/api"  # Missing http://
+
+# CORRECT - add protocol when needed
+env:
+  ENDPOINT: "https://{{{backend_publicUrl}}}/api"
+```
+
+---
+
+## Variable Categories
+
+### Build-Level Variables (Global)
+
+Available to all services in the environment.
+
+| Variable                  | Description                  | Example                  |
+| ------------------------- | ---------------------------- | ------------------------ |
+| `{{{buildUUID}}}`         | Environment identifier       | `lively-down-881123`     |
+| `{{{buildSHA}}}`          | Git SHA that triggered build | `0f6892`                 |
+| `{{{namespace}}}`         | Kubernetes namespace         | `env-lively-down-881123` |
+| `{{{pullRequestNumber}}}` | GitHub PR number             | `42`                     |
+
+### Service-Specific Variables
+
+Replace `<service>` with the service name (hyphens as underscores).
+
+| Variable                           | Active Service          | Inactive Service                        |
+| ---------------------------------- | ----------------------- | --------------------------------------- |
+| `{{{<service>_publicUrl}}}`        | Build-specific URL      | Falls back to `defaultPublicUrl`        |
+| `{{{<service>_internalHostname}}}` | Build-specific hostname | Falls back to `defaultInternalHostname` |
+| `{{{<service>_UUID}}}`             | Same as `buildUUID`     | Falls back to `defaultUUID`             |
+| `{{{<service>_sha}}}`              | Commit SHA              | Empty string                            |
+| `{{{<service>_branchName}}}`       | Branch name             | Empty string                            |
+| `{{{<service>_dockerImage}}}`      | `registry/app:tag`      | Empty string                            |
+| `{{{<service>_initDockerImage}}}`  | `registry/init:tag`     | Empty string                            |
+| `{{{<service>_ipAddress}}}`        | `10.0.0.1`              | Empty string                            |
+
+---
+
+## Internal Hostname Format
+
+<Mermaid
+  chart={`
+flowchart LR
+    subgraph hostname["redis-abc123.env-lively-down-881123.svc.cluster.local"]
+        A["redis-abc123"] --> B["env-lively-down-881123"] --> C["svc.cluster.local"]
+    end
+    A -.- D["service"]
+    B -.- E["namespace"]
+    C -.- F["K8s suffix"]
+`}
+/>
+
+**Adding suffixes and ports**:
+
+```yaml
+env:
+  # Basic hostname
+  REDIS_HOST: "{{{redis_internalHostname}}}"
+  # redis-abc123.namespace.svc.cluster.local
+
+  # With suffix (e.g., for Redis Sentinel)
+  REDIS_MASTER: "{{{redis_internalHostname}}}-master"
+  # redis-abc123-master.namespace.svc.cluster.local
+
+  # With port
+  REDIS_URL: "{{{redis_internalHostname}}}:6379"
+  # redis-abc123.namespace.svc.cluster.local:6379
+```
+
+---
+
+## Active vs Inactive Services
+
+When a service is **active** (deployed in this environment):
+
+- Variables resolve to build-specific values
+- `{{{backend_publicUrl}}}` returns `backend-lively-down-881123.example.com`
+
+When a service is **inactive** (not deployed):
+
+- Variables fall back to configured defaults
+- `{{{backend_publicUrl}}}` returns `backend-dev-0.example.com` (static environment)
+- `{{{backend_sha}}}` returns empty string
+
+<Callout type="info">
+  This fallback behavior lets services reference optional dependencies that may
+  point to a shared static environment when not explicitly deployed.
 </Callout>
 
-For more details, refer to the [Mustache.js documentation](https://github.com/janl/mustache.js).
+---
+
+## Where Variables Work
+
+| Location           | Example                                                         |
+| ------------------ | --------------------------------------------------------------- |
+| Service env vars   | `env: { API_URL: "{{{backend_publicUrl}}}" }`                   |
+| Init container env | `init: { env: { DB_HOST: "{{{postgres_internalHostname}}}" } }` |
+| Helm values        | `values: ["host={{{redis_internalHostname}}}"]`                 |
+| Webhooks           | `webhooks: [{ env: { URL: "{{{frontend_publicUrl}}}" } }]`      |
+
+---
+
+## Build Output Dependencies
+
+Reference another service's build output:
+
+```yaml
+env:
+  API_KEY: "{{{backend_buildOutput}}}"
+```
+
+<Callout type="warning">
+  This creates an implicit dependency. The service waits for the referenced
+  service to complete its build before deploying.
+</Callout>
+
+---
+
+## Troubleshooting
+
+| Problem                           | Solution                                                 |
+| --------------------------------- | -------------------------------------------------------- |
+| Variable resolves to empty string | Check service name spelling; hyphens must be underscores |
+| Wrong namespace in hostname       | Expected for inactive services; verify service is active |
+| HTML entities in URL (`&amp;`)    | Use triple braces `{{{ }}}` instead of double            |
+| Variable not replaced at all      | Verify variable name matches a defined service           |
+
+---
+
+## Summary: When to Use Each Variable
+
+| I need to...                           | Use this variable                      |
+| -------------------------------------- | -------------------------------------- |
+| Connect frontend to backend (external) | `{{{backend_publicUrl}}}`              |
+| Connect backend to database (internal) | `{{{postgres_internalHostname}}}:5432` |
+| Track which build this is              | `{{{buildUUID}}}`                      |
+| Know which commit triggered the build  | `{{{buildSHA}}}`                       |
+| Reference the PR number                | `{{{pullRequestNumber}}}`              |
+| Get a service's Docker image           | `{{{<service>_dockerImage}}}`          |
+| Wait for another service's build       | `{{{<service>_buildOutput}}}`          |

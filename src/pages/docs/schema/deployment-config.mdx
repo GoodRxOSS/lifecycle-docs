@@ -1,0 +1,509 @@
+---
+title: Deployment Configuration
+description: Complete reference for deployment configuration options in the Lifecycle schema
+navtext: Deployment Config
+tags:
+  - schema
+  - deployment
+  - kubernetes
+  - resources
+date: "2025-01-29"
+---
+
+import { Callout } from "nextra/components";
+
+## TL;DR
+
+The `deployment` block controls how your service runs in Kubernetes: resources, health checks, networking, and storage.
+
+```
++-------------------+     +--------------------+     +------------------+
+|   deployment:     | --> |  Kubernetes Pod    | --> |  Accessible via  |
+|   public: true    |     |  with resources,   |     |  Ingress URL or  |
+|   resource: {...} |     |  health checks,    |     |  internal DNS    |
+|   readiness: {...}|     |  storage attached  |     |                  |
++-------------------+     +--------------------+     +------------------+
+```
+
+**Access via:** `docker.deployment` or `github.deployment`
+
+<Callout type="warning">
+  Only applies to `docker` and `github` service types. Helm services configure
+  these settings through chart values.
+</Callout>
+
+---
+
+## Quick Reference
+
+| Field           | Type    | Default | Description                        |
+| --------------- | ------- | ------- | ---------------------------------- |
+| `public`        | boolean | `false` | Create Ingress for external access |
+| `capacityType`  | string  | `SPOT`  | `ON_DEMAND` or `SPOT` instances    |
+| `resource`      | object  | -       | CPU/memory requests and limits     |
+| `readiness`     | object  | -       | Health check configuration         |
+| `hostnames`     | object  | -       | Custom hostname and TLS            |
+| `network`       | object  | -       | Routing, IP whitelist, gRPC        |
+| `serviceDisks`  | array   | -       | Persistent storage volumes         |
+| `helm`          | object  | -       | Helm chart settings                |
+| `node_selector` | object  | -       | Simple node selection labels       |
+| `node_affinity` | object  | -       | Advanced node affinity rules       |
+
+---
+
+## Common Patterns
+
+### Minimal Public API
+
+```yaml
+deployment:
+  public: true
+  resource:
+    cpu: { request: "256m", limit: "512m" }
+    memory: { request: "512Mi", limit: "1Gi" }
+  readiness:
+    httpGet: { path: /health, port: 8080 }
+```
+
+### Database with Persistent Storage
+
+```yaml
+deployment:
+  capacityType: ON_DEMAND # Don't use SPOT for databases
+  serviceDisks:
+    - name: pgdata
+      mountPath: /var/lib/postgresql/data
+      storageSize: 20Gi
+      medium: EBS
+  readiness:
+    tcpSocketPort: 5432
+```
+
+### Background Worker (Internal Only)
+
+```yaml
+deployment:
+  public: false # No external access needed
+  capacityType: SPOT # Cost-effective for interruptible work
+  resource:
+    cpu: { request: "100m", limit: "500m" }
+    memory: { request: "256Mi", limit: "512Mi" }
+  readiness:
+    disabled: true # No health endpoint available
+```
+
+---
+
+## Common Mistakes
+
+### Resource Configuration
+
+```yaml
+# WRONG: Missing limits allows unbounded resource usage
+deployment:
+  resource:
+    cpu:
+      request: "256m"
+    memory:
+      request: "512Mi"
+
+# CORRECT: Always set both request and limit
+deployment:
+  resource:
+    cpu:
+      request: "256m"
+      limit: "512m"
+    memory:
+      request: "512Mi"
+      limit: "1Gi"
+```
+
+### Capacity Type for Stateful Services
+
+```yaml
+# WRONG: SPOT instances can be terminated, causing data loss
+deployment:
+  capacityType: SPOT
+  serviceDisks:
+    - name: data
+      mountPath: /data
+      storageSize: 10Gi
+
+# CORRECT: Use ON_DEMAND for stateful workloads
+deployment:
+  capacityType: ON_DEMAND
+  serviceDisks:
+    - name: data
+      mountPath: /data
+      storageSize: 10Gi
+```
+
+### Health Check Configuration
+
+```yaml
+# WRONG: No delay for slow-starting apps causes restarts
+deployment:
+  readiness:
+    httpGet:
+      path: /health
+      port: 8080
+
+# CORRECT: Add initial delay for startup time
+deployment:
+  readiness:
+    httpGet:
+      path: /health
+      port: 8080
+    initialDelaySeconds: 15
+    periodSeconds: 10
+    failureThreshold: 6
+```
+
+---
+
+## Ingress Configuration
+
+### `deployment.public`
+
+| Value   | Ingress Created | GitHub Deployment Status | Access            |
+| ------- | --------------- | ------------------------ | ----------------- |
+| `true`  | Yes             | Enabled                  | External hostname |
+| `false` | No              | Disabled                 | Internal DNS only |
+
+```yaml
+deployment:
+  public: true
+```
+
+---
+
+## Capacity Type
+
+### `deployment.capacityType`
+
+| Value       | Instance Type    | Scheduling         | Best For                        |
+| ----------- | ---------------- | ------------------ | ------------------------------- |
+| `SPOT`      | Spot/preemptible | Preferred affinity | Dev, CI, stateless workers      |
+| `ON_DEMAND` | Standard         | Required affinity  | Production, databases, stateful |
+
+<Callout type="warning">
+  SPOT instances may be interrupted with 2 minutes notice. Only use for
+  fault-tolerant, stateless workloads.
+</Callout>
+
+---
+
+## Resource Allocation
+
+### `deployment.resource`
+
+**Format Reference:**
+
+- CPU: `"100m"` (millicores), `"0.5"`, `"2"` (cores)
+- Memory: `"128Mi"`, `"512Mi"`, `"1Gi"`, `"2Gi"`
+
+| Field            | Description                            |
+| ---------------- | -------------------------------------- |
+| `cpu.request`    | Minimum CPU guaranteed (scheduling)    |
+| `cpu.limit`      | Maximum CPU allowed (throttled beyond) |
+| `memory.request` | Minimum memory guaranteed              |
+| `memory.limit`   | Maximum memory (OOMKilled beyond)      |
+
+```yaml
+deployment:
+  resource:
+    cpu:
+      request: "256m"
+      limit: "512m"
+    memory:
+      request: "512Mi"
+      limit: "1Gi"
+```
+
+---
+
+## Readiness Configuration
+
+### `deployment.readiness`
+
+Determines when a pod is ready to receive traffic.
+
+| Field                 | Default | Description                          |
+| --------------------- | ------- | ------------------------------------ |
+| `disabled`            | `false` | Skip readiness checks entirely       |
+| `httpGet.path`        | -       | HTTP endpoint path                   |
+| `httpGet.port`        | -       | HTTP endpoint port                   |
+| `tcpSocketPort`       | -       | TCP port check (alternative to HTTP) |
+| `initialDelaySeconds` | `0`     | Wait before first check              |
+| `periodSeconds`       | `10`    | Time between checks                  |
+| `timeoutSeconds`      | `1`     | Check timeout                        |
+| `successThreshold`    | `1`     | Consecutive successes to be ready    |
+| `failureThreshold`    | `30`    | Consecutive failures to be unready   |
+
+### HTTP vs TCP Health Checks
+
+```
+HTTP Check (web services):          TCP Check (databases, caches):
++--------+    GET /health    +-----+  +--------+  TCP connect  +-----+
+| K8s    | ----------------> | App |  | K8s    | ------------> | DB  |
++--------+    200 OK?        +-----+  +--------+  port open?   +-----+
+```
+
+**HTTP Check:**
+
+```yaml
+deployment:
+  readiness:
+    httpGet:
+      path: /health
+      port: 8080
+    initialDelaySeconds: 10
+    periodSeconds: 15
+```
+
+**TCP Check:**
+
+```yaml
+deployment:
+  readiness:
+    tcpSocketPort: 6379
+    initialDelaySeconds: 5
+```
+
+**Disable (not recommended):**
+
+```yaml
+deployment:
+  readiness:
+    disabled: true
+```
+
+---
+
+## Hostname Configuration
+
+### `deployment.hostnames`
+
+| Field                     | Description                     |
+| ------------------------- | ------------------------------- |
+| `host`                    | Custom hostname domain suffix   |
+| `acmARN`                  | AWS ACM certificate ARN for TLS |
+| `defaultInternalHostname` | Internal DNS name               |
+| `defaultPublicUrl`        | Default public URL              |
+
+```yaml
+deployment:
+  hostnames:
+    host: api.example.com
+    acmARN: arn:aws:acm:us-east-1:123456789:certificate/abc123
+```
+
+---
+
+## Network Configuration
+
+### `deployment.network`
+
+### IP Whitelisting
+
+Restrict access to specific IP ranges:
+
+```yaml
+deployment:
+  network:
+    ipWhitelist:
+      - "10.0.0.0/8" # Internal network
+      - "192.168.1.0/24" # Office network
+```
+
+### Path-to-Port Mapping
+
+Route different URL paths to different container ports:
+
+```
+Request: /api/users  -->  Port 8080 (API server)
+Request: /metrics    -->  Port 9090 (Prometheus)
+```
+
+```yaml
+deployment:
+  network:
+    pathPortMapping:
+      /api: "8080"
+      /metrics: "9090"
+```
+
+### gRPC Configuration
+
+```yaml
+deployment:
+  network:
+    grpc:
+      enable: true
+      host: grpc.example.com
+```
+
+---
+
+## Persistent Storage
+
+### `deployment.serviceDisks`
+
+| Field         | Required | Description                                                |
+| ------------- | -------- | ---------------------------------------------------------- |
+| `name`        | Yes      | Unique volume identifier                                   |
+| `mountPath`   | Yes      | Container mount path                                       |
+| `storageSize` | Yes      | Volume size (e.g., `10Gi`)                                 |
+| `accessModes` | No       | `ReadWriteOnce` (default), `ReadOnlyMany`, `ReadWriteMany` |
+| `medium`      | No       | `EBS` (default), `DISK`, `MEMORY`                          |
+
+### Storage Medium Comparison
+
+| Medium   | Persistence | Speed    | Use Case                  |
+| -------- | ----------- | -------- | ------------------------- |
+| `EBS`    | Persistent  | Standard | Databases, important data |
+| `MEMORY` | Ephemeral   | Fast     | Cache, temp files         |
+
+<Callout type="info">
+  EBS volumes can only attach to one node, so deployment strategy automatically
+  switches to `Recreate`.
+</Callout>
+
+```yaml
+deployment:
+  serviceDisks:
+    - name: pgdata
+      mountPath: /var/lib/postgresql/data
+      storageSize: 20Gi
+      accessModes: ReadWriteOnce
+      medium: EBS
+```
+
+---
+
+## Node Scheduling
+
+### Simple Selection: `node_selector`
+
+```yaml
+deployment:
+  node_selector:
+    disktype: ssd
+    environment: production
+```
+
+### Advanced Rules: `node_affinity`
+
+```yaml
+deployment:
+  node_affinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/instance-type
+              operator: In
+              values: [m5.large, m5.xlarge]
+```
+
+---
+
+## Helm Configuration
+
+### `deployment.helm`
+
+For services deployed via Helm charts:
+
+| Field          | Description                    |
+| -------------- | ------------------------------ |
+| `enabled`      | Enable Helm deployment         |
+| `chartName`    | Chart name                     |
+| `chartRepoUrl` | Repository URL                 |
+| `chartVersion` | Chart version                  |
+| `customValues` | Array of `key=value` overrides |
+
+```yaml
+deployment:
+  helm:
+    enabled: true
+    chartName: redis
+    chartRepoUrl: https://charts.bitnami.com/bitnami
+    chartVersion: 17.0.0
+    customValues:
+      - "replica.replicaCount=3"
+      - "auth.enabled=false"
+```
+
+---
+
+## Troubleshooting
+
+| Problem                 | Solution                                                 |
+| ----------------------- | -------------------------------------------------------- |
+| Pod keeps restarting    | Increase `initialDelaySeconds` for slow-starting apps    |
+| OOMKilled errors        | Increase `memory.limit`                                  |
+| CPU throttling          | Increase `cpu.limit`                                     |
+| Pod won't schedule      | Check `node_selector` labels exist on nodes              |
+| SPOT interruptions      | Switch to `capacityType: ON_DEMAND`                      |
+| EBS volume won't attach | EBS only supports `ReadWriteOnce` - check for stuck pods |
+
+---
+
+## Summary: When to Use What
+
+| Scenario              | Key Settings                                                         |
+| --------------------- | -------------------------------------------------------------------- |
+| Public web service    | `public: true`, `readiness.httpGet`, resources                       |
+| Internal microservice | `public: false`, `readiness.httpGet`                                 |
+| Database/stateful     | `capacityType: ON_DEMAND`, `serviceDisks`, `readiness.tcpSocketPort` |
+| Background worker     | `public: false`, `capacityType: SPOT`, `readiness.disabled: true`    |
+| High-memory service   | Larger `memory.limit`, consider `ON_DEMAND`                          |
+| Cost-sensitive dev    | `capacityType: SPOT`, minimal resources                              |
+
+---
+
+## Complete Example
+
+```yaml
+services:
+  - name: my-api
+    github:
+      repository: org/my-api
+      branchName: main
+      docker:
+        defaultTag: latest
+        app:
+          dockerfilePath: Dockerfile
+          ports:
+            - 8080
+      deployment:
+        public: true
+        capacityType: ON_DEMAND
+        resource:
+          cpu:
+            request: "500m"
+            limit: "1000m"
+          memory:
+            request: "1Gi"
+            limit: "2Gi"
+        readiness:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 5
+        hostnames:
+          host: api.example.com
+          acmARN: arn:aws:acm:us-east-1:123456789:certificate/abc
+        network:
+          ipWhitelist:
+            - "10.0.0.0/8"
+          pathPortMapping:
+            /api: "8080"
+            /metrics: "9090"
+        serviceDisks:
+          - name: app-data
+            mountPath: /data
+            storageSize: 10Gi
+            accessModes: ReadWriteOnce
+```
