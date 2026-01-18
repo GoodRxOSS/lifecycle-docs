@@ -1,0 +1,282 @@
+---
+title: GitHub Service
+description: Build and deploy services from GitHub repositories with Docker
+tags:
+  - schema
+  - github
+  - docker
+  - deployment
+  - build
+---
+
+import { Callout } from "nextra/components";
+import { Tabs } from "nextra/components";
+
+The `github` service type builds and deploys applications from a GitHub repository using a Dockerfile. This is the most common service type for application code that needs to be built from source.
+
+## Examples
+
+<Tabs items={["Minimal", "With Deployment Options", "Complete"]}>
+
+<Tabs.Tab>
+Minimal configuration with only required fields:
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "api"
+    github:
+      repository: "myorg/api" # Required - GitHub repo in owner/repo format
+      branchName: "main" # Required - default branch to build
+      docker: # Required - Docker build configuration
+        defaultTag: "main" # Required - image tag, typically matches branch
+        app: # Required - main application container
+          dockerfilePath: "Dockerfile" # Required - path to Dockerfile
+          ports:
+            - 3000
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+Configuration with deployment options:
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "api"
+    github:
+      repository: "myorg/api"
+      branchName: "main"
+      docker:
+        defaultTag: "main"
+        builder:
+          engine: "buildkit" # Options: buildkit (default), codefresh, kaniko
+        app:
+          dockerfilePath: "Dockerfile"
+          env:
+            NODE_ENV: "production"
+            LOG_LEVEL: "info"
+          ports:
+            - 3000
+      deployment:
+        public: true # Creates ingress for external access
+        resource: # Custom CPU/memory allocation
+          cpu:
+            request: "100m"
+            limit: "500m"
+          memory:
+            request: "256Mi"
+            limit: "512Mi"
+        readiness: # Health check configuration
+          httpGet:
+            path: "/health"
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+Complete configuration with all options:
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "api"
+    github:
+      repository: "myorg/api"
+      branchName: "main"
+      docker:
+        defaultTag: "main"
+        builder:
+          engine: "buildkit" # Options: buildkit (default), codefresh, kaniko
+        # Init container - runs before main application (optional)
+        init:
+          dockerfilePath: "docker/migrate.dockerfile"
+          command: "/bin/sh"
+          arguments: "-c%%SPLIT%%npm run db:migrate" # Use %%SPLIT%% for spaces in arguments
+          env:
+            DATABASE_URL: "postgres://{{database_internalHostname}}:5432/app"
+        # Main application container (required)
+        app:
+          dockerfilePath: "Dockerfile"
+          command: "node" # Optional - override entrypoint
+          arguments: "dist/main.js" # Optional - arguments to command
+          env:
+            NODE_ENV: "production"
+            DATABASE_URL: "postgres://{{database_internalHostname}}:5432/app"
+            REDIS_URL: "redis://{{cache_internalHostname}}:6379"
+          ports:
+            - 3000
+            - 9090
+      deployment:
+        public: true # true = creates ingress, false = internal only
+        capacityType: "spot" # Options: spot, on-demand
+        resource: # Custom CPU/memory requests and limits
+          cpu:
+            request: "100m"
+            limit: "1000m"
+          memory:
+            request: "256Mi"
+            limit: "1Gi"
+        readiness: # Health check - httpGet or tcpSocketPort
+          httpGet:
+            path: "/health"
+            port: 3000
+          initialDelaySeconds: 15 # Delay before first check
+          periodSeconds: 10 # Check interval
+          timeoutSeconds: 5 # Check timeout
+          failureThreshold: 3 # Failures before unhealthy
+        hostnames: # Optional - auto-constructed from global_config if omitted
+          host: "api.example.com"
+          defaultPublicUrl: "api.myapp.example.com"
+        network: # Optional - advanced routing
+          ipWhitelist:
+            - "10.0.0.0/8"
+          pathPortMapping: # Map URL paths to container ports
+            "/api": 3000
+            "/metrics": 9090
+          grpc: # gRPC support
+            enable: true
+            host: "grpc.api.example.com"
+        serviceDisks: # Optional - persistent volume mounts
+          - name: "uploads" # Required - volume name
+            mountPath: "/app/uploads" # Required - path in container
+            storageSize: "5Gi" # Required - storage size
+            accessModes: "ReadWriteOnce" # Optional - ReadWriteOnce or ReadWriteMany
+```
+
+</Tabs.Tab>
+
+</Tabs>
+
+## Docker Configuration
+
+The `docker` section defines how the application is built and run.
+
+### docker.defaultTag
+
+The default Docker image tag, typically matching the branch name.
+
+### docker.builder
+
+Configuration for the Docker build process. The `engine` field specifies which build engine to use:
+
+- `buildkit` - BuildKit engine (default)
+- `codefresh` - Codefresh build engine
+- `kaniko` - Kaniko build engine
+
+### docker.app (Required)
+
+Configuration for the main application container:
+
+- `dockerfilePath` - **Required.** Path to Dockerfile relative to repo root
+- `command` - Override container entrypoint
+- `arguments` - Arguments passed to the command. Use `%%SPLIT%%` as a delimiter for spaces (e.g., `-c%%SPLIT%%npm run start`)
+- `env` - Environment variables
+- `ports` - Exposed container ports
+
+### docker.init (Optional)
+
+Configuration for an init container that runs before the main application. Uses the same fields as `docker.app`.
+
+## Deployment Options
+
+The `deployment` section configures how the service is deployed to Kubernetes. All fields are optional.
+
+### public
+
+Controls whether the service is exposed via ingress for external access.
+
+- `true` - Creates an ingress, service gets a public URL
+- `false` - Internal only, accessible only within the cluster
+
+### capacityType
+
+Specifies the node capacity type for scheduling:
+
+- `spot` - Use spot/preemptible instances (cost-effective)
+- `on-demand` - Use on-demand instances (more reliable)
+
+### resource
+
+CPU and memory requests and limits for the container:
+
+| Field            | Description                               |
+| ---------------- | ----------------------------------------- |
+| `cpu.request`    | Minimum CPU guaranteed (e.g., `100m`)     |
+| `cpu.limit`      | Maximum CPU allowed (e.g., `1000m`)       |
+| `memory.request` | Minimum memory guaranteed (e.g., `256Mi`) |
+| `memory.limit`   | Maximum memory allowed (e.g., `1Gi`)      |
+
+### readiness
+
+Health check configuration to determine when the service is ready to receive traffic.
+
+**HTTP health check:**
+
+| Field          | Description                          |
+| -------------- | ------------------------------------ |
+| `httpGet.path` | HTTP endpoint path (e.g., `/health`) |
+| `httpGet.port` | Port to check                        |
+
+**TCP health check:**
+
+| Field           | Description                    |
+| --------------- | ------------------------------ |
+| `tcpSocketPort` | TCP port to check connectivity |
+
+**Common fields:**
+
+| Field                 | Description                          |
+| --------------------- | ------------------------------------ |
+| `initialDelaySeconds` | Delay before first check             |
+| `periodSeconds`       | Interval between checks              |
+| `timeoutSeconds`      | Timeout for each check               |
+| `successThreshold`    | Consecutive successes to be healthy  |
+| `failureThreshold`    | Consecutive failures to be unhealthy |
+
+### hostnames
+
+Custom hostname configuration. If omitted, hostnames are auto-constructed from `global_config` values.
+
+| Field                     | Description                     |
+| ------------------------- | ------------------------------- |
+| `host`                    | Custom hostname suffix          |
+| `defaultInternalHostname` | Internal Kubernetes hostname    |
+| `defaultPublicUrl`        | Default public URL              |
+| `acmARN`                  | AWS ACM certificate ARN for TLS |
+
+### network
+
+Advanced network configuration:
+
+| Field             | Description                                |
+| ----------------- | ------------------------------------------ |
+| `ipWhitelist`     | Array of allowed IP ranges (CIDR notation) |
+| `pathPortMapping` | Map URL paths to container ports           |
+| `hostPortMapping` | Map hostnames to container ports           |
+| `grpc.enable`     | Enable gRPC support                        |
+| `grpc.host`       | gRPC hostname                              |
+
+### serviceDisks
+
+Persistent volume mounts for stateful data:
+
+| Field         | Required | Description                        |
+| ------------- | -------- | ---------------------------------- |
+| `name`        | Yes      | Volume name                        |
+| `mountPath`   | Yes      | Path inside the container          |
+| `storageSize` | Yes      | Storage size (e.g., `10Gi`)        |
+| `accessModes` | No       | `ReadWriteOnce` or `ReadWriteMany` |
+| `medium`      | No       | Storage medium                     |
+
+## Template Variables
+
+Reference other services in your configuration using template variables. See the [Template Variables](/docs/features/template-variables) guide for the complete list.
+
+```yaml
+env:
+  DATABASE_URL: "postgres://{{database_internalHostname}}:5432/app"
+  CACHE_URL: "redis://{{cache_internalHostname}}:6379"
+  FRONTEND_URL: "https://{{frontend_publicUrl}}"
+```

@@ -20,7 +20,6 @@ import React, { useState, useEffect } from "react";
 import { Pre, HighlightedCode, highlight, RawCode } from "codehike/code";
 import {
   callout,
-  wordWrap,
   className,
   tabs,
   mark,
@@ -92,7 +91,6 @@ function Code({ codeblock }: { codeblock: RawCode | HighlightedCode }) {
       code={highlightedCode}
       handlers={[
         callout,
-        wordWrap,
         className,
         tabs,
         mark,

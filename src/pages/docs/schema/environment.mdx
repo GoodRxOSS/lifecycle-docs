@@ -1,0 +1,204 @@
+---
+title: Environment Configuration
+description: Configure deployment behavior, service grouping, and automation for ephemeral environments
+tags:
+  - schema
+  - environment
+  - configuration
+  - services
+---
+
+import { Callout } from "nextra/components";
+import { Tabs } from "nextra/components";
+
+The `environment` section controls how Lifecycle deploys and manages your ephemeral environments. It defines which services are deployed by default, which are optional, and how automation (webhooks) should behave.
+
+## Fields Reference
+
+| Field                    | Type    | Required | Description                              |
+| ------------------------ | ------- | -------- | ---------------------------------------- |
+| `autoDeploy`             | boolean | No       | Automatically deploy on PR updates       |
+| `defaultServices`        | array   | Yes      | Services deployed with every environment |
+| `optionalServices`       | array   | No       | Services available on-demand             |
+| `webhooks`               | array   | No       | Automation triggers on state changes     |
+| `enabledFeatures`        | array   | No       | Feature flags for the environment        |
+| `githubDeployments`      | boolean | No       | Create GitHub deployment records         |
+| `useGithubStatusComment` | boolean | No       | Post status comments on PRs              |
+
+## defaultServices
+
+Services listed in `defaultServices` are deployed automatically when an environment is created. At least one default service is required.
+
+```yaml filename="lifecycle.yaml"
+environment:
+  defaultServices:
+    - name: "api" # Required - service name (must match a service definition)
+    - name: "frontend"
+    - name: "database"
+```
+
+### Service Reference Fields
+
+Each entry in `defaultServices` can include optional fields to override the service configuration:
+
+| Field        | Type   | Description                                                   |
+| ------------ | ------ | ------------------------------------------------------------- |
+| `name`       | string | **Required.** Name matching a service in the `services` array |
+| `repository` | string | Override the repository for this service                      |
+| `branch`     | string | Override the branch for this service                          |
+| `serviceId`  | number | Internal service ID reference                                 |
+
+```yaml filename="lifecycle.yaml"
+environment:
+  defaultServices:
+    - name: "api"
+      repository: "myorg/api" # Optional - override repository
+      branch: "develop" # Optional - override branch
+```
+
+## optionalServices
+
+Services listed in `optionalServices` are not deployed by default but can be added to an environment on-demand through the Lifecycle UI or API.
+
+```yaml filename="lifecycle.yaml"
+environment:
+  defaultServices:
+    - name: "api"
+  optionalServices:
+    - name: "cache"
+      repository: "myorg/services"
+      branch: "main"
+    - name: "worker"
+      repository: "myorg/services"
+      branch: "main"
+```
+
+<Callout type="info">
+  Optional services are useful for components that aren't always needed, like
+  background workers, caching layers, or additional databases for specific
+  testing scenarios.
+</Callout>
+
+## autoDeploy
+
+When `autoDeploy` is enabled, Lifecycle automatically triggers a deployment whenever the PR is updated (new commits pushed).
+
+```yaml filename="lifecycle.yaml"
+environment:
+  autoDeploy: true # Default: false
+  defaultServices:
+    - name: "api"
+```
+
+<Callout type="info">
+  With `autoDeploy: true`, environments are created automatically on every
+  commit to the PR branch without requiring manual label addition.
+</Callout>
+
+## webhooks
+
+Webhooks allow you to trigger external actions when the environment reaches certain states. See the [Webhooks](/docs/schema/webhooks) page for detailed configuration.
+
+```yaml filename="lifecycle.yaml"
+environment:
+  defaultServices:
+    - name: "api"
+  webhooks:
+    - name: "Run E2E Tests"
+      state: deployed
+      type: docker
+      docker:
+        image: "myorg/e2e-tests:latest"
+      env:
+        TEST_URL: "https://{{api_publicUrl}}"
+```
+
+## Examples
+
+<Tabs items={["Minimal", "With Optional Services", "Complete"]}>
+
+<Tabs.Tab>
+The minimal configuration requires only `defaultServices`:
+
+```yaml filename="lifecycle.yaml"
+environment:
+  defaultServices:
+    - name: "api"
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+Configuration with both default and optional services:
+
+```yaml filename="lifecycle.yaml"
+environment:
+  autoDeploy: true
+  defaultServices:
+    - name: "api"
+    - name: "frontend"
+    - name: "database"
+  optionalServices:
+    - name: "cache"
+      repository: "myorg/infrastructure"
+      branch: "main"
+    - name: "worker"
+      repository: "myorg/api"
+      branch: "main"
+    - name: "monitoring"
+      repository: "myorg/tools"
+      branch: "main"
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+Complete configuration with all options:
+
+```yaml filename="lifecycle.yaml"
+environment:
+  autoDeploy: true
+  githubDeployments: true
+  useGithubStatusComment: true
+
+  defaultServices:
+    - name: "api"
+    - name: "frontend"
+    - name: "database"
+
+  optionalServices:
+    - name: "cache"
+      repository: "myorg/infrastructure"
+      branch: "main"
+    - name: "worker"
+
+  webhooks:
+    # Run tests after deployment
+    - name: "Integration Tests"
+      state: deployed
+      type: docker
+      docker:
+        image: "myorg/integration-tests:latest"
+        timeout: 1800
+      env:
+        API_URL: "https://{{api_publicUrl}}"
+        FRONTEND_URL: "https://{{frontend_publicUrl}}"
+
+    # Notify on errors
+    - name: "Slack Alert"
+      state: error
+      type: command
+      command:
+        image: "alpine:latest"
+        script: |
+          apk add --no-cache curl
+          curl -X POST "$SLACK_WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d '{"text":"Deployment failed for PR"}'
+      env:
+        SLACK_WEBHOOK: "https://hooks.slack.com/services/XXX/YYY/ZZZ"
+```
+
+</Tabs.Tab>
+
+</Tabs>

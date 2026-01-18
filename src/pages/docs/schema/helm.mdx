@@ -1,0 +1,289 @@
+---
+title: Helm Service
+description: Deploy services using Helm charts - local, OCI, or public repositories
+tags:
+  - schema
+  - helm
+  - kubernetes
+  - charts
+---
+
+import { Callout } from "nextra/components";
+import { Tabs } from "nextra/components";
+
+The `helm` service type deploys applications using Helm charts. It supports local charts, OCI registries, and public Helm repositories. You can optionally include a Docker build step for custom images.
+
+<Callout type="info">
+  For advanced Helm deployment features like native Helm and environment
+  variable mapping, see the [Native Helm
+  Deployment](/docs/features/native-helm-deployment) guide.
+</Callout>
+
+## Examples
+
+<Tabs items={["Local Chart", "OCI Registry", "Public Bitnami", "Complete"]}>
+
+<Tabs.Tab>
+Local chart with Docker build:
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "web-app"
+    helm:
+      repository: "myorg/web-app" # Required for builds - GitHub repo
+      branchName: "main" # Required for builds - branch
+      chart:
+        name: "./charts/web-app" # Local chart path (relative to repo root)
+        valueFiles:
+          - "./helm/values.yaml"
+      docker:
+        defaultTag: "main" # Required - image tag
+        app: # Required - main application container
+          dockerfilePath: "Dockerfile" # Required - path to Dockerfile
+          ports:
+            - 3000
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+OCI registry chart with Docker build:
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "api"
+    helm:
+      repository: "myorg/api" # Required for builds - GitHub repo
+      branchName: "main" # Required for builds - branch
+      chart:
+        name: "oci://registry.example.com/charts/api" # OCI registry URL
+        version: "1.2.0" # Chart version
+        values:
+          - "replicaCount=2"
+          - "labels.app=api"
+      docker:
+        defaultTag: "main"
+        builder:
+          engine: "buildkit" # Options: buildkit (default), codefresh, kaniko
+        app:
+          dockerfilePath: "Dockerfile"
+          command: "node" # Optional - override entrypoint
+          arguments: "dist/main.js" # Optional - arguments to command
+          env:
+            NODE_ENV: "production"
+          ports:
+            - 8080
+```
+
+<Callout type="info">
+  For Helm template variables that should be resolved at deployment time, use triple braces `{{{variable}}}` to prevent Helm from processing them prematurely.
+</Callout>
+</Tabs.Tab>
+
+<Tabs.Tab>
+Public Bitnami chart (no Docker build):
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "jenkins"
+    helm:
+      chart:
+        name: "jenkins" # Public chart name
+        repoUrl: "https://charts.bitnami.com/bitnami" # Helm repository URL
+        version: "13.6.8" # Chart version
+        values:
+          - "service.type=ClusterIP"
+          - "ingress.enabled=true"
+          - "ingress.hostname={{jenkins_publicUrl}}"
+          - "ingress.ingressClassName=nginx"
+```
+
+Other popular Bitnami charts:
+
+```yaml
+# PostgreSQL
+chart:
+  name: "postgresql"
+  repoUrl: "https://charts.bitnami.com/bitnami"
+  version: "12.9.0"
+  values:
+    - "auth.username=myuser"
+    - "auth.database=mydb"
+
+# Redis
+chart:
+  name: "redis"
+  repoUrl: "https://charts.bitnami.com/bitnami"
+  version: "18.4.0"
+  values:
+    - "architecture=standalone"
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+Complete configuration with all options:
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "api-gateway"
+    helm:
+      deploymentMethod: "native" # Use native Helm deployment
+      version: "3.14.0" # Helm CLI version
+      args: "--wait --timeout 10m" # Additional Helm args
+
+      repository: "myorg/api-services" # Required for builds - GitHub repo
+      branchName: "main" # Required for builds - branch
+
+      chart:
+        name: "./charts/microservices" # Local chart path
+        values: # Inline Helm values (key=value format)
+          - "replicaCount=2"
+          - "service.type=LoadBalancer"
+          - "ingress.enabled=true"
+          - "labels.environment=preview"
+        valueFiles: # Value file paths (relative to repo root)
+          - "deploy/helm/base-values.yaml"
+          - "deploy/helm/api-gateway-values.yaml"
+
+      # Environment variable mapping for native Helm
+      envMapping:
+        app:
+          format: "array" # Options: array, map
+          path: "containers.api.env"
+
+      docker:
+        defaultTag: "main"
+        builder:
+          engine: "buildkit" # Options: buildkit (default), codefresh, kaniko
+        # Init container - runs before main application (optional)
+        init:
+          dockerfilePath: "docker/migrate.dockerfile"
+          command: "/bin/sh"
+          arguments: "-c%%SPLIT%%npm run migrate" # Use %%SPLIT%% for spaces
+        # Main application container (required)
+        app:
+          dockerfilePath: "docker/api.dockerfile"
+          command: "node" # Optional - override entrypoint
+          arguments: "dist/main.js" # Optional - arguments to command
+          env:
+            NODE_ENV: "production"
+            BACKEND_URL: "{{backend_internalHostname}}:3000"
+          ports:
+            - 8080
+            - 9090
+```
+
+</Tabs.Tab>
+
+</Tabs>
+
+## Chart Configuration
+
+The `chart` section is required and defines which Helm chart to deploy.
+
+<Callout type="info">
+  Commonly used charts can be configured in the `global_config` table to reuse
+  chart configuration across multiple services.
+</Callout>
+
+### chart.name (Required)
+
+The chart name can be one of:
+
+| Value                    | Description                         |
+| ------------------------ | ----------------------------------- |
+| `"./"` or `"../"` prefix | Relative path to local chart        |
+| `"oci://..."`            | OCI registry chart URL              |
+| Chart name               | Public chart name from a repository |
+
+### chart.repoUrl
+
+URL of the Helm repository (required for public charts).
+
+### chart.version
+
+Specific chart version to deploy.
+
+### chart.values
+
+Array of Helm values in `key=value` format.
+
+### chart.valueFiles
+
+Array of value file paths relative to the repository root.
+
+## Docker Configuration
+
+The optional `docker` section defines how to build a custom image. This uses the same configuration as the [GitHub service docker section](/docs/schema/github#docker-configuration).
+
+### docker.defaultTag
+
+The default Docker image tag, typically matching the branch name.
+
+### docker.builder
+
+Configuration for the Docker build process. The `engine` field specifies which build engine to use:
+
+- `buildkit` - BuildKit engine (default)
+- `codefresh` - Codefresh build engine
+- `kaniko` - Kaniko build engine
+
+### docker.app (Required when using docker)
+
+Configuration for the main application container:
+
+- `dockerfilePath` - **Required.** Path to Dockerfile relative to repo root
+- `command` - Override container entrypoint
+- `arguments` - Arguments passed to the command. Use `%%SPLIT%%` as a delimiter for spaces (e.g., `-c%%SPLIT%%npm run start`)
+- `env` - Environment variables
+- `ports` - Exposed container ports
+
+### docker.init (Optional)
+
+Configuration for an init container that runs before the main application. Uses the same fields as `docker.app`.
+
+## Complete Fields Reference
+
+| Field              | Type   | Required   | Description               |
+| ------------------ | ------ | ---------- | ------------------------- |
+| `chart.name`       | string | **Yes**    | Chart name or path        |
+| `chart.repoUrl`    | string | For public | Helm repository URL       |
+| `chart.version`    | string | No         | Chart version             |
+| `chart.values`     | array  | No         | Inline Helm values        |
+| `chart.valueFiles` | array  | No         | Value file paths          |
+| `repository`       | string | For builds | GitHub repository         |
+| `branchName`       | string | For builds | Branch to build from      |
+| `docker`           | object | No         | Docker build config       |
+| `args`             | string | No         | Additional Helm arguments |
+| `version`          | string | No         | Helm CLI version          |
+| `deploymentMethod` | string | No         | `"native"` or `"ci"`      |
+
+## Templated Variables
+
+Use templated variables in chart values to reference dynamic deployment values. See the [Template Variables](/docs/features/template-variables) guide for the complete list.
+
+<Callout type="info">
+  Use triple braces `{{{variable}}}` for Lifecycle template variables. This prevents Helm from trying to process them as Helm template functions.
+</Callout>
+
+## Native Helm Deployment
+
+For more control over Helm deployments, enable native Helm:
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "api"
+    helm:
+      deploymentMethod: "native" # Enable native Helm
+      # ... rest of config
+```
+
+Native Helm provides:
+
+- Direct Kubernetes job execution
+- Real-time deployment logs
+- Better handling of concurrent deployments
+- Full Helm argument control
+
+See the [Native Helm Deployment](/docs/features/native-helm-deployment) guide for details.

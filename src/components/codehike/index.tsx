@@ -24,7 +24,6 @@ export {
   MAX_TRANSITION_DURATION,
 } from "@/components/codehike/constants";
 export {
-  wordWrap,
   tokenTransitions,
   SmoothPre,
   callout,

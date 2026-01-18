@@ -1,0 +1,167 @@
+---
+title: Schema Overview
+description: Introduction to the lifecycle.yaml configuration file and its structure
+tags:
+  - schema
+  - configuration
+  - lifecycle.yaml
+---
+
+import { Callout } from "nextra/components";
+
+The `lifecycle.yaml` file is the core configuration file that defines how Lifecycle manages your ephemeral environments. Place this file at the root of your repository.
+
+## File Structure
+
+A `lifecycle.yaml` file has three main sections:
+
+```yaml filename="lifecycle.yaml"
+version: "1.0.0" # Schema version
+
+environment: # Environment-level configuration
+  autoDeploy: true
+  defaultServices:
+    - name: "my-service"
+  # optionalServices, webhooks, etc.
+
+services: # Service definitions
+  - name: "my-service"
+    github: # Service type configuration
+      # ...
+```
+
+| Section       | Description                                                  |
+| ------------- | ------------------------------------------------------------ |
+| `version`     | Schema version (currently `"1.0.0"`)                         |
+| `environment` | Controls deployment behavior, service grouping, and webhooks |
+| `services`    | Array of service definitions with their configurations       |
+
+## Service Types
+
+Each service in the `services` array must have exactly one service type configured. Choose based on your deployment needs:
+
+| Service Type                                     | Use Case                                                          |
+| ------------------------------------------------ | ----------------------------------------------------------------- |
+| [**github**](/docs/schema/github)                | Build and deploy from a GitHub repository with Dockerfile         |
+| [**docker**](/docs/schema/docker)                | Deploy pre-built Docker images (databases, caches, etc.)          |
+| [**helm**](/docs/schema/helm)                    | Deploy using Helm charts (local or remote)                        |
+| [**codefresh**](/docs/schema/codefresh)          | Trigger external Codefresh pipelines for deployment               |
+| [**auroraRestore**](/docs/schema/aurora-restore) | Restore AWS Aurora database snapshots                             |
+| [**configuration**](/docs/schema/configuration)  | Deploy configuration-only services (feature flags, shared config) |
+
+## Choosing a Service Type
+
+```
+Do you need to build from source?
+├─ Yes → Do you need custom Helm charts?
+│        ├─ Yes → helm (with docker section)
+│        └─ No  → github
+└─ No  → Is it a pre-built image?
+         ├─ Yes → docker
+         └─ No  → Do you need Helm charts?
+                  ├─ Yes → helm (without docker section)
+                  └─ No  → Is it a CI/CD pipeline?
+                           ├─ Yes → codefresh
+                           └─ No  → configuration or auroraRestore
+```
+
+## Minimal Example
+
+Here's the simplest valid `lifecycle.yaml` for a single service:
+
+```yaml filename="lifecycle.yaml"
+version: "1.0.0"
+
+environment:
+  defaultServices:
+    - name: "api"
+
+services:
+  - name: "api"
+    github:
+      repository: "myorg/api"
+      branchName: "main"
+      docker:
+        defaultTag: "main"
+        app:
+          dockerfilePath: "Dockerfile"
+          ports:
+            - 3000
+```
+
+## Complete Example
+
+A more complete example with multiple service types:
+
+```yaml filename="lifecycle.yaml"
+version: "1.0.0"
+
+environment:
+  autoDeploy: true
+  defaultServices:
+    - name: "api"
+    - name: "database"
+  optionalServices:
+    - name: "cache"
+      repository: "myorg/services"
+      branch: "main"
+  webhooks:
+    - name: "E2E Tests"
+      state: deployed
+      type: docker
+      docker:
+        image: "myorg/e2e-tests:latest"
+      env:
+        TEST_URL: "https://{{api_publicUrl}}"
+
+services:
+  # Build from GitHub repository
+  - name: "api"
+    github:
+      repository: "myorg/api"
+      branchName: "main"
+      docker:
+        defaultTag: "main"
+        app:
+          dockerfilePath: "Dockerfile"
+          ports:
+            - 3000
+      deployment:
+        public: true
+
+  # Pre-built Docker image
+  - name: "database"
+    docker:
+      dockerImage: "postgres"
+      defaultTag: "15-alpine"
+      ports:
+        - 5432
+      env:
+        POSTGRES_USER: "app"
+        POSTGRES_PASSWORD: "secret"
+        POSTGRES_DB: "myapp"
+      deployment:
+        public: false
+
+  # Pre-built Docker image (optional)
+  - name: "cache"
+    docker:
+      dockerImage: "redis"
+      defaultTag: "7-alpine"
+      ports:
+        - 6379
+```
+
+## Template Variables
+
+Throughout your configuration, you can use template variables like `{{api_publicUrl}}` or `{{database_internalHostname}}` to reference dynamic values from other services.
+
+See the [Template Variables](/docs/features/template-variables) guide for the complete list of available variables and usage examples.
+
+## Next Steps
+
+- [Environment Configuration](/docs/schema/environment) - Configure deployment behavior and service grouping
+- [Webhooks](/docs/schema/webhooks) - Automate actions on deployment events
+- [GitHub Service](/docs/schema/github) - Build and deploy from source
+- [Docker Service](/docs/schema/docker) - Deploy pre-built images
+- [Helm Service](/docs/schema/helm) - Deploy with Helm charts

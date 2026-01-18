@@ -25,7 +25,6 @@ import {
 } from "codehike/utils/selection";
 import {
   callout,
-  wordWrap,
   className,
   tabs,
   mark,
@@ -114,7 +113,6 @@ function Code({ codeblock }: { codeblock: RawCode | HighlightedCode }) {
       code={highlightedCode}
       handlers={[
         callout,
-        wordWrap,
         className,
         tabs,
         mark,
