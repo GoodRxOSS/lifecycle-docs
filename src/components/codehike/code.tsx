@@ -21,7 +21,6 @@ import dynamic from "next/dynamic";
 import { Pre, type CustomPreProps } from "codehike/code";
 import {
   callout,
-  wordWrap,
   className,
   tabs,
   mark,
@@ -42,7 +41,6 @@ export const CodeHikeSSR = ({
   codeblock,
   handlers = [
     callout,
-    wordWrap,
     className,
     tabs,
     mark,

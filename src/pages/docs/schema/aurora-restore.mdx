@@ -1,0 +1,98 @@
+---
+title: Aurora Restore Service
+description: Restore AWS Aurora database snapshots for ephemeral environments
+tags:
+  - schema
+  - aurora
+  - database
+  - aws
+  - restore
+---
+
+import { Callout } from "nextra/components";
+
+The `auroraRestore` service type restores AWS Aurora database snapshots for use in ephemeral environments. This allows you to test against production-like data.
+
+<Callout type="warning">
+  This documentation is still in progress and will be updated shortly with the
+  latest information.
+</Callout>
+
+## Required Fields
+
+| Field       | Type   | Description                                  |
+| ----------- | ------ | -------------------------------------------- |
+| `command`   | string | Command to execute for the restore operation |
+| `arguments` | string | Arguments passed to the command              |
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "database-restore"
+    auroraRestore:
+      command: "/restore/run.sh" # Required
+      arguments: "--snapshot-id latest" # Required
+```
+
+## How It Works
+
+1. When the environment is deployed, Lifecycle executes the configured command with arguments
+2. The command typically triggers an Aurora snapshot restore process
+3. Once complete, the restored database is available for other services
+
+<Callout type="info">
+  The `auroraRestore` service type is a specialized service that runs a command
+  to initiate database restoration. The actual restore logic is implemented in
+  your command/script.
+</Callout>
+
+## Example
+
+```yaml filename="lifecycle.yaml"
+environment:
+  defaultServices:
+    - name: "api"
+    - name: "aurora-db"
+
+services:
+  - name: "api"
+    github:
+      repository: "myorg/api"
+      branchName: "main"
+      docker:
+        defaultTag: "main"
+        app:
+          dockerfilePath: "Dockerfile"
+          env:
+            DATABASE_URL: "{{aurora-db_internalHostname}}:5432"
+          ports:
+            - 3000
+
+  - name: "aurora-db"
+    auroraRestore:
+      command: "/scripts/restore-aurora.sh"
+      arguments: "--cluster my-cluster --snapshot production-backup"
+```
+
+## Use Cases
+
+- **Production data testing** - Test features against realistic production data
+- **Database migrations** - Validate migrations against production schema
+- **Performance testing** - Benchmark against production-scale data
+- **Bug reproduction** - Reproduce issues with production data state
+
+<Callout type="warning">
+  When restoring from production snapshots, ensure sensitive data is properly
+  anonymized or that access is appropriately restricted.
+</Callout>
+
+## Implementation Notes
+
+The restore command is executed as part of the environment deployment process. Your script should:
+
+1. Handle authentication with AWS
+2. Initiate the snapshot restore
+3. Wait for the restore to complete
+4. Configure network access to the restored instance
+5. Return the connection information
+
+The restored database endpoint can then be referenced by other services using template variables.

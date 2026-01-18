@@ -15,34 +15,34 @@
  */
 
 export default {
-  "what-is-lifecycle": {
-    "title": "What is Lifecycle?"
+  "overview": {
+    "title": "Schema Overview"
   },
-  "setup": {
-    "title": "Setup & Installation"
+  "environment": {
+    "title": "Environment Configuration"
   },
-  "-": {
+  "webhooks": {
+    "title": "Webhooks Configuration"
+  },
+  "---": {
     "type": "separator"
   },
-  "getting-started": {
-    "title": "Getting Started"
+  "github": {
+    "title": "GitHub Service"
   },
-  "schema": {
-    "title": "Schema Reference"
+  "docker": {
+    "title": "Docker Service"
   },
-  "--": {
-    "type": "separator"
+  "helm": {
+    "title": "Helm Service"
   },
-  "features": {
-    "title": "Features"
+  "codefresh": {
+    "title": "Codefresh Service"
   },
-  "tips": {
-    "title": "Tips"
+  "aurora-restore": {
+    "title": "Aurora Restore Service"
   },
-  "troubleshooting": {
-    "title": "Troubleshooting"
-  },
-  "----": {
-    "type": "separator"
+  "configuration": {
+    "title": "Configuration Service"
   }
 };

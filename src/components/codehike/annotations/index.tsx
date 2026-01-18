@@ -20,7 +20,6 @@ export {
   tokenTransitions,
   SmoothPre,
 } from "@/components/codehike/annotations/token-transitions";
-export { wordWrap } from "@/components/codehike/annotations/word-wrap";
 export { link } from "@/components/codehike/annotations/link";
 export { mark } from "@/components/codehike/annotations/mark";
 export { foldinline } from "@/components/codehike/annotations/fold-inline";

@@ -18,7 +18,7 @@
 
 import { useState, useEffect } from "react";
 import { Pre, highlight, HighlightedCode } from "codehike/code";
-import { tokenTransitions, wordWrap } from "@/components/codehike/annotations";
+import { tokenTransitions } from "@/components/codehike/annotations";
 import dynamic from "next/dynamic";
 import Loader from "@/components/loader";
 import {
@@ -56,7 +56,7 @@ function TokenTransitionToggleClient({
       <div className="relative">
         <Pre
           code={currentCode}
-          handlers={[tokenTransitions, wordWrap]}
+          handlers={[tokenTransitions]}
           className="p-4 rounded-none"
           style={{ position: "relative" }}
         />

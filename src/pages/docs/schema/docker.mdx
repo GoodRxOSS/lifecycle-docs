@@ -1,0 +1,263 @@
+---
+title: Docker Service
+description: Deploy pre-built Docker images like databases, caches, and other infrastructure components
+tags:
+  - schema
+  - docker
+  - database
+  - redis
+  - postgres
+---
+
+import { Callout } from "nextra/components";
+import { Tabs } from "nextra/components";
+
+The `docker` service type deploys pre-built Docker images without building from source. This is ideal for databases, caches, message queues, and other infrastructure components.
+
+## Examples
+
+<Tabs items={["PostgreSQL", "Redis", "MySQL with Persistence", "Complete"]}>
+
+<Tabs.Tab>
+PostgreSQL database (internal only):
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "database"
+    docker:
+      dockerImage: "postgres" # Required - Docker image name
+      defaultTag: "15-alpine" # Required - image tag
+      ports:
+        - 5432
+      env:
+        POSTGRES_USER: "app"
+        POSTGRES_PASSWORD: "secret"
+        POSTGRES_DB: "myapp"
+      deployment:
+        public: false # No ingress - internal only
+```
+
+Reference from other services:
+
+```yaml
+env:
+  DATABASE_URL: "postgres://app:secret@{{database_internalHostname}}:5432/myapp"
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+Redis cache:
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "cache"
+    docker:
+      dockerImage: "redis"
+      defaultTag: "7-alpine"
+      command: "redis-server" # Override entrypoint
+      arguments: "--appendonly%%SPLIT%%yes" # Use %%SPLIT%% for spaces
+      ports:
+        - 6379
+      deployment:
+        public: false
+        resource: # Custom memory allocation
+          memory:
+            request: "128Mi"
+            limit: "256Mi"
+```
+
+Reference from other services:
+
+```yaml
+env:
+  REDIS_URL: "redis://{{cache_internalHostname}}:6379"
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+MySQL with persistent storage:
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "mysql"
+    docker:
+      dockerImage: "mysql"
+      defaultTag: "8.0"
+      ports:
+        - 3306
+      env:
+        MYSQL_ROOT_PASSWORD: "rootpassword"
+        MYSQL_DATABASE: "myapp"
+        MYSQL_USER: "app"
+        MYSQL_PASSWORD: "apppassword"
+      deployment:
+        public: false
+        resource:
+          cpu:
+            request: "100m"
+          memory:
+            request: "512Mi"
+            limit: "1Gi"
+        readiness: # Health check
+          tcpSocketPort: 3306
+          initialDelaySeconds: 30
+        serviceDisks: # Persistent volume
+          - name: "mysql-data"
+            mountPath: "/var/lib/mysql"
+            storageSize: "10Gi"
+            accessModes: "ReadWriteOnce"
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+Complete configuration with all options:
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "database"
+    docker:
+      dockerImage: "postgres" # Required - Docker image name
+      defaultTag: "15-alpine" # Required - image tag
+      command: "docker-entrypoint.sh" # Optional - override entrypoint
+      arguments: "postgres%%SPLIT%%-c%%SPLIT%%max_connections=200" # Use %%SPLIT%% for spaces
+      ports:
+        - 5432
+      env:
+        POSTGRES_USER: "app"
+        POSTGRES_PASSWORD: "secret"
+        POSTGRES_DB: "myapp"
+        PGDATA: "/var/lib/postgresql/data/pgdata"
+      deployment:
+        public: false # false = internal only, no ingress
+        capacityType: "on-demand" # Options: spot, on-demand
+        resource: # Custom CPU/memory requests and limits
+          cpu:
+            request: "250m"
+            limit: "1000m"
+          memory:
+            request: "512Mi"
+            limit: "2Gi"
+        readiness: # Health check - tcpSocketPort or httpGet
+          tcpSocketPort: 5432
+          initialDelaySeconds: 15 # Delay before first check
+          periodSeconds: 10 # Check interval
+          failureThreshold: 5 # Failures before unhealthy
+        serviceDisks: # Persistent volume mounts
+          - name: "postgres-data" # Required - volume name
+            mountPath: "/var/lib/postgresql/data" # Required - path in container
+            storageSize: "20Gi" # Required - storage size
+            accessModes: "ReadWriteOnce" # Optional - ReadWriteOnce or ReadWriteMany
+```
+
+</Tabs.Tab>
+
+</Tabs>
+
+## Fields Reference
+
+### Required Fields
+
+| Field         | Type   | Description                                   |
+| ------------- | ------ | --------------------------------------------- |
+| `dockerImage` | string | Docker image name (e.g., `postgres`, `redis`) |
+| `defaultTag`  | string | Image tag (e.g., `15-alpine`, `7-alpine`)     |
+
+### Optional Fields
+
+| Field        | Type   | Description                                                 |
+| ------------ | ------ | ----------------------------------------------------------- |
+| `command`    | string | Override container entrypoint                               |
+| `arguments`  | string | Arguments passed to the command. Use `%%SPLIT%%` for spaces |
+| `env`        | object | Environment variables                                       |
+| `ports`      | array  | Exposed container ports                                     |
+| `deployment` | object | Deployment configuration (see below)                        |
+
+## Deployment Options
+
+The `deployment` section configures how the service is deployed to Kubernetes. All fields are optional.
+
+See [GitHub Service - Deployment Options](/docs/schema/github#deployment-options) for detailed documentation of each field.
+
+| Field          | Description                                                               |
+| -------------- | ------------------------------------------------------------------------- |
+| `public`       | `true` = creates ingress, `false` = internal only                         |
+| `capacityType` | Node type: `spot` or `on-demand`                                          |
+| `resource`     | CPU and memory requests/limits                                            |
+| `readiness`    | Health check using `httpGet` or `tcpSocketPort`                           |
+| `hostnames`    | Custom hostname config (auto-constructed from `global_config` if omitted) |
+| `network`      | IP whitelist, port mapping, gRPC support                                  |
+| `serviceDisks` | Persistent volume mounts                                                  |
+
+<Callout type="info">
+  For databases and caches, you typically want `public: false` to keep them
+  internal to the cluster.
+</Callout>
+
+## Common Images
+
+### Databases
+
+```yaml
+# PostgreSQL
+docker:
+  dockerImage: "postgres"
+  defaultTag: "15-alpine"
+  ports:
+    - 5432
+  env:
+    POSTGRES_USER: "user"
+    POSTGRES_PASSWORD: "pass"
+    POSTGRES_DB: "db"
+
+# MySQL
+docker:
+  dockerImage: "mysql"
+  defaultTag: "8.0"
+  ports:
+    - 3306
+  env:
+    MYSQL_ROOT_PASSWORD: "root"
+    MYSQL_DATABASE: "db"
+
+# MongoDB
+docker:
+  dockerImage: "mongo"
+  defaultTag: "7.0"
+  ports:
+    - 27017
+  env:
+    MONGO_INITDB_ROOT_USERNAME: "admin"
+    MONGO_INITDB_ROOT_PASSWORD: "pass"
+```
+
+### Caches & Queues
+
+```yaml
+# Redis
+docker:
+  dockerImage: "redis"
+  defaultTag: "7-alpine"
+  ports:
+    - 6379
+
+# Memcached
+docker:
+  dockerImage: "memcached"
+  defaultTag: "1.6-alpine"
+  ports:
+    - 11211
+
+# RabbitMQ
+docker:
+  dockerImage: "rabbitmq"
+  defaultTag: "3.12-management-alpine"
+  ports:
+    - 5672
+    - 15672
+  env:
+    RABBITMQ_DEFAULT_USER: "guest"
+    RABBITMQ_DEFAULT_PASS: "guest"
+```

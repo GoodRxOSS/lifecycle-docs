@@ -24,7 +24,6 @@ import { Block, HighlightedCodeBlock, parseProps } from "codehike/blocks";
 import { HighlightedCode, Pre } from "codehike/code";
 import {
   callout,
-  wordWrap,
   className,
   tabs,
   mark,
@@ -79,7 +78,6 @@ function Code({ codeblock }: { codeblock: HighlightedCode }) {
       code={codeblock}
       handlers={[
         callout,
-        wordWrap,
         className,
         tabs,
         mark,

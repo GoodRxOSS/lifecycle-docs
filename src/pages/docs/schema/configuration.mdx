@@ -1,0 +1,136 @@
+---
+title: Configuration Service
+description: Deploy configuration-only services for feature flags and shared configuration
+tags:
+  - schema
+  - configuration
+  - feature-flags
+  - config
+---
+
+import { Callout } from "nextra/components";
+
+The `configuration` service type creates a configuration-only service that doesn't deploy any containers. It's useful for managing feature flags, shared configuration, or service metadata that other services can reference.
+
+<Callout type="warning">
+  This documentation is still in progress and will be updated shortly with the
+  latest information.
+</Callout>
+
+## Required Fields
+
+| Field        | Type   | Description                          |
+| ------------ | ------ | ------------------------------------ |
+| `defaultTag` | string | Configuration version tag            |
+| `branchName` | string | Branch name for configuration source |
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "config"
+    configuration:
+      defaultTag: "v1.0.0" # Required
+      branchName: "main" # Required
+```
+
+## How It Works
+
+A configuration service:
+
+1. Does not deploy any containers or pods
+2. Registers a service entry in Lifecycle for reference by other services
+3. Provides a way to version and track configuration changes
+4. Can be referenced by other services using template variables
+
+## Example
+
+```yaml filename="lifecycle.yaml"
+environment:
+  defaultServices:
+    - name: "api"
+    - name: "feature-flags"
+
+services:
+  - name: "api"
+    github:
+      repository: "myorg/api"
+      branchName: "main"
+      docker:
+        defaultTag: "main"
+        app:
+          dockerfilePath: "Dockerfile"
+          env:
+            CONFIG_VERSION: "{{feature-flags_branchName}}"
+          ports:
+            - 3000
+
+  - name: "feature-flags"
+    configuration:
+      defaultTag: "v2.1.0"
+      branchName: "main"
+```
+
+## Use Cases
+
+### Feature Flags
+
+Track feature flag configuration versions:
+
+```yaml
+services:
+  - name: "feature-flags"
+    configuration:
+      defaultTag: "2024.01.15"
+      branchName: "main"
+```
+
+### Shared Configuration
+
+Reference shared configuration across services:
+
+```yaml
+services:
+  - name: "shared-config"
+    configuration:
+      defaultTag: "v1.0.0"
+      branchName: "production"
+
+  - name: "api"
+    github:
+      repository: "myorg/api"
+      branchName: "main"
+      docker:
+        defaultTag: "main"
+        app:
+          dockerfilePath: "Dockerfile"
+          env:
+            CONFIG_BRANCH: "{{shared-config_branchName}}"
+
+  - name: "worker"
+    github:
+      repository: "myorg/worker"
+      branchName: "main"
+      docker:
+        defaultTag: "main"
+        app:
+          dockerfilePath: "Dockerfile"
+          env:
+            CONFIG_BRANCH: "{{shared-config_branchName}}"
+```
+
+### Environment Metadata
+
+Track environment-specific metadata:
+
+```yaml
+services:
+  - name: "env-metadata"
+    configuration:
+      defaultTag: "ephemeral"
+      branchName: "{{PR_BRANCH}}"
+```
+
+<Callout type="info">
+  Configuration services are lightweight entries in Lifecycle's service
+  registry. They don't consume cluster resources but allow other services to
+  reference configuration state.
+</Callout>

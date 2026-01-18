@@ -36,7 +36,6 @@ export {
   Scrollycoding,
   THEMES,
   MAX_TRANSITION_DURATION,
-  wordWrap,
   tokenTransitions,
   SmoothPre,
   callout,

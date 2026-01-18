@@ -1,0 +1,121 @@
+---
+title: Webhooks Configuration
+description: Schema reference for configuring webhooks to automate actions on deployment events
+tags:
+  - schema
+  - webhooks
+  - automation
+  - codefresh
+  - docker
+---
+
+import { Callout } from "nextra/components";
+
+Webhooks allow you to trigger automated actions when an environment reaches certain states. They are configured under `environment.webhooks` in your `lifecycle.yaml`.
+
+<Callout type="info">
+  For detailed use cases, examples, and execution behavior, see the
+  [Webhooks](/docs/features/webhooks) guide.
+</Callout>
+
+## Common Fields
+
+All webhook types share these common fields:
+
+| Field         | Type   | Required | Description                                        |
+| ------------- | ------ | -------- | -------------------------------------------------- |
+| `name`        | string | No       | Human-readable name for the webhook                |
+| `description` | string | No       | Description of what the webhook does               |
+| `state`       | string | **Yes**  | Trigger state: `deployed`, `error`, or `torn_down` |
+| `type`        | string | **Yes**  | Webhook type: `codefresh`, `docker`, or `command`  |
+| `env`         | object | **Yes**  | Environment variables passed to the webhook        |
+
+## Trigger States
+
+| State       | Description                                    |
+| ----------- | ---------------------------------------------- |
+| `deployed`  | All services successfully deployed and running |
+| `error`     | Build or deployment failed                     |
+| `torn_down` | Environment has been destroyed                 |
+
+## Webhook Types
+
+### codefresh
+
+Triggers an existing Codefresh pipeline.
+
+| Field        | Type   | Required | Description           |
+| ------------ | ------ | -------- | --------------------- |
+| `pipelineId` | string | Yes      | Codefresh pipeline ID |
+| `trigger`    | string | No       | Pipeline trigger name |
+
+```yaml filename="lifecycle.yaml"
+environment:
+  webhooks:
+    - name: "Run E2E Tests"
+      state: deployed
+      type: codefresh
+      pipelineId: "64598362453cc650c0c9cd4d"
+      trigger: "tests"
+      env:
+        BRANCH: "{{api_branchName}}"
+```
+
+### docker
+
+Runs a Docker image as a Kubernetes job.
+
+| Field            | Type   | Required | Description                                   |
+| ---------------- | ------ | -------- | --------------------------------------------- |
+| `docker.image`   | string | **Yes**  | Docker image to execute                       |
+| `docker.command` | array  | No       | Override entrypoint command                   |
+| `docker.args`    | array  | No       | Arguments to pass to the command              |
+| `docker.timeout` | number | No       | Max execution time in seconds (default: 1800) |
+
+```yaml filename="lifecycle.yaml"
+environment:
+  webhooks:
+    - name: "Integration Tests"
+      state: deployed
+      type: docker
+      docker:
+        image: "myorg/integration-tests:latest"
+        command: ["npm", "run", "test"]
+        timeout: 3600
+      env:
+        API_URL: "https://{{api_publicUrl}}"
+```
+
+### command
+
+Runs a shell script in a specified Docker image.
+
+| Field             | Type   | Required | Description                                   |
+| ----------------- | ------ | -------- | --------------------------------------------- |
+| `command.image`   | string | **Yes**  | Docker image to run the script in             |
+| `command.script`  | string | **Yes**  | Shell script to execute                       |
+| `command.timeout` | number | No       | Max execution time in seconds (default: 1800) |
+
+```yaml filename="lifecycle.yaml"
+environment:
+  webhooks:
+    - name: "Slack Notification"
+      state: deployed
+      type: command
+      command:
+        image: "alpine:latest"
+        script: |
+          apk add --no-cache curl
+          curl -X POST "$SLACK_WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d '{"text":"Deployed to $URL"}'
+      env:
+        SLACK_WEBHOOK: "https://hooks.slack.com/services/XXX"
+        URL: "https://{{api_publicUrl}}"
+```
+
+## Template Variables
+
+You can use template variables like `{{api_publicUrl}}` in the `env` section to reference dynamic values from your services.
+
+See the [Template Variables](/docs/features/template-variables) guide for the complete list of available variables.
