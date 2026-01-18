@@ -25,8 +25,7 @@ import { Separator } from "@/components/ui/separator";
 import { Code } from "@/components";
 import Image from "next/image";
 
-const isLocal = process.env?.NEXT_PUBLIC_DEV_ENV === "local";
-const basePath = !isLocal ? "/lifecycle-docs" : "";
+const basePath = process.env.NODE_ENV === "production" ? "/lifecycle-docs" : "";
 
 const logo = (
   <div className="flex items-center gap-2 logo-shake">
