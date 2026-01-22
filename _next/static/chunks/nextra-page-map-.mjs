@@ -36,6 +36,13 @@ export const pageMap = [{
         "tags": ["helm", "deployment", "kubernetes", "native"]
       }
     }, {
+      name: "secrets",
+      route: "/docs/features/secrets",
+      frontMatter: {
+        "title": "Cloud Secrets",
+        "tags": ["secrets", "aws", "gcp", "environment variables", "security"]
+      }
+    }, {
       name: "service-dependencies",
       route: "/docs/features/service-dependencies",
       frontMatter: {
@@ -502,6 +509,13 @@ export const pageMap = [{
       "description": "Lifecycle \"edit\" docs"
     }
   }, {
+    name: "environment variables",
+    route: "/tags/environment variables",
+    frontMatter: {
+      "title": "environment variables",
+      "description": "Lifecycle \"environment variables\" docs"
+    }
+  }, {
     name: "environment",
     route: "/tags/environment",
     frontMatter: {
@@ -542,6 +556,13 @@ export const pageMap = [{
     frontMatter: {
       "title": "first environment",
       "description": "Lifecycle \"first environment\" docs"
+    }
+  }, {
+    name: "gcp",
+    route: "/tags/gcp",
+    frontMatter: {
+      "title": "gcp",
+      "description": "Lifecycle \"gcp\" docs"
     }
   }, {
     name: "getting-started",
@@ -787,6 +808,20 @@ export const pageMap = [{
     frontMatter: {
       "title": "schema",
       "description": "Lifecycle \"schema\" docs"
+    }
+  }, {
+    name: "secrets",
+    route: "/tags/secrets",
+    frontMatter: {
+      "title": "secrets",
+      "description": "Lifecycle \"secrets\" docs"
+    }
+  }, {
+    name: "security",
+    route: "/tags/security",
+    frontMatter: {
+      "title": "security",
+      "description": "Lifecycle \"security\" docs"
     }
   }, {
     name: "service-dependencies",
