@@ -1,0 +1,92 @@
+---
+title: Environment TTL
+tags:
+  - ttl
+  - cleanup
+  - lifecycle-keep
+  - inactivity
+  - global-config
+---
+
+import { Callout } from "nextra/components";
+
+Lifecycle automatically cleans up inactive ephemeral environments based on configurable TTL (Time To Live) settings. This helps reduce resource usage while allowing teams to keep environments alive when needed.
+
+## Configuration
+
+The TTL cleanup configuration is stored in the `global_config` table with the key `ttl_cleanup`:
+
+```json
+{
+  "enabled": true,
+  "dryRun": false,
+  "inactivityDays": 14,
+  "checkIntervalMinutes": 240,
+  "commentTemplate": "This environment has been inactive for {inactivityDays} days and will be automatically cleaned up.",
+  "excludedRepositories": []
+}
+```
+
+### `enabled`
+
+Enables or disables automatic cleanup of inactive environments.
+
+**Default:** `false`
+
+### `dryRun`
+
+Runs cleanup process without actually tearing down environments. Useful for testing.
+
+**Default:** `true`
+
+### `inactivityDays`
+
+Number of days of inactivity before an environment is eligible for cleanup.
+
+**Default:** `14`
+
+### `checkIntervalMinutes`
+
+How frequently the cleanup job runs to check for stale environments.
+
+**Default:** `240` (4 hours)
+
+### `commentTemplate`
+
+Custom message posted to the PR when cleaning up. Supports `{inactivityDays}` placeholder and dynamic label replacements.
+
+**Default:** `"Tearing down lifecycle env since no activity in the past {inactivityDays} days."`
+
+### `excludedRepositories`
+
+Repository names (format: `owner/repo`) to exclude from automatic cleanup.
+
+**Default:** `[]`
+
+<Callout type="warning">
+  Changes to TTL configuration require refreshing the global config cache or
+  waiting for the automatic refresh cycle.
+</Callout>
+
+---
+
+## How It Works
+
+Lifecycle tracks environment expiration using `lfc/ttl-expireAtUnix` labels on Kubernetes namespaces. The cleanup service runs periodically to scan for expired environments, validates eligibility (PR is open, not static, not excluded), and tears down environments by removing the deploy label and adding the disabled label.
+
+### Preventing Cleanup
+
+Add the `keep` label to a PR to prevent automatic cleanup. This disables TTL on the namespace and keeps the environment alive indefinitely. See [Configurable Labels](/docs/features/configurable-labels) to customize the keep label.
+
+---
+
+## Summary
+
+| Property               | Type     | Purpose                            |
+| ---------------------- | -------- | ---------------------------------- |
+| `enabled`              | boolean  | Enable/disable automatic cleanup   |
+| `dryRun`               | boolean  | Test mode without actual cleanup   |
+| `inactivityDays`       | number   | Days of inactivity before cleanup  |
+| `checkIntervalMinutes` | number   | Cleanup job frequency in minutes   |
+| `commentTemplate`      | string   | Custom cleanup message for PRs     |
+| `excludedRepositories` | string[] | Repositories excluded from cleanup |
