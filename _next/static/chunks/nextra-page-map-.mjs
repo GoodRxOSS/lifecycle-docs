@@ -28,6 +28,20 @@ export const pageMap = [{
         "tags": ["deploy", "auto", "labels", "lifecycle-deploy", "lifecycle-disabled"]
       }
     }, {
+      name: "configurable-labels",
+      route: "/docs/features/configurable-labels",
+      frontMatter: {
+        "title": "Configurable Labels",
+        "tags": ["labels", "configuration", "deploy", "disabled", "keep", "status-comments", "global-config"]
+      }
+    }, {
+      name: "environment-ttl",
+      route: "/docs/features/environment-ttl",
+      frontMatter: {
+        "title": "Environment TTL",
+        "tags": ["ttl", "cleanup", "lifecycle-keep", "inactivity", "global-config"]
+      }
+    }, {
       name: "native-helm-deployment",
       route: "/docs/features/native-helm-deployment",
       frontMatter: {
@@ -495,6 +509,13 @@ export const pageMap = [{
       "description": "Lifecycle \"dev-0\" docs"
     }
   }, {
+    name: "disabled",
+    route: "/tags/disabled",
+    frontMatter: {
+      "title": "disabled",
+      "description": "Lifecycle \"disabled\" docs"
+    }
+  }, {
     name: "docker",
     route: "/tags/docker",
     frontMatter: {
@@ -586,6 +607,13 @@ export const pageMap = [{
       "description": "Lifecycle \"gke\" docs"
     }
   }, {
+    name: "global-config",
+    route: "/tags/global-config",
+    frontMatter: {
+      "title": "global-config",
+      "description": "Lifecycle \"global-config\" docs"
+    }
+  }, {
     name: "glossary",
     route: "/tags/glossary",
     frontMatter: {
@@ -598,6 +626,13 @@ export const pageMap = [{
     frontMatter: {
       "title": "helm",
       "description": "Lifecycle \"helm\" docs"
+    }
+  }, {
+    name: "inactivity",
+    route: "/tags/inactivity",
+    frontMatter: {
+      "title": "inactivity",
+      "description": "Lifecycle \"inactivity\" docs"
     }
   }, {
     name: "install",
@@ -635,6 +670,13 @@ export const pageMap = [{
       "description": "Lifecycle \"issues\" docs"
     }
   }, {
+    name: "keep",
+    route: "/tags/keep",
+    frontMatter: {
+      "title": "keep",
+      "description": "Lifecycle \"keep\" docs"
+    }
+  }, {
     name: "kubernetes",
     route: "/tags/kubernetes",
     frontMatter: {
@@ -661,6 +703,13 @@ export const pageMap = [{
     frontMatter: {
       "title": "lifecycle-disabled",
       "description": "Lifecycle \"lifecycle-disabled\" docs"
+    }
+  }, {
+    name: "lifecycle-keep",
+    route: "/tags/lifecycle-keep",
+    frontMatter: {
+      "title": "lifecycle-keep",
+      "description": "Lifecycle \"lifecycle-keep\" docs"
     }
   }, {
     name: "lifecycle",
@@ -873,6 +922,13 @@ export const pageMap = [{
       "description": "Lifecycle \"static\" docs"
     }
   }, {
+    name: "status-comments",
+    route: "/tags/status-comments",
+    frontMatter: {
+      "title": "status-comments",
+      "description": "Lifecycle \"status-comments\" docs"
+    }
+  }, {
     name: "tear down",
     route: "/tags/tear down",
     frontMatter: {
@@ -913,6 +969,13 @@ export const pageMap = [{
     frontMatter: {
       "title": "todo",
       "description": "Lifecycle \"todo\" docs"
+    }
+  }, {
+    name: "ttl",
+    route: "/tags/ttl",
+    frontMatter: {
+      "title": "ttl",
+      "description": "Lifecycle \"ttl\" docs"
     }
   }, {
     name: "tutorial",
