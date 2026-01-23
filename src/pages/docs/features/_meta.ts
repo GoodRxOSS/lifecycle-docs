@@ -18,6 +18,9 @@ export default {
   "auto-deployment": {
     "title": "Auto Deploy & Labels"
   },
+  "configurable-labels": {
+    "title": "Configurable Labels"
+  },
   "template-variables": {
     "title": "Template Variables"
   },
@@ -29,5 +32,11 @@ export default {
   },
   "native-helm-deployment": {
     "title": "Native Helm Deployment"
+  },
+  "secrets": {
+    "title": "Cloud Secrets"
+  },
+  "environment-ttl": {
+    "title": "Environment TTL"
   }
 };

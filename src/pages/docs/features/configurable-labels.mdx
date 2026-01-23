@@ -1,0 +1,84 @@
+---
+title: Configurable Labels
+tags:
+  - labels
+  - configuration
+  - deploy
+  - disabled
+  - keep
+  - status-comments
+  - global-config
+---
+
+import { Callout } from "nextra/components";
+
+Lifecycle allows you to customize the GitHub labels that control environment deployments, TTL behavior, and status comments through the `global_config.labels` configuration.
+
+## Configuration
+
+The labels configuration is stored in the `global_config` table with the key `labels`:
+
+```json
+{
+  "deploy": ["lifecycle-deploy!", "lfc-deploy"],
+  "disabled": ["lifecycle-disabled!", "lfc-skip"],
+  "keep": ["lifecycle-keep!", "lfc-keep"],
+  "statusComments": ["lifecycle-status-comments!"],
+  "defaultStatusComments": true,
+  "defaultControlComments": true
+}
+```
+
+### `deploy`
+
+Labels that trigger environment deployment. When any deploy label is added to a PR, Lifecycle creates an ephemeral environment. The first label in the array is used when adding labels programmatically. Supports multiple labels for different teams or naming conventions.
+
+**Default:** `["lifecycle-deploy!"]`
+
+### `disabled`
+
+Labels that prevent or teardown deployments. When any disabled label is added or deploy label is removed, the active environment will be torn down.
+
+**Default:** `["lifecycle-disabled!"]`
+
+### `keep`
+
+Labels that disable TTL cleanup for an environment. When present on a PR, prevents automatic teardown due to inactivity and sets `lfc/ttl-enable: false` on the Kubernetes namespace.
+
+**Default:** `["lifecycle-keep!"]`
+
+### `statusComments`
+
+Labels that control status comment visibility on a per-PR basis. Behavior depends on the `defaultStatusComments` setting.
+
+**Default:** `["lifecycle-status-comments!"]`
+
+### `defaultStatusComments`
+
+Controls whether status comments are enabled by default across all PRs. When `true`, status comments show for all PRs. When `false`, status comments only show when the status comment label is present.
+
+**Default:** `true`
+
+### `defaultControlComments`
+
+Enables or disables control-related comments system-wide.
+
+**Default:** `true`
+
+<Callout type="warning">
+  Changes to label configuration require refreshing the global config cache or
+  waiting for the automatic refresh cycle.
+</Callout>
+
+---
+
+## Summary
+
+| Property                 | Type     | Purpose                             |
+| ------------------------ | -------- | ----------------------------------- |
+| `deploy`                 | string[] | Trigger environment deployment      |
+| `disabled`               | string[] | Prevent or teardown deployments     |
+| `keep`                   | string[] | Disable TTL cleanup                 |
+| `statusComments`         | string[] | Control status comment visibility   |
+| `defaultStatusComments`  | boolean  | Enable status comments by default   |
+| `defaultControlComments` | boolean  | Enable control comments system-wide |
