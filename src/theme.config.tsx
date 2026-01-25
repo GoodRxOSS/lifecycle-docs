@@ -25,12 +25,10 @@ import { Separator } from "@/components/ui/separator";
 import { Code } from "@/components";
 import Image from "next/image";
 
-const basePath = process.env.NODE_ENV === "production" ? "/lifecycle-docs" : "";
-
 const logo = (
   <div className="flex items-center gap-2 logo-shake">
     <Image
-      src={`${basePath}/logo.png`}
+      src="/logo.png"
       alt="Lifecycle"
       width={32}
       height={32}
@@ -73,7 +71,7 @@ export const HeadMeta = () => {
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <meta property="og:title" content="Lifecycle" />
       <meta property="og:description" content="Documentation for Lifecycle" />
-      <link rel="icon" type="image/png" href={`${basePath}/logo.png`} />
+      <link rel="icon" type="image/png" href="/logo.png" />
     </>
   );
 };

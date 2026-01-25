@@ -123,7 +123,7 @@ To enable GitHub Pages for this repository:
 5. Under "Branch", select "gh-pages" and "/ (root)"
 6. Click "Save"
 
-The site will be available at `https://goodrxoss.github.io/lifecycle-docs/` (or your custom domain if configured).
+The site will be available at `https://uselifecycle.com/`.
 
 ### Static Build for GitHub Pages
 

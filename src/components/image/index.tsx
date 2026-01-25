@@ -52,8 +52,7 @@ export const DefinedImage = ({
   width = 800,
   height = 500,
 }: DefinedImageProps) => {
-  const isLocal = process.env.NEXT_PUBLIC_DEV_ENV === "local";
-  const currentSrc = !isLocal ? `/lifecycle-docs${src}` : src;
+  const currentSrc = src;
   return width && height ? (
     <Image
       src={currentSrc}
