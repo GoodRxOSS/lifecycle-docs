@@ -1,0 +1,709 @@
+# Lifecycle
+
+> Lifecycle is an ephemeral environment generator that creates isolated dev environments from a `lifecycle.yaml` config file. This guide helps AI agents assist developers in configuring their repositories.
+
+## Documentation
+
+- [What is Lifecycle](https://uselifecycle.com/docs/what-is-lifecycle): Overview of Lifecycle and core concepts.
+- [Terminology](https://uselifecycle.com/docs/getting-started/terminology): Key terms and definitions.
+- [Create Environment](https://uselifecycle.com/docs/getting-started/create-environment): Tutorial for creating your first environment.
+- [Configure Environment](https://uselifecycle.com/docs/getting-started/configure-environment): Tutorial for configuring services.
+
+## Schema Reference
+
+- [Schema Overview](https://uselifecycle.com/docs/schema/overview): Complete lifecycle.yaml structure reference.
+- [Environment Schema](https://uselifecycle.com/docs/schema/environment): Environment-level configuration options.
+- [GitHub Service](https://uselifecycle.com/docs/schema/github): Build services from source code.
+- [Docker Service](https://uselifecycle.com/docs/schema/docker): Deploy pre-built Docker images.
+- [Helm Service](https://uselifecycle.com/docs/schema/helm): Deploy Helm charts.
+- [Codefresh Service](https://uselifecycle.com/docs/schema/codefresh): External CI/CD pipeline integration.
+- [Configuration Service](https://uselifecycle.com/docs/schema/configuration): Metadata-only services.
+- [Webhooks Schema](https://uselifecycle.com/docs/schema/webhooks): Webhook configuration reference.
+
+## Features
+
+- [Auto-Deployment](https://uselifecycle.com/docs/features/auto-deployment): Automatic deployment on PR updates.
+- [Template Variables](https://uselifecycle.com/docs/features/template-variables): Dynamic references between services.
+- [Service Dependencies](https://uselifecycle.com/docs/features/service-dependencies): Hard dependencies with `requires`.
+- [Secrets](https://uselifecycle.com/docs/features/secrets): AWS/GCP secret manager integration.
+- [Webhooks](https://uselifecycle.com/docs/features/webhooks): Trigger actions on deployment events.
+- [Configurable Labels](https://uselifecycle.com/docs/features/configurable-labels): GitHub label configuration.
+- [Environment TTL](https://uselifecycle.com/docs/features/environment-ttl): Automatic cleanup of inactive environments.
+- [Native Helm Deployment](https://uselifecycle.com/docs/features/native-helm-deployment): Kubernetes job-based Helm deployments.
+
+---
+
+## Getting Started
+
+**File location:** Create `lifecycle.yaml` at the root of your repository.
+
+**Trigger deployment:** Add `lifecycle-deploy!` label to a PR, or set `autoDeploy: true` in config.
+
+**Access environment:** After deployment, environment URLs appear in PR comments.
+
+**Minimum viable config:**
+```yaml
+version: "1.0.0"
+
+environment:
+  defaultServices:
+    - name: "api"
+
+services:
+  - name: "api"
+    github:
+      repository: "org/repo"
+      branchName: "main"
+      docker:
+        defaultTag: "main"
+        app:
+          dockerfilePath: "Dockerfile"
+          ports:
+            - 3000
+```
+
+---
+
+## Core Concepts
+
+| Term | Definition |
+|------|------------|
+| **Service** | A deployable unit (container, database, etc.) |
+| **Environment** | A stack of services deployed together |
+| **Build/UUID** | Unique identifier for an environment instance (e.g., `arm-model-060825`) |
+| **defaultServices** | Services always deployed with every environment |
+| **optionalServices** | Services available on-demand via UI or labels |
+| **branchName** | Default branch for the repository (used for builds) |
+| **defaultTag** | Docker image tag, typically matches the default branch name |
+
+Docs: [Terminology](https://uselifecycle.com/docs/getting-started/terminology)
+
+---
+
+## Decision Tree for Agents
+
+When a user wants to add a service, ask these questions in order:
+
+### Step 1: Service Type
+```
+Q: Is this service built from source code or using a pre-built image?
+
+→ "Built from source" → Use `github` type
+→ "Pre-built image" → Use `docker` type
+```
+
+### Step 2: Build Configuration (for github type)
+```
+Q: Where is your Dockerfile located?
+   Default: "Dockerfile" in repo root
+
+Q: What port does your application listen on?
+   Common: 3000, 8080, 80
+
+Q: Does it need a health check endpoint?
+   Common: /health, /healthz, /ready
+```
+
+### Step 3: Runtime Configuration
+```
+Q: What environment variables does your service need?
+   → Add to `env` section
+
+Q: Does it need to connect to other services?
+   → Use template variables (always quote them): "{{{service_name_internalHostname}}}"
+
+Q: Should it be publicly accessible?
+   → Set `deployment.public: true`
+```
+
+### Step 4: Dependencies
+```
+Q: Does this service depend on other services (databases, caches)?
+   → Add to `requires` array
+   → Or add dependency as separate service in defaultServices
+```
+
+---
+
+## Service Types
+
+### GitHub Service (Build from Source)
+
+Use when: Building a Docker image from source code in a GitHub repository.
+
+Docs: [GitHub Schema](https://uselifecycle.com/docs/schema/github)
+
+**Required fields:**
+- `github.repository` - GitHub org/repo (e.g., "myorg/api")
+- `github.branchName` - Default branch (e.g., "main")
+- `github.docker.defaultTag` - Image tag, typically same as default branch
+- `github.docker.app.dockerfilePath` - Path to Dockerfile
+- `github.docker.app.ports` - Array of exposed ports
+
+**Template:**
+```yaml
+services:
+  - name: "SERVICE_NAME"
+    github:
+      repository: "ORG/REPO"
+      branchName: "main"
+      docker:
+        defaultTag: "main"
+        app:
+          dockerfilePath: "Dockerfile"
+          ports:
+            - PORT_NUMBER
+          env:
+            KEY: "value"
+```
+
+**With health checks and public access:**
+```yaml
+services:
+  - name: "api"
+    github:
+      repository: "myorg/api"
+      branchName: "main"
+      docker:
+        defaultTag: "main"
+        app:
+          dockerfilePath: "Dockerfile"
+          ports:
+            - 3000
+          env:
+            NODE_ENV: "development"
+      deployment:
+        public: true
+        readiness:
+          httpGet:
+            path: "/health"
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+```
+
+**With resource limits:**
+```yaml
+deployment:
+  resource:
+    cpu:
+      request: "100m"
+      limit: "500m"
+    memory:
+      request: "256Mi"
+      limit: "512Mi"
+```
+
+### Docker Service (Pre-built Images)
+
+Use when: Deploying existing Docker images (databases, Redis, third-party services).
+
+Docs: [Docker Schema](https://uselifecycle.com/docs/schema/docker)
+
+**Required fields:**
+- `docker.dockerImage` - Image name (e.g., "postgres", "redis")
+- `docker.defaultTag` - Image tag (e.g., "15-alpine", "7")
+- `docker.ports` - Array of exposed ports
+
+**Template:**
+```yaml
+services:
+  - name: "SERVICE_NAME"
+    docker:
+      dockerImage: "IMAGE_NAME"
+      defaultTag: "TAG"
+      ports:
+        - PORT_NUMBER
+      env:
+        KEY: "value"
+```
+
+**Common database examples:**
+
+PostgreSQL:
+```yaml
+services:
+  - name: "postgres"
+    docker:
+      dockerImage: "postgres"
+      defaultTag: "15-alpine"
+      ports:
+        - 5432
+      env:
+        POSTGRES_USER: "app"
+        POSTGRES_PASSWORD: "password"
+        POSTGRES_DB: "appdb"
+```
+
+Redis:
+```yaml
+services:
+  - name: "redis"
+    docker:
+      dockerImage: "redis"
+      defaultTag: "7-alpine"
+      ports:
+        - 6379
+```
+
+MySQL:
+```yaml
+services:
+  - name: "mysql"
+    docker:
+      dockerImage: "mysql"
+      defaultTag: "8.0"
+      ports:
+        - 3306
+      env:
+        MYSQL_ROOT_PASSWORD: "password"
+        MYSQL_DATABASE: "appdb"
+```
+
+MongoDB:
+```yaml
+services:
+  - name: "mongo"
+    docker:
+      dockerImage: "mongo"
+      defaultTag: "6"
+      ports:
+        - 27017
+      env:
+        MONGO_INITDB_ROOT_USERNAME: "admin"
+        MONGO_INITDB_ROOT_PASSWORD: "password"
+```
+
+---
+
+## Template Variables
+
+Connect services using template variables. **Always wrap template variables in quotes.**
+
+Docs: [Template Variables](https://uselifecycle.com/docs/features/template-variables)
+
+**Format:** `"{{{variable_name}}}"`
+
+| Variable | Description | Example Value |
+|----------|-------------|---------------|
+| `{{{buildUUID}}}` | Environment identifier | `arm-model-060825` |
+| `{{{namespace}}}` | Kubernetes namespace | `env-arm-model-060825` |
+| `{{{SERVICE_internalHostname}}}` | Internal DNS for service | `api.env-xxx.svc.cluster.local` |
+| `{{{SERVICE_publicUrl}}}` | External URL (if public) | `api-xxx.example.com` |
+
+**Service name to variable mapping:**
+- Service name `postgres` → `"{{{postgres_internalHostname}}}"`
+- Service name `users-service` → `"{{{users-service_internalHostname}}}"`
+- Hyphens in service names are preserved in variable names
+
+**Example usage:**
+```yaml
+env:
+  DATABASE_URL: "postgresql://app:password@{{{postgres_internalHostname}}}:5432/appdb"
+  REDIS_URL: "redis://{{{redis_internalHostname}}}:6379"
+  API_URL: "https://{{{api_publicUrl}}}"
+```
+
+---
+
+## Multi-Service Environments
+
+### Connecting Services
+
+Docs: [Service Dependencies](https://uselifecycle.com/docs/features/service-dependencies)
+
+**Example: API connecting to PostgreSQL and Redis**
+```yaml
+version: "1.0.0"
+
+environment:
+  defaultServices:
+    - name: "api"
+    - name: "postgres"
+    - name: "redis"
+
+services:
+  - name: "api"
+    github:
+      repository: "myorg/api"
+      branchName: "main"
+      docker:
+        defaultTag: "main"
+        app:
+          dockerfilePath: "Dockerfile"
+          ports:
+            - 3000
+          env:
+            DATABASE_URL: "postgresql://app:password@{{{postgres_internalHostname}}}:5432/appdb"
+            REDIS_URL: "redis://{{{redis_internalHostname}}}:6379"
+      deployment:
+        public: true
+
+  - name: "postgres"
+    docker:
+      dockerImage: "postgres"
+      defaultTag: "15-alpine"
+      ports:
+        - 5432
+      env:
+        POSTGRES_USER: "app"
+        POSTGRES_PASSWORD: "password"
+        POSTGRES_DB: "appdb"
+
+  - name: "redis"
+    docker:
+      dockerImage: "redis"
+      defaultTag: "7-alpine"
+      ports:
+        - 6379
+```
+
+### Service Dependencies with `requires`
+
+Use `requires` when a service has hard dependencies that must be deployed together:
+
+```yaml
+services:
+  - name: "api"
+    requires:
+      - name: "postgres"
+    github:
+      # ... config
+
+  - name: "postgres"
+    docker:
+      # ... config
+```
+
+Note: `requires` only resolves 1 level deep.
+
+### Full Stack Example (Frontend + Backend + Database)
+
+```yaml
+version: "1.0.0"
+
+environment:
+  autoDeploy: true
+  defaultServices:
+    - name: "frontend"
+    - name: "api"
+    - name: "postgres"
+
+services:
+  - name: "frontend"
+    github:
+      repository: "myorg/frontend"
+      branchName: "main"
+      docker:
+        defaultTag: "main"
+        app:
+          dockerfilePath: "Dockerfile"
+          ports:
+            - 3000
+          env:
+            API_URL: "https://{{{api_publicUrl}}}"
+      deployment:
+        public: true
+
+  - name: "api"
+    requires:
+      - name: "postgres"
+    github:
+      repository: "myorg/api"
+      branchName: "main"
+      docker:
+        defaultTag: "main"
+        app:
+          dockerfilePath: "Dockerfile"
+          ports:
+            - 8080
+          env:
+            DATABASE_URL: "postgresql://app:password@{{{postgres_internalHostname}}}:5432/appdb"
+      deployment:
+        public: true
+        readiness:
+          httpGet:
+            path: "/health"
+            port: 8080
+
+  - name: "postgres"
+    docker:
+      dockerImage: "postgres"
+      defaultTag: "15-alpine"
+      ports:
+        - 5432
+      env:
+        POSTGRES_USER: "app"
+        POSTGRES_PASSWORD: "password"
+        POSTGRES_DB: "appdb"
+```
+
+---
+
+## Environment Configuration
+
+Docs: [Environment Schema](https://uselifecycle.com/docs/schema/environment)
+
+### Auto-Deploy
+
+Automatically deploy on PR creation/updates:
+
+Docs: [Auto-Deployment](https://uselifecycle.com/docs/features/auto-deployment)
+
+```yaml
+environment:
+  autoDeploy: true
+```
+
+### Optional Services
+
+Services that can be deployed on-demand (not by default):
+
+```yaml
+environment:
+  defaultServices:
+    - name: "api"
+  optionalServices:
+    - name: "debug-tools"
+```
+
+### Cross-Repository Services
+
+Reference services from other repositories:
+
+```yaml
+environment:
+  defaultServices:
+    - name: "api"
+    - name: "shared-service"
+      repository: "myorg/shared-infra"
+      branch: "main"
+```
+
+---
+
+## Advanced Features
+
+### Cloud Secrets
+
+Reference secrets from AWS Secrets Manager or GCP Secret Manager.
+
+Docs: [Secrets](https://uselifecycle.com/docs/features/secrets)
+
+```yaml
+env:
+  DB_PASSWORD: "{{aws:myapp/database:password}}"
+  API_KEY: "{{gcp:project/api-keys:main}}"
+```
+
+Format: `{{<provider>:<secret-path>:<key>}}`
+
+### Webhooks
+
+Trigger actions after deployment (e.g., run tests).
+
+Docs: [Webhooks](https://uselifecycle.com/docs/features/webhooks), [Webhooks Schema](https://uselifecycle.com/docs/schema/webhooks)
+
+```yaml
+environment:
+  webhooks:
+    - name: "E2E Tests"
+      state: deployed
+      type: docker
+      docker:
+        image: "myorg/e2e-tests:latest"
+        command: ["npm", "run", "test"]
+      env:
+        TEST_URL: "https://{{{frontend_publicUrl}}}"
+```
+
+### Persistent Storage
+
+Add persistent volumes to services:
+
+```yaml
+deployment:
+  serviceDisks:
+    - name: "data"
+      mountPath: "/var/lib/data"
+      storageSize: "5Gi"
+```
+
+---
+
+## Validation Checklist
+
+Before finalizing a lifecycle.yaml, verify:
+
+- [ ] `version: "1.0.0"` is present
+- [ ] File is named `lifecycle.yaml` and located at repository root
+- [ ] Every service in `defaultServices` has a matching definition in `services`
+- [ ] All `github` services have: `repository`, `branchName`, `docker.defaultTag`, `docker.app.dockerfilePath`, `docker.app.ports`
+- [ ] All `docker` services have: `dockerImage`, `defaultTag`, `ports`
+- [ ] Template variables are wrapped in quotes (e.g., `"{{{postgres_internalHostname}}}"`)
+- [ ] Template variables reference existing service names
+- [ ] Public services have `deployment.public: true`
+- [ ] Health check paths match actual endpoints in the application
+
+---
+
+## Information to Gather from Users
+
+When helping a user configure Lifecycle, collect:
+
+### For each service:
+1. **Service name** - Identifier used in config and template variables
+2. **Service type** - Building from source or using pre-built image?
+3. **Source details** (if building):
+   - GitHub repository (org/repo)
+   - Dockerfile location
+4. **Image details** (if pre-built):
+   - Image name and tag
+5. **Ports** - What ports does the service expose?
+6. **Environment variables** - Required config values
+7. **Dependencies** - What other services does it connect to?
+8. **Public access** - Should it be externally accessible?
+9. **Health check** - Endpoint path for readiness probe
+
+### For the environment:
+1. **Auto-deploy** - Should it deploy automatically on PR updates?
+2. **Default vs optional** - Which services are always deployed vs on-demand?
+
+---
+
+## Common Patterns
+
+### Pattern: API with Database
+```yaml
+environment:
+  defaultServices:
+    - name: "api"
+    - name: "db"
+
+services:
+  - name: "api"
+    github:
+      repository: "org/api"
+      branchName: "main"
+      docker:
+        defaultTag: "main"
+        app:
+          dockerfilePath: "Dockerfile"
+          ports:
+            - 8080
+          env:
+            DATABASE_URL: "postgresql://user:pass@{{{db_internalHostname}}}:5432/app"
+      deployment:
+        public: true
+
+  - name: "db"
+    docker:
+      dockerImage: "postgres"
+      defaultTag: "15-alpine"
+      ports:
+        - 5432
+      env:
+        POSTGRES_USER: "user"
+        POSTGRES_PASSWORD: "pass"
+        POSTGRES_DB: "app"
+```
+
+### Pattern: Microservices with Shared Database
+```yaml
+environment:
+  defaultServices:
+    - name: "gateway"
+    - name: "users-service"
+    - name: "orders-service"
+    - name: "postgres"
+
+services:
+  - name: "gateway"
+    github:
+      repository: "org/gateway"
+      branchName: "main"
+      docker:
+        defaultTag: "main"
+        app:
+          dockerfilePath: "Dockerfile"
+          ports:
+            - 8080
+          env:
+            USERS_URL: "http://{{{users-service_internalHostname}}}:3000"
+            ORDERS_URL: "http://{{{orders-service_internalHostname}}}:3000"
+      deployment:
+        public: true
+
+  - name: "users-service"
+    github:
+      repository: "org/users-service"
+      branchName: "main"
+      docker:
+        defaultTag: "main"
+        app:
+          dockerfilePath: "Dockerfile"
+          ports:
+            - 3000
+          env:
+            DATABASE_URL: "postgresql://user:pass@{{{postgres_internalHostname}}}:5432/users"
+
+  - name: "orders-service"
+    github:
+      repository: "org/orders-service"
+      branchName: "main"
+      docker:
+        defaultTag: "main"
+        app:
+          dockerfilePath: "Dockerfile"
+          ports:
+            - 3000
+          env:
+            DATABASE_URL: "postgresql://user:pass@{{{postgres_internalHostname}}}:5432/orders"
+
+  - name: "postgres"
+    docker:
+      dockerImage: "postgres"
+      defaultTag: "15-alpine"
+      ports:
+        - 5432
+      env:
+        POSTGRES_USER: "user"
+        POSTGRES_PASSWORD: "pass"
+```
+
+### Pattern: Frontend + BFF (Backend for Frontend)
+```yaml
+environment:
+  defaultServices:
+    - name: "web"
+    - name: "bff"
+
+services:
+  - name: "web"
+    github:
+      repository: "org/web"
+      branchName: "main"
+      docker:
+        defaultTag: "main"
+        app:
+          dockerfilePath: "Dockerfile"
+          ports:
+            - 3000
+          env:
+            API_URL: "https://{{{bff_publicUrl}}}"
+      deployment:
+        public: true
+
+  - name: "bff"
+    github:
+      repository: "org/bff"
+      branchName: "main"
+      docker:
+        defaultTag: "main"
+        app:
+          dockerfilePath: "Dockerfile"
+          ports:
+            - 8080
+      deployment:
+        public: true
+```
