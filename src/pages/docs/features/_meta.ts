@@ -38,5 +38,14 @@ export default {
   },
   "environment-ttl": {
     "title": "Environment TTL"
-  }
+  },
+  "ai-agent": {
+    "title": "AI Agent"
+  },
+  "ai-agent-configuration": {
+    "title": "AI Agent Configuration"
+  },
+  "mcp-integration": {
+    "title": "MCP Integration"
+  },
 };
