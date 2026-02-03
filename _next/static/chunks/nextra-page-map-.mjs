@@ -20,6 +20,20 @@ export const pageMap = [{
     children: [{
       data: docs_features_meta
     }, {
+      name: "ai-agent-configuration",
+      route: "/docs/features/ai-agent-configuration",
+      frontMatter: {
+        "title": "AI Agent Configuration",
+        "tags": ["ai", "agent", "configuration", "admin", "api"]
+      }
+    }, {
+      name: "ai-agent",
+      route: "/docs/features/ai-agent",
+      frontMatter: {
+        "title": "AI Agent",
+        "tags": ["ai", "agent", "debugging", "investigation", "llm"]
+      }
+    }, {
       name: "auto-deployment",
       route: "/docs/features/auto-deployment",
       frontMatter: {
@@ -40,6 +54,13 @@ export const pageMap = [{
       frontMatter: {
         "title": "Environment TTL",
         "tags": ["ttl", "cleanup", "lifecycle-keep", "inactivity", "global-config"]
+      }
+    }, {
+      name: "mcp-integration",
+      route: "/docs/features/mcp-integration",
+      frontMatter: {
+        "title": "MCP Integration",
+        "tags": ["ai", "agent", "mcp", "tools", "integration"]
       }
     }, {
       name: "native-helm-deployment",
@@ -320,6 +341,34 @@ export const pageMap = [{
   children: [{
     data: tags_meta
   }, {
+    name: "admin",
+    route: "/tags/admin",
+    frontMatter: {
+      "title": "admin",
+      "description": "Lifecycle \"admin\" docs"
+    }
+  }, {
+    name: "agent",
+    route: "/tags/agent",
+    frontMatter: {
+      "title": "agent",
+      "description": "Lifecycle \"agent\" docs"
+    }
+  }, {
+    name: "ai",
+    route: "/tags/ai",
+    frontMatter: {
+      "title": "ai",
+      "description": "Lifecycle \"ai\" docs"
+    }
+  }, {
+    name: "api",
+    route: "/tags/api",
+    frontMatter: {
+      "title": "api",
+      "description": "Lifecycle \"api\" docs"
+    }
+  }, {
     name: "app",
     route: "/tags/app",
     frontMatter: {
@@ -472,6 +521,13 @@ export const pageMap = [{
     frontMatter: {
       "title": "datadog",
       "description": "Lifecycle \"datadog\" docs"
+    }
+  }, {
+    name: "debugging",
+    route: "/tags/debugging",
+    frontMatter: {
+      "title": "debugging",
+      "description": "Lifecycle \"debugging\" docs"
     }
   }, {
     name: "defaultservices",
@@ -642,6 +698,13 @@ export const pageMap = [{
       "description": "Lifecycle \"install\" docs"
     }
   }, {
+    name: "integration",
+    route: "/tags/integration",
+    frontMatter: {
+      "title": "integration",
+      "description": "Lifecycle \"integration\" docs"
+    }
+  }, {
     name: "internalhostname",
     route: "/tags/internalhostname",
     frontMatter: {
@@ -654,6 +717,13 @@ export const pageMap = [{
     frontMatter: {
       "title": "intro",
       "description": "Lifecycle \"intro\" docs"
+    }
+  }, {
+    name: "investigation",
+    route: "/tags/investigation",
+    frontMatter: {
+      "title": "investigation",
+      "description": "Lifecycle \"investigation\" docs"
     }
   }, {
     name: "issue",
@@ -726,11 +796,25 @@ export const pageMap = [{
       "description": "Lifecycle \"lifecycle.yaml\" docs"
     }
   }, {
+    name: "llm",
+    route: "/tags/llm",
+    frontMatter: {
+      "title": "llm",
+      "description": "Lifecycle \"llm\" docs"
+    }
+  }, {
     name: "logs",
     route: "/tags/logs",
     frontMatter: {
       "title": "logs",
       "description": "Lifecycle \"logs\" docs"
+    }
+  }, {
+    name: "mcp",
+    route: "/tags/mcp",
+    frontMatter: {
+      "title": "mcp",
+      "description": "Lifecycle \"mcp\" docs"
     }
   }, {
     name: "metrics",
@@ -969,6 +1053,13 @@ export const pageMap = [{
     frontMatter: {
       "title": "todo",
       "description": "Lifecycle \"todo\" docs"
+    }
+  }, {
+    name: "tools",
+    route: "/tags/tools",
+    frontMatter: {
+      "title": "tools",
+      "description": "Lifecycle \"tools\" docs"
     }
   }, {
     name: "ttl",
