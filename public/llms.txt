@@ -140,6 +140,8 @@ Docs: [GitHub Schema](https://uselifecycle.com/docs/schema/github)
 - `github.docker.app.dockerfilePath` - Path to Dockerfile
 - `github.docker.app.ports` - Array of exposed ports
 
+**Important:** For github services, `deployment` is nested **inside** `github:` at the same level as `docker:`, not at the service level or inside `docker:`.
+
 **Template:**
 ```yaml
 services:
@@ -184,14 +186,26 @@ services:
 
 **With resource limits:**
 ```yaml
-deployment:
-  resource:
-    cpu:
-      request: "100m"
-      limit: "500m"
-    memory:
-      request: "256Mi"
-      limit: "512Mi"
+services:
+  - name: "api"
+    github:
+      repository: "myorg/api"
+      branchName: "main"
+      docker:
+        defaultTag: "main"
+        app:
+          dockerfilePath: "Dockerfile"
+          ports:
+            - 3000
+      deployment:
+        public: true
+        resource:
+          cpu:
+            request: "100m"
+            limit: "500m"
+          memory:
+            request: "256Mi"
+            limit: "512Mi"
 ```
 
 ### Docker Service (Pre-built Images)
@@ -205,6 +219,8 @@ Docs: [Docker Schema](https://uselifecycle.com/docs/schema/docker)
 - `docker.defaultTag` - Image tag (e.g., "15-alpine", "7")
 - `docker.ports` - Array of exposed ports
 
+**Important:** For docker services, `deployment` is nested **inside** `docker:`, not at the service level.
+
 **Template:**
 ```yaml
 services:
@@ -216,6 +232,10 @@ services:
         - PORT_NUMBER
       env:
         KEY: "value"
+      deployment:
+        public: false
+        readiness:
+          tcpSocketPort: PORT_NUMBER
 ```
 
 **Common database examples:**
@@ -244,6 +264,9 @@ services:
       defaultTag: "7-alpine"
       ports:
         - 6379
+      deployment:
+        readiness:
+          tcpSocketPort: 6379
 ```
 
 MySQL:
@@ -272,6 +295,26 @@ services:
       env:
         MONGO_INITDB_ROOT_USERNAME: "admin"
         MONGO_INITDB_ROOT_PASSWORD: "password"
+```
+
+Nginx (public with deployment):
+```yaml
+services:
+  - name: "nginx"
+    docker:
+      dockerImage: "nginx"
+      defaultTag: "latest"
+      ports:
+        - 80
+      deployment:
+        public: true
+        resource:
+          cpu:
+            request: "10m"
+          memory:
+            request: "200Mi"
+        readiness:
+          tcpSocketPort: 80
 ```
 
 ---
