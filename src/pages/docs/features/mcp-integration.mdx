@@ -1,0 +1,278 @@
+---
+title: MCP Integration
+tags:
+  - ai
+  - agent
+  - mcp
+  - tools
+  - integration
+---
+
+import { Callout } from "nextra/components";
+
+The **Model Context Protocol (MCP)** is an open standard that lets AI agents discover and call tools from external servers. Lifecycle supports MCP, so you can extend the [AI Agent](/docs/features/ai-agent) with tools beyond the built-in Kubernetes and GitHub capabilities.
+
+When you register an MCP server, Lifecycle connects to it, discovers the available tools, caches their definitions, and makes them available during chat sessions. MCP tools appear alongside built-in tools and work the same way.
+
+<Callout type="info">
+  MCP servers must be reachable from the Lifecycle server at the configured URL.
+  Lifecycle validates connectivity whenever you create or update a server
+  configuration.
+</Callout>
+
+## Configuring MCP servers
+
+MCP server configurations are managed through the REST API. Each configuration includes these fields:
+
+| Field         | Type              | Required | Default    | Description                                                                                      |
+| ------------- | ----------------- | -------- | ---------- | ------------------------------------------------------------------------------------------------ |
+| `slug`        | `string`          | Yes      | —          | Unique identifier. Lowercase alphanumeric and hyphens, 1–100 chars, no leading/trailing hyphens. |
+| `name`        | `string`          | Yes      | —          | Human-readable display name.                                                                     |
+| `url`         | `string`          | Yes      | —          | Full URL of the MCP server endpoint.                                                             |
+| `scope`       | `string`          | Yes      | `"global"` | Either `"global"` or a repo full name (e.g. `"myorg/myrepo"`).                                   |
+| `description` | `string`          | No       | `null`     | Optional description of the server's purpose.                                                    |
+| `headers`     | `object`          | No       | `{}`       | HTTP headers sent with every request (e.g. auth tokens).                                         |
+| `envVars`     | `object`          | No       | `{}`       | Environment variables associated with this server.                                               |
+| `enabled`     | `boolean`         | No       | `true`     | Whether the server is active. Disabled servers are excluded from tool resolution.                |
+| `timeout`     | `number`          | No       | `30000`    | Timeout in milliseconds for handshake and tool calls.                                            |
+| `cachedTools` | `McpCachedTool[]` | Auto     | `[]`       | Auto-populated during connectivity validation with discovered tool definitions.                  |
+
+### Transport auto-negotiation
+
+Lifecycle automatically negotiates the transport protocol. It tries **StreamableHTTP** first, then falls back to **SSE (Server-Sent Events)**. If both fail, the connection is rejected with an error describing what went wrong.
+
+### Connectivity validation
+
+Lifecycle checks that the MCP server is reachable and returns at least one tool:
+
+- **On create** — Validation always runs. If the server is unreachable or returns zero tools, the request fails with `422`.
+- **On update** — Validation only runs when `url` or `headers` change. If neither changes, the existing cached tools are preserved.
+
+During validation, `cachedTools` is automatically populated with the tools discovered from the server.
+
+---
+
+## Scoping and merge behavior
+
+MCP servers can be scoped at two levels:
+
+- **Global** (`scope: "global"`) — Available to all repositories.
+- **Per-repository** (`scope: "myorg/myrepo"`) — Available only to that specific repository.
+
+### Runtime merge
+
+When the AI Agent starts a session, Lifecycle resolves the effective set of MCP servers by combining:
+
+1. All **enabled global** servers (minus any in the repository's `disabledSlugs` list)
+2. All **enabled per-repository** servers for that build's repository
+
+The combined list gives the agent the full set of MCP tools.
+
+### Disabling global servers per-repository
+
+A repository can opt out of specific global MCP servers by adding their slugs to the `disabledSlugs` list. This prevents those servers from contributing tools for that repository without affecting others.
+
+<Callout>
+  For per-repository AI Agent settings (like `disabledSlugs`, excluded tools,
+  and custom rules), see [AI Agent
+  Configuration](/docs/features/ai-agent-configuration).
+</Callout>
+
+---
+
+## Managing MCP servers via API
+
+All endpoints are under `/api/v2/ai/config/mcp-servers`. Request and response bodies use JSON. Header values are redacted to `"******"` in all responses.
+
+### List servers
+
+```
+GET /api/v2/ai/config/mcp-servers?scope={scope}
+```
+
+Returns all MCP server configurations for the given scope. Defaults to `"global"` if `scope` is omitted.
+
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "id": 1,
+      "slug": "my-server",
+      "name": "My MCP Server",
+      "description": "Provides custom tools",
+      "url": "https://mcp.example.com",
+      "scope": "global",
+      "headers": { "Authorization": "******" }, // redacted in responses
+      "envVars": {},
+      "enabled": true,
+      "timeout": 30000,
+      "cachedTools": [
+        {
+          "name": "lookup_user",
+          "description": "Look up a user by ID",
+          "inputSchema": {
+            "type": "object",
+            "properties": { "userId": { "type": "string" } }
+          }
+        }
+      ],
+      "createdAt": "2025-01-15T10:00:00.000Z",
+      "updatedAt": "2025-01-15T10:00:00.000Z"
+    }
+  ]
+}
+```
+
+### Create a server
+
+```
+POST /api/v2/ai/config/mcp-servers
+```
+
+Registers a new MCP server. Lifecycle validates connectivity before saving.
+
+```json
+{
+  "slug": "my-server",
+  "name": "My MCP Server",
+  "url": "https://mcp.example.com",
+  "scope": "global",
+  "description": "Provides custom tools",
+  "headers": { "Authorization": "Bearer token123" }, // sent with every request
+  "enabled": true,
+  "timeout": 30000 // milliseconds
+}
+```
+
+Returns the created configuration (status `201`) with redacted headers and populated `cachedTools`.
+
+| Error | Cause                                                               |
+| ----- | ------------------------------------------------------------------- |
+| `400` | Missing required fields (`slug`, `name`, `url`)                     |
+| `409` | A server with the same slug already exists in the same scope        |
+| `422` | Slug validation failed, or server unreachable / returned zero tools |
+
+### Get a server by slug
+
+```
+GET /api/v2/ai/config/mcp-servers/{slug}?scope={scope}
+```
+
+Returns a single configuration with redacted headers. Defaults to `"global"` scope. Returns `404` if not found.
+
+### Update a server
+
+```
+PUT /api/v2/ai/config/mcp-servers/{slug}?scope={scope}
+```
+
+Only include the fields you want to change. If `url` or `headers` change, connectivity is re-validated.
+
+```json
+{
+  "name": "Updated Name",
+  "timeout": 60000 // bump timeout to 60 seconds
+}
+```
+
+Returns the updated configuration. Returns `404` if not found, `422` if connectivity validation fails.
+
+### Delete a server
+
+```
+DELETE /api/v2/ai/config/mcp-servers/{slug}?scope={scope}
+```
+
+Soft-deletes the configuration. Returns `204` on success, `404` if not found.
+
+### Health check
+
+```
+GET /api/v2/ai/config/mcp-servers/health
+```
+
+Checks connectivity for all enabled servers. Connects to each one, lists tools, and reports reachability. If the tool list changed since the last check, cached tools are automatically refreshed.
+
+```json
+{
+  "healthy": true, // true only when ALL servers are reachable
+  "servers": [
+    {
+      "slug": "my-server",
+      "name": "My MCP Server",
+      "reachable": true,
+      "toolCount": 3,
+      "latencyMs": 245,
+      "error": null,
+      "cacheRefreshed": false // true if tools changed since last check
+    }
+  ]
+}
+```
+
+---
+
+## Tool naming and safety
+
+### Naming convention
+
+To avoid collisions between servers, MCP tools are exposed with a namespaced name:
+
+```
+mcp__{slug}__{toolName}
+```
+
+For example, a tool called `lookup_user` from a server with slug `my-server` becomes `mcp__my-server__lookup_user`. The agent handles this automatically.
+
+### Safety mapping
+
+MCP tool annotations are mapped to Lifecycle safety levels that influence how the agent uses each tool:
+
+| MCP Annotation          | Lifecycle Safety Level | What happens                            |
+| ----------------------- | ---------------------- | --------------------------------------- |
+| `destructiveHint: true` | `DANGEROUS`            | Description prefixed with `[DANGEROUS]` |
+| `readOnlyHint: true`    | `SAFE`                 | Description prefixed with `[SAFE]`      |
+| `openWorldHint: true`   | `CAUTIOUS`             | No prefix added                         |
+| No annotations          | `CAUTIOUS`             | Default safety level                    |
+
+Annotations are evaluated in priority order: `destructiveHint` takes precedence over `readOnlyHint`, which takes precedence over `openWorldHint`.
+
+### Error handling
+
+MCP tool errors fall into three categories:
+
+| Error Code             | Trigger                                         | Recoverable |
+| ---------------------- | ----------------------------------------------- | ----------- |
+| `MCP_CONNECTION_ERROR` | Server unreachable, timeout, connection refused | Yes         |
+| `MCP_TOOL_ERROR`       | Tool returned an error result                   | Yes         |
+| `MCP_PROTOCOL_ERROR`   | JSON-RPC or protocol-level failure              | No          |
+
+Recoverable errors let the agent retry or suggest alternatives. Protocol errors indicate a fundamental compatibility issue between Lifecycle and the server.
+
+---
+
+## Troubleshooting
+
+### Server fails connectivity check
+
+1. **Check the URL** — Confirm the URL is correct and reachable from the Lifecycle server.
+2. **Check the transport** — Your server must support StreamableHTTP or SSE. Stdio-only servers do not work with Lifecycle.
+3. **Check authentication** — If your server requires auth headers, make sure they are included in the `headers` field. Header values are redacted in responses, so you cannot read them back.
+4. **Check the timeout** — If the server is slow to respond, increase the `timeout` value.
+
+### Tools not appearing in the agent
+
+1. **Verify the server returns at least one tool** — Lifecycle rejects servers that expose zero tools during validation.
+2. **Check the `enabled` flag** — Disabled servers are excluded from tool resolution.
+3. **Check the scope** — A server scoped to a specific repo does not appear for builds in other repos.
+4. **Check `disabledSlugs`** — A repo-level configuration may be opting out of your global server.
+
+### Health check shows unreachable
+
+Run the health check endpoint to see the specific error message in the `error` field. Common causes include the server being down or network policies blocking traffic from Lifecycle pods.
+
+<Callout type="tip">
+  Use `GET /api/v2/ai/config/mcp-servers/health` to verify all servers are
+  reachable and their tool caches are current.
+</Callout>

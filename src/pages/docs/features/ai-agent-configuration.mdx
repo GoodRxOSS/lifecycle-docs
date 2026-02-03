@@ -1,0 +1,337 @@
+---
+title: AI Agent Configuration
+tags:
+  - ai
+  - agent
+  - configuration
+  - admin
+  - api
+---
+
+import { Callout } from "nextra/components";
+
+The AI Agent configuration system gives administrators fine-grained control over agent behavior at two levels: **global defaults** that apply to all repositories, and **per-repository overrides** for specific projects. All configuration is managed through REST API endpoints.
+
+<Callout type="info">
+  For an overview of the AI Agent itself, see [AI
+  Agent](/docs/features/ai-agent). To extend the agent with external tools, see
+  [MCP Integration](/docs/features/mcp-integration).
+</Callout>
+
+## Configuration hierarchy
+
+Global defaults live in the Lifecycle `global_config` table under the `aiAgent` key. Per-repository overrides are stored in the `ai_agent_repo_config` table and merged on top of global defaults at runtime.
+
+### Fields
+
+| Field                   | Type               | Default     | Description                                     |
+| ----------------------- | ------------------ | ----------- | ----------------------------------------------- |
+| `enabled`               | `boolean`          | `false`     | Whether the AI Agent is available               |
+| `maxMessagesPerSession` | `number`           | `50`        | Maximum messages per chat session               |
+| `sessionTTL`            | `number`           | `3600`      | Session time-to-live in seconds                 |
+| `providers`             | `ProviderConfig[]` | `[]`        | LLM provider configurations (global only)       |
+| `additiveRules`         | `string[]`         | `[]`        | Extra rules appended to the system prompt       |
+| `systemPromptOverride`  | `string`           | `undefined` | Full replacement for the system prompt          |
+| `excludedTools`         | `string[]`         | `[]`        | Tools the agent cannot use                      |
+| `excludedFilePatterns`  | `string[]`         | `[]`        | Glob patterns for files the agent cannot access |
+
+### How merging works
+
+When a repository has an override, the effective configuration is computed by merging the override on top of global defaults:
+
+- **Scalar fields** (`enabled`, `maxMessagesPerSession`, `sessionTTL`, `systemPromptOverride`) — the repository value replaces the global value.
+- **Array fields** (`additiveRules`, `excludedTools`, `excludedFilePatterns`) — repository values are **appended** to global values. Duplicates are removed automatically.
+
+Here's a concrete example. Say your global config looks like this:
+
+```json
+{
+  "enabled": true,
+  "maxMessagesPerSession": 50,
+  "excludedTools": ["patch_k8s_resource"], // blocked org-wide
+  "additiveRules": ["Always confirm before scaling."]
+}
+```
+
+And `myorg/frontend` has this override:
+
+```json
+{
+  "maxMessagesPerSession": 100, // raises the limit
+  "excludedTools": ["update_github_file"], // blocked for this repo only
+  "additiveRules": ["Prefer CSS fixes over JS."] // repo-specific rule
+}
+```
+
+The effective config for `myorg/frontend`:
+
+```json
+{
+  "enabled": true, // inherited
+  "maxMessagesPerSession": 100, // replaced
+  "excludedTools": ["patch_k8s_resource", "update_github_file"], // combined
+  "additiveRules": [
+    "Always confirm before scaling.",
+    "Prefer CSS fixes over JS."
+  ] // combined
+}
+```
+
+### Caching
+
+<Callout type="info">
+  Configurations are cached at three layers: in-memory (30 seconds), Redis (5
+  minutes), and the database (source of truth). Updating via the API immediately
+  invalidates both the Redis and in-memory caches for that repository.
+</Callout>
+
+---
+
+## Prompt customization
+
+### Additive rules
+
+The `additiveRules` field accepts an array of strings appended to the system prompt. Use this to add organization-specific guidelines, restrict behaviors, or provide extra context.
+
+Because additive rules use **additive merge**, global rules and repository rules are combined. Set organization-wide rules globally and layer project-specific rules per repository.
+
+```json
+{
+  "additiveRules": [
+    "Always check pod resource limits before suggesting scaling changes.",
+    "Prefer rolling restarts over full redeployments."
+  ]
+}
+```
+
+### System prompt override
+
+The `systemPromptOverride` field replaces the entire default system prompt. This is a **full replacement**, not additive.
+
+<Callout type="warning">
+  Setting `systemPromptOverride` replaces the entire built-in system prompt,
+  including safety instructions. Use this only when you need complete control
+  over the agent's behavior. Maximum length is **50,000 characters**.
+</Callout>
+
+When set at the repository level, the override applies only to that repository. The scalar merge rule means the repository value fully replaces any global override.
+
+---
+
+## Access control
+
+### Excluded tools
+
+The `excludedTools` field prevents the agent from using specific tools. This is useful for restricting write operations in sensitive repositories.
+
+Available tool names:
+
+- `get_k8s_resources`
+- `get_lifecycle_logs`
+- `patch_k8s_resource`
+- `query_database`
+- `get_github_file`
+- `list_github_directory`
+- `update_github_file`
+- `get_issue_comment`
+
+<Callout type="warning">
+  `query_database` is a **core tool** and cannot be excluded. Attempting to
+  exclude it returns a `400` error.
+</Callout>
+
+Because excluded tools use additive merge, tools excluded at the global level cannot be "un-excluded" at the repository level.
+
+### Excluded file patterns
+
+The `excludedFilePatterns` field accepts glob patterns that restrict which files the agent can access through the GitHub tools.
+
+**Validation rules:**
+
+| Rule                       | Limit                                  |
+| -------------------------- | -------------------------------------- |
+| Maximum number of patterns | 50                                     |
+| Maximum pattern length     | 200 characters                         |
+| Forbidden patterns         | `*`, `**`, `**/*` (overly broad)       |
+| Path traversal             | `../` is not allowed                   |
+| Absolute paths             | Patterns starting with `/` not allowed |
+
+```json
+{
+  "excludedFilePatterns": [
+    "*.env", // environment files
+    "secrets/**", // secrets directory
+    "config/production.*" // production configs
+  ]
+}
+```
+
+Like other array fields, file patterns use additive merge. Global patterns and repository patterns are combined and deduplicated.
+
+---
+
+## Managing configuration via API
+
+All endpoints are under `/api/v2/ai/agent-config`. Request and response bodies use JSON.
+
+### Global configuration
+
+**Get the current global config:**
+
+```
+GET /api/v2/ai/agent-config
+```
+
+```json
+{
+  "status": "success",
+  "data": {
+    "enabled": true,
+    "providers": [],
+    "maxMessagesPerSession": 50,
+    "sessionTTL": 3600,
+    "additiveRules": [],
+    "excludedTools": [],
+    "excludedFilePatterns": []
+  }
+}
+```
+
+**Update the global config:**
+
+```
+PUT /api/v2/ai/agent-config
+```
+
+```json
+{
+  "enabled": true,
+  "providers": [],
+  "maxMessagesPerSession": 100, // raise the session limit
+  "sessionTTL": 7200 // 2 hours
+}
+```
+
+Returns the updated configuration on success. Returns `400` for validation failures (invalid schema, prompt too long, core tool exclusion, bad file patterns).
+
+---
+
+### Repository overrides
+
+**List all repository overrides:**
+
+```
+GET /api/v2/ai/agent-config/repos
+```
+
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "id": 1,
+      "repositoryFullName": "myorg/myrepo",
+      "config": {
+        "enabled": false,
+        "excludedTools": ["patch_k8s_resource"]
+      },
+      "createdAt": "2025-01-15T10:00:00.000Z",
+      "updatedAt": "2025-01-15T10:00:00.000Z"
+    }
+  ]
+}
+```
+
+**Get a single repository override:**
+
+```
+GET /api/v2/ai/agent-config/repos/{owner}/{repo}
+```
+
+Returns only the override fields, not the merged result. Returns `404` if no override exists.
+
+**Get the effective (merged) configuration:**
+
+```
+GET /api/v2/ai/agent-config/repos/{owner}/{repo}/effective
+```
+
+```json
+{
+  "status": "success",
+  "data": {
+    "repoFullName": "myorg/myrepo",
+    "effectiveConfig": {
+      "enabled": false,
+      "providers": [],
+      "maxMessagesPerSession": 50,
+      "sessionTTL": 3600,
+      "additiveRules": [],
+      "excludedTools": ["patch_k8s_resource"], // merged from global + repo
+      "excludedFilePatterns": []
+    }
+  }
+}
+```
+
+<Callout type="tip">
+  Use the `/effective` endpoint to verify exactly what configuration a
+  repository uses at runtime, after merge.
+</Callout>
+
+**Create or update a repository override:**
+
+```
+PUT /api/v2/ai/agent-config/repos/{owner}/{repo}
+```
+
+Uses upsert semantics. Only include the fields you want to override.
+
+```json
+{
+  "enabled": false,
+  "excludedTools": ["patch_k8s_resource", "update_github_file"],
+  "additiveRules": ["Do not restart pods without explicit user confirmation."]
+}
+```
+
+Returns the saved override on success. Returns `400` for validation failures.
+
+**Delete a repository override:**
+
+```
+DELETE /api/v2/ai/agent-config/repos/{owner}/{repo}
+```
+
+Soft-deletes the override. The repository reverts to global defaults.
+
+---
+
+## Troubleshooting
+
+### Config changes not taking effect
+
+Configuration is cached at multiple layers. The API automatically invalidates caches on update, but if you changed the database directly, you may need to wait:
+
+- **In-memory cache** — expires after 30 seconds
+- **Redis cache** — expires after 5 minutes
+
+Use the `/effective` endpoint to confirm what the agent sees.
+
+### Cannot exclude a core tool
+
+`query_database` is required for agent operation. If you include it in `excludedTools`, the API returns:
+
+```
+Cannot exclude core tool: "query_database". Core tools are required for agent operation.
+```
+
+Remove it from your exclusion list.
+
+### Excluded tool still being used
+
+Array fields use **additive merge**. If you removed a tool from a repository override but it's still excluded, check the global config — the tool may be excluded there. Global exclusions cannot be overridden at the repo level.
+
+### System prompt override not working as expected
+
+`systemPromptOverride` **completely replaces** the built-in prompt, including safety instructions and tool usage guidelines. If the agent behaves unexpectedly, try `additiveRules` instead — it appends to the default prompt rather than replacing it.

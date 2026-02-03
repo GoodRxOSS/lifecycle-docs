@@ -1,0 +1,151 @@
+---
+title: AI Agent
+tags:
+  - ai
+  - agent
+  - debugging
+  - investigation
+  - llm
+---
+
+import { Callout } from "nextra/components";
+
+The **AI Agent** is an interactive assistant built into Lifecycle that helps you debug and investigate issues in your ephemeral environments. It inspects Kubernetes resources, reads pod logs, queries the Lifecycle database, browses your GitHub repository, and can apply fixes directly.
+
+<Callout type="info">
+  An administrator must enable the AI Agent before you can use it. If the
+  feature is not enabled, you see an **"AI Agent Not Enabled"** message with a
+  prompt to contact your administrator. See [AI Agent
+  Configuration](/docs/features/ai-agent-configuration) for setup details.
+</Callout>
+
+## Accessing the agent
+
+Navigate to the AI Agent from any build's detail view:
+
+```
+/builds/<build-uuid>/ai
+```
+
+The chat interface is scoped to that build's environment — the agent already knows which namespace, services, and resources to inspect.
+
+---
+
+## Debugging a failing environment
+
+Here's a typical debugging session:
+
+1. Open the AI Agent page for your build.
+2. Click one of the suggested prompts — for example, **"Why are my pods not starting?"**
+3. The agent queries Kubernetes for pod statuses, reads recent logs, and checks deployment configurations.
+4. It returns a structured response with a summary, per-service findings, and suggested fixes.
+
+At this point, you should see a response with **service cards** and an **activity panel** (described below). If the agent suggests a fix, you can apply it with one click.
+
+<Callout type="tip">
+  You don't need to know which Kubernetes commands to run. Describe your problem
+  in plain language and let the agent investigate.
+</Callout>
+
+The suggested prompts on first load are:
+
+- **"Why is my build failing?"**
+- **"What's wrong with deployments?"**
+- **"Why are my pods not starting?"**
+
+You can also type your own question.
+
+---
+
+## Understanding responses
+
+The agent returns two response formats depending on the question:
+
+- **Plain text** — for simple or conversational answers
+- **Structured investigation** — for debugging queries, containing the sections below
+
+### Summary
+
+A brief overview at the top describing overall environment health and key findings.
+
+### Service cards
+
+Each service gets its own card with:
+
+- **Status chip** — service health: `healthy`, `degraded`, `failing`, `pending`, or `unknown`
+- **Issue** — root cause or current problem
+- **Errors** — specific error messages from logs or events
+- **Suggested fixes** — actionable steps you can follow
+- **Auto-fix button** — applies a fix directly (for example, restarting a deployment or committing a config change to your PR branch)
+- **Evidence** — links back to the tool calls that support the findings
+
+### Activity panel
+
+Each response includes a collapsible **Investigation** panel showing every tool call the agent made:
+
+- **Status icon** — spinner (in progress), green checkmark (success), or red X (failure)
+- **Description** — what the agent did (e.g., "Fetched pods in namespace env-abc123")
+- **Duration chip** — how long the call took
+
+A **total investigation time** appears at the top of the panel. Evidence references in the response link to specific entries in this panel.
+
+---
+
+## Selecting a model
+
+A **Model** dropdown in the chat header displays available models in the format `provider:modelId` (for example, "Claude Sonnet" or "GPT-4o"). Your selection is saved to `localStorage` and persists across sessions.
+
+A **Clear** button appears when you have messages. It clears the conversation history and starts a new session.
+
+### Supported providers
+
+Each provider requires its own API key configured on the server:
+
+| Provider      | Environment Variable | Fallback Variable |
+| ------------- | -------------------- | ----------------- |
+| **Anthropic** | `ANTHROPIC_API_KEY`  | `AI_API_KEY`      |
+| **OpenAI**    | `OPENAI_API_KEY`     | `AI_API_KEY`      |
+| **Gemini**    | `GEMINI_API_KEY`     | `AI_API_KEY`      |
+
+<Callout type="tip">
+  Set `AI_API_KEY` as a universal fallback if all providers share the same key.
+  Provider-specific keys take precedence.
+</Callout>
+
+---
+
+## Agent capabilities
+
+The agent has access to tools organized by category:
+
+| Category       | Tools                                           | What they do                                                                       |
+| -------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------- |
+| **Kubernetes** | Get Resources, Get Pod Logs, Get Lifecycle Logs | Inspect pods, deployments, services, events, and logs in the build namespace       |
+| **Kubernetes** | Patch Resource                                  | Restart deployments, scale replicas, delete stuck resources, apply patches         |
+| **Kubernetes** | Query Database                                  | Run read-only queries against the Lifecycle database for build and deploy metadata |
+| **GitHub**     | Get File, List Directory                        | Browse repository files and directories on the PR branch                           |
+| **GitHub**     | Update File                                     | Commit a fix directly to the PR branch                                             |
+| **GitHub**     | Get Issue Comment                               | Read PR comments for additional context                                            |
+
+<Callout>
+  Administrators can restrict which tools the agent uses per repository. See [AI
+  Agent Configuration](/docs/features/ai-agent-configuration#access-control) for
+  details.
+</Callout>
+
+You can also extend the agent with external tools via [MCP Integration](/docs/features/mcp-integration).
+
+---
+
+## Summary
+
+| Feature             | Details                                                                                       |
+| ------------------- | --------------------------------------------------------------------------------------------- |
+| Access URL          | `/builds/<build-uuid>/ai`                                                                     |
+| Prerequisite        | Must be enabled by an administrator                                                           |
+| Suggested prompts   | "Why is my build failing?", "What's wrong with deployments?", "Why are my pods not starting?" |
+| Response format     | Plain text or structured investigation with service cards                                     |
+| Activity panel      | Collapsible list of tool calls with status and duration                                       |
+| Model selection     | Dropdown in header, persisted in localStorage                                                 |
+| Supported providers | Anthropic, OpenAI, Gemini                                                                     |
+| Auto-fix            | One-click fixes via Kubernetes patches or GitHub commits                                      |
