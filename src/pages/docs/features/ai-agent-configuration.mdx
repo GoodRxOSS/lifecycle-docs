@@ -77,6 +77,78 @@ The effective config for `myorg/frontend`:
 }
 ```
 
+### Provider and model configuration
+
+The `providers` field defines which LLM providers and models are available. This is a **global-only** field — repository overrides cannot change provider configuration.
+
+Each provider entry has the following structure:
+
+| Field          | Type            | Required | Description                                           |
+| -------------- | --------------- | -------- | ----------------------------------------------------- |
+| `name`         | `string`        | Yes      | Provider identifier (`anthropic`, `openai`, `gemini`) |
+| `enabled`      | `boolean`       | Yes      | Whether this provider is available                    |
+| `apiKeyEnvVar` | `string`        | Yes      | Environment variable containing the API key           |
+| `models`       | `ModelConfig[]` | Yes      | List of models for this provider                      |
+
+Each model entry:
+
+| Field                  | Type      | Required | Description                                                     |
+| ---------------------- | --------- | -------- | --------------------------------------------------------------- |
+| `id`                   | `string`  | Yes      | Model identifier sent to the provider API                       |
+| `displayName`          | `string`  | Yes      | Human-readable name shown in the UI dropdown                    |
+| `enabled`              | `boolean` | Yes      | Whether this model is selectable                                |
+| `default`              | `boolean` | Yes      | Whether this is the default model (one per provider)            |
+| `maxTokens`            | `integer` | Yes      | Maximum output tokens for the model                             |
+| `inputCostPerMillion`  | `number`  | No       | Cost per 1M input tokens (USD). Enables cost display in the UI  |
+| `outputCostPerMillion` | `number`  | No       | Cost per 1M output tokens (USD). Enables cost display in the UI |
+
+<Callout type="info">
+  When `inputCostPerMillion` and `outputCostPerMillion` are both set for a
+  model, the UI displays a computed cost alongside token counts in the X-Ray
+  debug panel. If either field is omitted, cost is not shown.
+</Callout>
+
+Example with pricing configured:
+
+```json
+{
+  "providers": [
+    {
+      "name": "anthropic",
+      "enabled": true,
+      "apiKeyEnvVar": "ANTHROPIC_API_KEY",
+      "models": [
+        {
+          "id": "claude-sonnet-4-20250514",
+          "displayName": "Claude Sonnet",
+          "enabled": true,
+          "default": true,
+          "maxTokens": 8096,
+          "inputCostPerMillion": 3.0,
+          "outputCostPerMillion": 15.0
+        }
+      ]
+    },
+    {
+      "name": "gemini",
+      "enabled": true,
+      "apiKeyEnvVar": "GEMINI_API_KEY",
+      "models": [
+        {
+          "id": "gemini-2.5-pro-preview-05-06",
+          "displayName": "Gemini 2.5 Pro",
+          "enabled": true,
+          "default": true,
+          "maxTokens": 65536,
+          "inputCostPerMillion": 1.25,
+          "outputCostPerMillion": 10.0
+        }
+      ]
+    }
+  ]
+}
+```
+
 ### Caching
 
 <Callout type="info">

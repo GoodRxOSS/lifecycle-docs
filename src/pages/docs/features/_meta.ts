@@ -47,5 +47,5 @@ export default {
   },
   "mcp-integration": {
     "title": "MCP Integration"
-  },
+  }
 };
