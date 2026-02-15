@@ -24,16 +24,25 @@ Global defaults live in the Lifecycle `global_config` table under the `aiAgent` 
 
 ### Fields
 
-| Field                   | Type               | Default     | Description                                     |
-| ----------------------- | ------------------ | ----------- | ----------------------------------------------- |
-| `enabled`               | `boolean`          | `false`     | Whether the AI Agent is available               |
-| `maxMessagesPerSession` | `number`           | `50`        | Maximum messages per chat session               |
-| `sessionTTL`            | `number`           | `3600`      | Session time-to-live in seconds                 |
-| `providers`             | `ProviderConfig[]` | `[]`        | LLM provider configurations (global only)       |
-| `additiveRules`         | `string[]`         | `[]`        | Extra rules appended to the system prompt       |
-| `systemPromptOverride`  | `string`           | `undefined` | Full replacement for the system prompt          |
-| `excludedTools`         | `string[]`         | `[]`        | Tools the agent cannot use                      |
-| `excludedFilePatterns`  | `string[]`         | `[]`        | Glob patterns for files the agent cannot access |
+| Field                              | Type               | Default     | Description                                                                    |
+| ---------------------------------- | ------------------ | ----------- | ------------------------------------------------------------------------------ |
+| `enabled`                          | `boolean`          | `false`     | Whether the AI Agent is available                                              |
+| `maxMessagesPerSession`            | `number`           | `50`        | Maximum messages per chat session                                              |
+| `sessionTTL`                       | `number`           | `3600`      | Session time-to-live in seconds                                                |
+| `providers`                        | `ProviderConfig[]` | `[]`        | LLM provider configurations (global only)                                      |
+| `additiveRules`                    | `string[]`         | `[]`        | Extra rules appended to the system prompt                                      |
+| `systemPromptOverride`             | `string`           | `undefined` | Full replacement for the system prompt                                         |
+| `excludedTools`                    | `string[]`         | `[]`        | Tools the agent cannot use                                                     |
+| `excludedFilePatterns`             | `string[]`         | `[]`        | Glob patterns for files the agent cannot access                                |
+| `maxIterations`                    | `number`           | `20`        | Maximum orchestration loop iterations (global only)                            |
+| `maxToolCalls`                     | `number`           | `50`        | Maximum total tool calls per query (global only)                               |
+| `maxRepeatedCalls`                 | `number`           | `1`         | Maximum repeated calls with same arguments before loop detection (global only) |
+| `compressionThreshold`             | `number`           | `80000`     | Token count before conversation history is compressed (global only)            |
+| `observationMaskingRecencyWindow`  | `number`           | `3`         | Number of recent tool results preserved when masking (global only)             |
+| `observationMaskingTokenThreshold` | `number`           | `25000`     | Token count before observation masking activates (global only)                 |
+| `toolExecutionTimeout`             | `number`           | `30000`     | Tool execution timeout in milliseconds (global only)                           |
+| `toolOutputMaxChars`               | `number`           | `30000`     | Maximum characters in tool output before truncation (global only)              |
+| `retryBudget`                      | `number`           | `10`        | Maximum retry attempts per query on provider errors (global only)              |
 
 ### How merging works
 
@@ -239,6 +248,70 @@ The `excludedFilePatterns` field accepts glob patterns that restrict which files
 ```
 
 Like other array fields, file patterns use additive merge. Global patterns and repository patterns are combined and deduplicated.
+
+---
+
+## Orchestration limits
+
+These fields control the agent's internal behavior. They are all **global-only** settings — repository overrides cannot change them. If omitted, the defaults below are used.
+
+### Loop protection
+
+Controls for the agent's tool-calling loop that prevent runaway behavior.
+
+| Field              | Default | Description                                                                                         |
+| ------------------ | ------- | --------------------------------------------------------------------------------------------------- |
+| `maxIterations`    | `20`    | Maximum number of LLM round-trips in a single query. Prevents runaway conversations.                |
+| `maxToolCalls`     | `50`    | Maximum total tool invocations across all iterations. Caps resource usage for broad investigations. |
+| `maxRepeatedCalls` | `1`     | How many times the same tool can be called with identical arguments before loop detection kicks in. |
+
+When a limit is hit, the agent stops and returns an error message to the user explaining what happened.
+
+### Context management
+
+Controls how the agent manages conversation context to stay within LLM token limits.
+
+| Field                              | Default | Description                                                                                                                               |
+| ---------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `compressionThreshold`             | `80000` | Token count at which the conversation history is summarized into a compact form. Higher values preserve more context but use more tokens. |
+| `observationMaskingRecencyWindow`  | `3`     | Number of recent tool results kept in full when masking older observations. Older results are replaced with placeholders.                 |
+| `observationMaskingTokenThreshold` | `25000` | Token count at which observation masking activates. Below this threshold, all tool results are kept in full.                              |
+
+### Tool execution
+
+Controls for tool execution behavior and output handling.
+
+| Field                  | Default | Description                                                                                                                     |
+| ---------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `toolExecutionTimeout` | `30000` | Maximum time in milliseconds a single tool call can run before being terminated. Increase for slow K8s clusters or MCP servers. |
+| `toolOutputMaxChars`   | `30000` | Maximum characters in a tool's output before truncation. Larger values give the agent more data but cost more tokens.           |
+
+### Resilience
+
+Controls for error recovery when communicating with LLM providers.
+
+| Field         | Default | Description                                                                                                                                |
+| ------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `retryBudget` | `10`    | Maximum retry attempts per query when the LLM provider returns transient errors. Higher values improve reliability at the cost of latency. |
+
+```json
+{
+  "maxIterations": 30,
+  "maxToolCalls": 80,
+  "maxRepeatedCalls": 2,
+  "compressionThreshold": 100000,
+  "observationMaskingRecencyWindow": 5,
+  "observationMaskingTokenThreshold": 40000,
+  "toolExecutionTimeout": 60000,
+  "toolOutputMaxChars": 50000,
+  "retryBudget": 15
+}
+```
+
+<Callout type="info">
+  Increasing these limits allows the agent to perform deeper investigations but
+  consumes more LLM tokens. Lower values are safer for cost control.
+</Callout>
 
 ---
 
