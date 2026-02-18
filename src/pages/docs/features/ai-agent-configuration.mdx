@@ -24,32 +24,33 @@ Global defaults live in the Lifecycle `global_config` table under the `aiAgent` 
 
 ### Fields
 
-| Field                              | Type               | Default     | Description                                                                    |
-| ---------------------------------- | ------------------ | ----------- | ------------------------------------------------------------------------------ |
-| `enabled`                          | `boolean`          | `false`     | Whether the AI Agent is available                                              |
-| `maxMessagesPerSession`            | `number`           | `50`        | Maximum messages per chat session                                              |
-| `sessionTTL`                       | `number`           | `3600`      | Session time-to-live in seconds                                                |
-| `providers`                        | `ProviderConfig[]` | `[]`        | LLM provider configurations (global only)                                      |
-| `additiveRules`                    | `string[]`         | `[]`        | Extra rules appended to the system prompt                                      |
-| `systemPromptOverride`             | `string`           | `undefined` | Full replacement for the system prompt                                         |
-| `excludedTools`                    | `string[]`         | `[]`        | Tools the agent cannot use                                                     |
-| `excludedFilePatterns`             | `string[]`         | `[]`        | Glob patterns for files the agent cannot access                                |
-| `maxIterations`                    | `number`           | `20`        | Maximum orchestration loop iterations (global only)                            |
-| `maxToolCalls`                     | `number`           | `50`        | Maximum total tool calls per query (global only)                               |
-| `maxRepeatedCalls`                 | `number`           | `1`         | Maximum repeated calls with same arguments before loop detection (global only) |
-| `compressionThreshold`             | `number`           | `80000`     | Token count before conversation history is compressed (global only)            |
-| `observationMaskingRecencyWindow`  | `number`           | `3`         | Number of recent tool results preserved when masking (global only)             |
-| `observationMaskingTokenThreshold` | `number`           | `25000`     | Token count before observation masking activates (global only)                 |
-| `toolExecutionTimeout`             | `number`           | `30000`     | Tool execution timeout in milliseconds (global only)                           |
-| `toolOutputMaxChars`               | `number`           | `30000`     | Maximum characters in tool output before truncation (global only)              |
-| `retryBudget`                      | `number`           | `10`        | Maximum retry attempts per query on provider errors (global only)              |
+| Field                              | Type               | Default                               | Description                                                                    |
+| ---------------------------------- | ------------------ | ------------------------------------- | ------------------------------------------------------------------------------ |
+| `enabled`                          | `boolean`          | `false`                               | Whether the AI Agent is available                                              |
+| `maxMessagesPerSession`            | `number`           | `50`                                  | Maximum messages per chat session                                              |
+| `sessionTTL`                       | `number`           | `3600`                                | Session time-to-live in seconds                                                |
+| `providers`                        | `ProviderConfig[]` | `[]`                                  | LLM provider configurations (global only)                                      |
+| `additiveRules`                    | `string[]`         | `[]`                                  | Extra rules appended to the system prompt                                      |
+| `systemPromptOverride`             | `string`           | `undefined`                           | Full replacement for the system prompt                                         |
+| `excludedTools`                    | `string[]`         | `[]`                                  | Tools the agent cannot use                                                     |
+| `excludedFilePatterns`             | `string[]`         | `[]`                                  | Glob patterns for files the agent cannot access                                |
+| `allowedWritePatterns`             | `string[]`         | `["lifecycle.yaml", "lifecycle.yml"]` | Glob patterns for additional file paths the agent is allowed to write to       |
+| `maxIterations`                    | `number`           | `20`                                  | Maximum orchestration loop iterations (global only)                            |
+| `maxToolCalls`                     | `number`           | `50`                                  | Maximum total tool calls per query (global only)                               |
+| `maxRepeatedCalls`                 | `number`           | `1`                                   | Maximum repeated calls with same arguments before loop detection (global only) |
+| `compressionThreshold`             | `number`           | `80000`                               | Token count before conversation history is compressed (global only)            |
+| `observationMaskingRecencyWindow`  | `number`           | `3`                                   | Number of recent tool results preserved when masking (global only)             |
+| `observationMaskingTokenThreshold` | `number`           | `25000`                               | Token count before observation masking activates (global only)                 |
+| `toolExecutionTimeout`             | `number`           | `30000`                               | Tool execution timeout in milliseconds (global only)                           |
+| `toolOutputMaxChars`               | `number`           | `30000`                               | Maximum characters in tool output before truncation (global only)              |
+| `retryBudget`                      | `number`           | `10`                                  | Maximum retry attempts per query on provider errors (global only)              |
 
 ### How merging works
 
 When a repository has an override, the effective configuration is computed by merging the override on top of global defaults:
 
 - **Scalar fields** (`enabled`, `maxMessagesPerSession`, `sessionTTL`, `systemPromptOverride`) — the repository value replaces the global value.
-- **Array fields** (`additiveRules`, `excludedTools`, `excludedFilePatterns`) — repository values are **appended** to global values. Duplicates are removed automatically.
+- **Array fields** (`additiveRules`, `excludedTools`, `excludedFilePatterns`, `allowedWritePatterns`) — repository values are **appended** to global values. Duplicates are removed automatically.
 
 Here's a concrete example. Say your global config looks like this:
 
@@ -249,6 +250,33 @@ The `excludedFilePatterns` field accepts glob patterns that restrict which files
 
 Like other array fields, file patterns use additive merge. Global patterns and repository patterns are combined and deduplicated.
 
+### Allowed write patterns
+
+The `allowedWritePatterns` field controls which file paths the agent is permitted to modify through the `update_file` tool. By default, the agent can only write to `lifecycle.yaml` and `lifecycle.yml` (plus any files explicitly referenced in the lifecycle configuration such as Dockerfiles and Helm value files).
+
+To allow the agent to modify additional files, add glob patterns to this field. For example, to allow modifications to Helm charts, Dockerfiles, and Ansible playbooks:
+
+```json
+{
+  "allowedWritePatterns": [
+    "lifecycle.yaml",
+    "lifecycle.yml",
+    "helm/**/*.{yaml,yml}",
+    "sysops/helm/**/*.{yaml,yml}",
+    "sysops/dockerfiles/**/*.dockerfile",
+    "sysops/ansible/**/*.{yaml,yml}"
+  ]
+}
+```
+
+<Callout type="warning">
+  Setting `allowedWritePatterns` at the global or repository level defines the
+  full set of writable paths (in addition to files referenced in the lifecycle
+  config). Keep the list minimal to limit the blast radius of agent changes.
+</Callout>
+
+Like other array fields, allowed write patterns use additive merge. Global patterns and repository patterns are combined and deduplicated.
+
 ---
 
 ## Orchestration limits
@@ -337,7 +365,8 @@ GET /api/v2/ai/agent-config
     "sessionTTL": 3600,
     "additiveRules": [],
     "excludedTools": [],
-    "excludedFilePatterns": []
+    "excludedFilePatterns": [],
+    "allowedWritePatterns": ["lifecycle.yaml", "lifecycle.yml"]
   }
 }
 ```
@@ -413,7 +442,8 @@ GET /api/v2/ai/agent-config/repos/{owner}/{repo}/effective
       "sessionTTL": 3600,
       "additiveRules": [],
       "excludedTools": ["patch_k8s_resource"], // merged from global + repo
-      "excludedFilePatterns": []
+      "excludedFilePatterns": [],
+      "allowedWritePatterns": ["lifecycle.yaml", "lifecycle.yml"]
     }
   }
 }
