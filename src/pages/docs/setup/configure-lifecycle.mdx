@@ -60,6 +60,24 @@ Replace the `defaultIPWhiteList` under `global_config.serviceDefaults` with your
 
 ---
 
+## Enable Environment Lens Globally
+
+The environment lens banner can be enabled globally for all services via the `features` row in `global_config`. Individual services can still override this by setting `envLens` explicitly in their `lifecycle.yaml`.
+
+```sql
+-- Enable envLens globally for all services
+INSERT INTO public.global_config ("key", config, "createdAt", "updatedAt")
+VALUES ('features', '{"envLens": true}'::json, NOW(), NOW())
+ON CONFLICT ("key")
+DO UPDATE SET
+    config = (public.global_config.config::jsonb || '{"envLens": true}'::jsonb)::json,
+    "updatedAt" = NOW();
+```
+
+After running this, [refresh the config cache](#refresh-config-cache) to apply the change.
+
+---
+
 ## Refresh config cache
 
 ```sh
