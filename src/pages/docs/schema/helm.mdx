@@ -156,6 +156,13 @@ services:
         defaultTag: "main"
         builder:
           engine: "buildkit" # Options: buildkit (default), codefresh, kaniko
+          resources: # Optional - custom CPU/memory for the build job
+            requests:
+              cpu: "1"
+              memory: "2Gi"
+            limits:
+              cpu: "4"
+              memory: "8Gi"
         # Init container - runs before main application (optional)
         init:
           dockerfilePath: "docker/migrate.dockerfile"
@@ -223,11 +230,13 @@ The default Docker image tag, typically matching the branch name.
 
 ### docker.builder
 
-Configuration for the Docker build process. The `engine` field specifies which build engine to use:
+Configuration for the Docker build process. See the [GitHub service docker.builder](/docs/schema/github#dockerbuilder) section for the full reference, including `resources` configuration for build job CPU/memory.
 
-- `buildkit` - BuildKit engine (default)
-- `codefresh` - Codefresh build engine
-- `kaniko` - Kaniko build engine
+| Field                | Type   | Description                                               |
+| -------------------- | ------ | --------------------------------------------------------- |
+| `engine`             | string | Build engine: `buildkit` (default), `kaniko`, `codefresh` |
+| `resources.requests` | object | Minimum CPU/memory guaranteed for the build job           |
+| `resources.limits`   | object | Maximum CPU/memory allowed for the build job              |
 
 ### docker.app (Required when using docker)
 
