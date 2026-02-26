@@ -230,13 +230,14 @@ The default Docker image tag, typically matching the branch name.
 
 ### docker.builder
 
-Configuration for the Docker build process. See the [GitHub service docker.builder](/docs/schema/github#dockerbuilder) section for the full reference, including `resources` configuration for build job CPU/memory.
+Configuration for the Docker build process. See the [GitHub service docker.builder](/docs/schema/github#dockerbuilder) section for the full reference, including `resources` configuration for build job CPU/memory and details on the `safe-to-evict` pod annotation.
 
-| Field                | Type   | Description                                               |
-| -------------------- | ------ | --------------------------------------------------------- |
-| `engine`             | string | Build engine: `buildkit` (default), `kaniko`, `codefresh` |
-| `resources.requests` | object | Minimum CPU/memory guaranteed for the build job           |
-| `resources.limits`   | object | Maximum CPU/memory allowed for the build job              |
+| Field                | Type                    | Description                                                                        |
+| -------------------- | ----------------------- | ---------------------------------------------------------------------------------- |
+| `engine`             | string                  | Build engine: `buildkit` (default), `kaniko`, `codefresh`                          |
+| `resources.requests` | object                  | Minimum CPU/memory guaranteed for the build job                                    |
+| `resources.limits`   | object                  | Maximum CPU/memory allowed for the build job                                       |
+| `podAnnotations`     | `Record<string,string>` | Custom annotations applied to the build pod template (merged with global defaults) |
 
 ### docker.app (Required when using docker)
 
