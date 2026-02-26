@@ -96,6 +96,8 @@ services:
             limits:
               cpu: "4"
               memory: "8Gi"
+          podAnnotations: # Optional - custom annotations on the build pod
+            my-org/team: "backend"
         # Init container - runs before main application (optional)
         init:
           dockerfilePath: "docker/migrate.dockerfile"
@@ -168,15 +170,26 @@ The default Docker image tag, typically matching the branch name.
 
 Configuration for the Docker build process.
 
-| Field                | Type   | Description                                               |
-| -------------------- | ------ | --------------------------------------------------------- |
-| `engine`             | string | Build engine: `buildkit` (default), `kaniko`, `codefresh` |
-| `resources.requests` | object | Minimum CPU/memory guaranteed for the build job           |
-| `resources.limits`   | object | Maximum CPU/memory allowed for the build job              |
+| Field                | Type                    | Description                                                                        |
+| -------------------- | ----------------------- | ---------------------------------------------------------------------------------- |
+| `engine`             | string                  | Build engine: `buildkit` (default), `kaniko`, `codefresh`                          |
+| `resources.requests` | object                  | Minimum CPU/memory guaranteed for the build job                                    |
+| `resources.limits`   | object                  | Maximum CPU/memory allowed for the build job                                       |
+| `podAnnotations`     | `Record<string,string>` | Custom annotations applied to the build pod template (merged with global defaults) |
 
 The `resources` field lets you configure CPU and memory for the build job container. Values use standard Kubernetes resource units (e.g., `"500m"` for CPU, `"1Gi"` for memory).
 
 **Precedence:** Per-service `resources` in lifecycle.yaml take priority over values set in `global_config`. If neither is set, built-in defaults are used.
+
+<Callout type="info">
+  Build pods automatically include the annotation
+  `cluster-autoscaler.kubernetes.io/safe-to-evict: "false"` to prevent the
+  Kubernetes cluster autoscaler from evicting long-running build jobs during
+  scale-down. You can add custom annotations per-service via `podAnnotations`
+  above, or globally via `podAnnotations` in `global_config.buildDefaults`.
+  Per-service values override global defaults, and the hardcoded `safe-to-evict`
+  annotation cannot be overridden.
+</Callout>
 
 | Engine   | Default CPU Request | Default Memory Request | Default CPU Limit | Default Memory Limit |
 | -------- | ------------------- | ---------------------- | ----------------- | -------------------- |

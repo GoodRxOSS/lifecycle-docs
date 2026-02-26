@@ -74,6 +74,17 @@ SET config = jsonb_set(
 WHERE key = 'buildDefaults';
 ```
 
+### Configure Build Pod Annotations
+
+Build pods automatically include the `cluster-autoscaler.kubernetes.io/safe-to-evict: "false"` annotation to prevent eviction during cluster scale-down.
+
+You can add custom annotations in two ways:
+
+- **Per-service:** Set `podAnnotations` in the `docker.builder` section of your `lifecycle.yaml`. See the [GitHub service schema](/docs/schema/github#dockerbuilder) for details.
+- **Globally:** Set `podAnnotations` in the `buildDefaults` row of the `global_config` table. These apply to all build jobs and can be overridden per-service.
+
+The hardcoded `safe-to-evict` annotation always takes final precedence and cannot be overridden.
+
 ### Refresh Configuration Cache
 
 After running either option above, refresh the configuration cache:
