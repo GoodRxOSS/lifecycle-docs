@@ -207,6 +207,9 @@ docker:
       limits:
         cpu: "4"
         memory: "8Gi"
+    podAnnotations:
+      my-org/team: "backend"
+      my-org/cost-center: "engineering"
 ```
 
 ### docker.app (Required)
