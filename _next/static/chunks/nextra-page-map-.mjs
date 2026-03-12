@@ -90,7 +90,7 @@ export const pageMap = [{
       route: "/docs/features/template-variables",
       frontMatter: {
         "title": "Template Variables",
-        "tags": ["template", "variables", "buildUUID", "publicUrl", "sha", "branchName", "UUID", "internalHostname", "review"]
+        "tags": ["template", "variables", "buildUUID", "publicUrl", "sha", "branchName", "repoName", "UUID", "internalHostname", "review"]
       }
     }, {
       name: "webhooks",
@@ -913,6 +913,13 @@ export const pageMap = [{
     frontMatter: {
       "title": "redis",
       "description": "Lifecycle \"redis\" docs"
+    }
+  }, {
+    name: "reponame",
+    route: "/tags/reponame",
+    frontMatter: {
+      "title": "reponame",
+      "description": "Lifecycle \"reponame\" docs"
     }
   }, {
     name: "requirements",
