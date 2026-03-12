@@ -7,6 +7,7 @@ tags:
   - publicUrl
   - sha
   - branchName
+  - repoName
   - UUID
   - internalHostname
   - review
@@ -27,6 +28,8 @@ The following template variables are available for use within your configuration
 - **`{{{buildUUID}}}`** - The unique identifier for the Lifecycle environment, e.g., `lively-down-881123`.
 - **`{{{namespace}}}`** - Namespace for the deployments, e.g., `env-lively-down-881123`.
 - **`{{{pullRequestNumber}}}`** - The GitHub pull request number associated with the environment.
+- **`{{{branchName}}}`** - The branch name of the pull request that triggered the environment.
+- **`{{{repoName}}}`** - The full repository name (e.g., `org/repo`) associated with the environment.
 
 ### Service-Specific Variables
 
