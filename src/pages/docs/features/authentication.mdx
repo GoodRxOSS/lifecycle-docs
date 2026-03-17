@@ -1,0 +1,104 @@
+---
+title: Authentication
+tags:
+  - authentication
+  - security
+  - keycloak
+  - sso
+  - oidc
+---
+
+import { Callout, Steps } from "nextra/components";
+
+**Authentication** in Lifecycle is powered by Keycloak, providing robust identity management and authorization capabilities to ensure the UI is protected and secure.
+
+By default, Lifecycle deploys a Keycloak instance configured via the `lifecycle-keycloak` Helm chart. This automated setup handles the creation of necessary realms, clients, and default users to get you started quickly without manual intervention.
+
+<Callout type="info">
+  For advanced configuration details and Helm chart values, refer to the
+  [lifecycle-keycloak Helm Chart
+  repository](https://github.com/GoodRxOSS/helm-charts/tree/main/charts/lifecycle-keycloak).
+</Callout>
+
+---
+
+## Default configuration
+
+When you install Lifecycle, the Keycloak operator automatically provisions the following defaults:
+
+- **Realm**: A default realm named `internal` is created.
+- **Default User**: Within the `internal` realm, a default user is provisioned.
+
+The default credentials for this user are:
+
+- **Username**: `lifecycle`
+- **Password**: `lifecycle`
+
+This allows you to log in to the Lifecycle UI immediately after installation without any additional configuration.
+
+---
+
+## Configuring an external OIDC provider
+
+If you prefer to use an external OIDC provider (such as Okta, Auth0, or Azure AD) instead of the default Keycloak setup, you can easily configure Keycloak to federate authentication to your provider.
+
+Here is how you can set up an external OIDC provider:
+
+<Callout type="info">
+  To log in to the Keycloak Admin Console, you need the bootstrap administrator
+  credentials. By default, these are stored in a Kubernetes secret named
+  `lifecycle-keycloak-bootstrap-admin` within the namespace where Keycloak and
+  Lifecycle are installed (default is `lifecycle-app`).
+</Callout>
+
+<Steps>
+### Access Keycloak Admin Console
+Log in to your Keycloak Admin Console using your administrator credentials.
+
+### Select the realm
+
+Select the **lifecycle** realm from the top-left dropdown menu.
+
+### Navigate to Identity Providers
+
+In the left-hand menu, click on **Identity Providers**.
+
+### Select the SSO provider
+
+Select the **company-sso** provider from the list of available identity providers.
+
+### Update provider settings
+
+Update the following settings to match your external provider (e.g., Okta):
+
+- **Client Authentication**: Change this from `jwt` to `Client secret sent as basic auth`.
+- **Client ID**: Replace with the Client ID provided by your external OIDC provider.
+- **Client Secret**: Replace with the Client Secret provided by your external OIDC provider.
+- **Authorization URL**: Update to your provider's authorization endpoint.
+- **Token URL**: Update to your provider's token endpoint.
+- **JWKS URL**: Update to your provider's JSON Web Key Set endpoint.
+
+### Save changes
+
+Click **Save** to apply your changes.
+
+</Steps>
+
+Once configured, users will be able to authenticate using your external OIDC provider when accessing the Lifecycle UI.
+
+<Callout type="tip">
+  Ensure that your external OIDC provider is configured to allow redirects back
+  to your Keycloak instance's URL.
+</Callout>
+
+---
+
+## Summary
+
+| Feature                 | Details                                                                    |
+| :---------------------- | :------------------------------------------------------------------------- |
+| **Provider**            | Keycloak                                                                   |
+| **Default Realm**       | `internal`                                                                 |
+| **Default Credentials** | `lifecycle` / `lifecycle`                                                  |
+| **External OIDC**       | Supported via the `company-sso` identity provider in the `lifecycle` realm |
+| **Helm Chart**          | `lifecycle-keycloak`                                                       |

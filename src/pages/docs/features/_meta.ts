@@ -15,6 +15,9 @@
  */
 
 export default {
+  "authentication": {
+    "title": "Authentication"
+  },
   "auto-deployment": {
     "title": "Auto Deploy & Labels"
   },
