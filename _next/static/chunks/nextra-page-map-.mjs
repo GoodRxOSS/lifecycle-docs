@@ -34,6 +34,13 @@ export const pageMap = [{
         "tags": ["ai", "agent", "debugging", "investigation", "llm"]
       }
     }, {
+      name: "authentication",
+      route: "/docs/features/authentication",
+      frontMatter: {
+        "title": "Authentication",
+        "tags": ["authentication", "security", "keycloak", "sso", "oidc"]
+      }
+    }, {
       name: "auto-deployment",
       route: "/docs/features/auto-deployment",
       frontMatter: {
@@ -381,6 +388,13 @@ export const pageMap = [{
     frontMatter: {
       "title": "aurora",
       "description": "Lifecycle \"aurora\" docs"
+    }
+  }, {
+    name: "authentication",
+    route: "/tags/authentication",
+    frontMatter: {
+      "title": "authentication",
+      "description": "Lifecycle \"authentication\" docs"
     }
   }, {
     name: "auto",
@@ -747,6 +761,13 @@ export const pageMap = [{
       "description": "Lifecycle \"keep\" docs"
     }
   }, {
+    name: "keycloak",
+    route: "/tags/keycloak",
+    frontMatter: {
+      "title": "keycloak",
+      "description": "Lifecycle \"keycloak\" docs"
+    }
+  }, {
     name: "kubernetes",
     route: "/tags/kubernetes",
     frontMatter: {
@@ -850,6 +871,13 @@ export const pageMap = [{
     frontMatter: {
       "title": "observability",
       "description": "Lifecycle \"observability\" docs"
+    }
+  }, {
+    name: "oidc",
+    route: "/tags/oidc",
+    frontMatter: {
+      "title": "oidc",
+      "description": "Lifecycle \"oidc\" docs"
     }
   }, {
     name: "onboard",
@@ -997,6 +1025,13 @@ export const pageMap = [{
     frontMatter: {
       "title": "sha",
       "description": "Lifecycle \"sha\" docs"
+    }
+  }, {
+    name: "sso",
+    route: "/tags/sso",
+    frontMatter: {
+      "title": "sso",
+      "description": "Lifecycle \"sso\" docs"
     }
   }, {
     name: "start",
