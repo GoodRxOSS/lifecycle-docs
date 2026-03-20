@@ -88,11 +88,14 @@ When a user wants to add a service, ask these questions in order:
 ```
 Q: Is this service built from source code or using a pre-built image?
 
-→ "Built from source" → Use `github` type
-→ "Pre-built image" → Use `docker` type
+→ "Built from source, deployed directly" → Use `github` type
+→ "Pre-built image"                      → Use `docker` type
+→ "Deploy via Helm chart"                → Use `helm` type
 ```
 
-### Step 2: Build Configuration (for github type)
+### Step 2: Build Configuration
+
+For `github` type:
 ```
 Q: Where is your Dockerfile located?
    Default: "Dockerfile" in repo root
@@ -102,6 +105,17 @@ Q: What port does your application listen on?
 
 Q: Does it need a health check endpoint?
    Common: /health, /healthz, /ready
+```
+
+For `helm` type:
+```
+Q: Is this a public chart (e.g. Bitnami), a local chart in the repo, or an OCI registry chart?
+
+Q: What is the chart name and (if public) the Helm repository URL?
+
+Q: Does it need a custom Docker build? (If yes, also collect Dockerfile location and ports)
+
+Q: What Helm values need to be set? (e.g. auth credentials, replica count)
 ```
 
 ### Step 3: Runtime Configuration
@@ -140,48 +154,45 @@ Docs: [GitHub Schema](https://uselifecycle.com/docs/schema/github)
 - `github.docker.app.dockerfilePath` - Path to Dockerfile
 - `github.docker.app.ports` - Array of exposed ports
 
-**Important:** For github services, `deployment` is nested **inside** `github:` at the same level as `docker:`, not at the service level or inside `docker:`.
+**Nesting rules (common source of errors):**
+- `env` lives at `github.docker.app.env` — deep inside the `app` block
+- `deployment` lives at `github.deployment` — sibling of `docker`, NOT inside `docker`
 
-**Template:**
+This asymmetry is intentional but easy to get wrong. Use the annotated template below as the reference.
+
+**Template (with env, deployment, and health check):**
 ```yaml
 services:
   - name: "SERVICE_NAME"
-    github:
+    github:                          # ← github level
       repository: "ORG/REPO"
       branchName: "main"
-      docker:
+      docker:                        # ← github.docker level
         defaultTag: "main"
-        app:
+        app:                         # ← github.docker.app level
           dockerfilePath: "Dockerfile"
           ports:
             - PORT_NUMBER
-          env:
+          env:                       # ← env goes HERE (github.docker.app.env)
             KEY: "value"
-```
-
-**With health checks and public access:**
-```yaml
-services:
-  - name: "api"
-    github:
-      repository: "myorg/api"
-      branchName: "main"
-      docker:
-        defaultTag: "main"
-        app:
-          dockerfilePath: "Dockerfile"
-          ports:
-            - 3000
-          env:
-            NODE_ENV: "development"
-      deployment:
+      deployment:                    # ← deployment goes HERE (github.deployment, sibling of docker)
         public: true
         readiness:
           httpGet:
             path: "/health"
-            port: 3000
+            port: PORT_NUMBER
           initialDelaySeconds: 10
           periodSeconds: 5
+```
+
+**Optional: build engine** — add `builder` under `docker` to select the build engine (default is `buildkit`):
+```yaml
+      docker:
+        defaultTag: "main"
+        builder:
+          engine: "buildkit"   # buildkit (default), kaniko, codefresh
+        app:
+          # ...
 ```
 
 **With resource limits:**
@@ -315,6 +326,92 @@ services:
             request: "200Mi"
         readiness:
           tcpSocketPort: 80
+```
+
+### Helm Service (Helm Charts)
+
+Use when: Deploying services via Helm charts — local charts, OCI registries, or public repositories like Bitnami. Supports an optional Docker build step.
+
+Docs: [Helm Schema](https://uselifecycle.com/docs/schema/helm), [Native Helm Deployment](https://uselifecycle.com/docs/features/native-helm-deployment)
+
+**Required fields:**
+- `helm.chart.name` - Chart name, local path (`./charts/app`), OCI URL (`oci://...`), or public chart name
+- `helm.chart.repoUrl` - Helm repository URL (required for public charts)
+
+**Recommended:**
+- `helm.deploymentMethod: "native"` - Runs Helm as a Kubernetes job for real-time logs and better concurrency handling
+
+**Nesting rules:**
+- `repository` and `branchName` go directly under `helm:` (only needed when using `docker:` for a build)
+- `envMapping` goes directly under `helm:` (sibling of `chart:` and `docker:`)
+- `docker.app.env` goes at `helm.docker.app.env` — same depth as in github services
+
+**Passing env vars to Helm services — two approaches:**
+
+**Approach 1: Via `chart.values`** (for public/Bitnami charts with no custom build)
+Pass env as Helm values directly in `key=value` format. See the "Template: Public chart" example below.
+
+**Approach 2: Via `docker.app.env` + `envMapping`** (for local/org charts with a Docker build)
+Define env vars in `docker.app.env`, then use `envMapping` to tell Lifecycle where to inject them in the chart's values. Without `envMapping`, the env vars are defined but NOT passed to the Helm chart. See the "Template: Local chart with Docker build" example below.
+
+**Template: Public chart (e.g. Bitnami PostgreSQL)**
+```yaml
+services:
+  - name: "SERVICE_NAME"
+    helm:
+      deploymentMethod: "native"
+      chart:
+        name: "postgresql"
+        repoUrl: "https://charts.bitnami.com/bitnami"
+        version: "12.9.0"
+        values:
+          - "auth.username=myuser"
+          - "auth.password=mypassword"
+          - "auth.database=mydb"
+```
+
+**Template: Local chart with Docker build and env vars**
+```yaml
+services:
+  - name: "SERVICE_NAME"
+    helm:
+      deploymentMethod: "native"
+      repository: "ORG/REPO"
+      branchName: "main"
+      chart:                         # ← helm.chart level
+        name: "./charts/app"
+        valueFiles:
+          - "./helm/values.yaml"
+      envMapping:                    # ← helm.envMapping level (sibling of chart and docker)
+        app:
+          format: "array"            # array or map, depending on your chart's values.yaml
+          path: "env"                # path in chart values where env vars are injected
+      docker:                        # ← helm.docker level
+        defaultTag: "main"
+        builder:
+          engine: "buildkit"
+        app:                         # ← helm.docker.app level
+          dockerfilePath: "Dockerfile"
+          ports:
+            - PORT_NUMBER
+          env:                       # ← env goes HERE (helm.docker.app.env)
+            KEY: "value"
+```
+
+**Common Bitnami chart examples:**
+
+Redis:
+```yaml
+services:
+  - name: "redis"
+    helm:
+      deploymentMethod: "native"
+      chart:
+        name: "redis"
+        repoUrl: "https://charts.bitnami.com/bitnami"
+        version: "18.4.0"
+        values:
+          - "architecture=standalone"
 ```
 
 ---
@@ -583,6 +680,7 @@ Before finalizing a lifecycle.yaml, verify:
 - [ ] Every service in `defaultServices` has a matching definition in `services`
 - [ ] All `github` services have: `repository`, `branchName`, `docker.defaultTag`, `docker.app.dockerfilePath`, `docker.app.ports`
 - [ ] All `docker` services have: `dockerImage`, `defaultTag`, `ports`
+- [ ] All `helm` services have: `chart.name` and `chart.repoUrl` (for public charts); `repository` + `branchName` only required when using `docker:` build step
 - [ ] Template variables are wrapped in quotes (e.g., `"{{{postgres_internalHostname}}}"`)
 - [ ] Template variables reference existing service names
 - [ ] Public services have `deployment.public: true`
