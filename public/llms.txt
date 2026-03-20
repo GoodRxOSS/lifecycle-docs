@@ -352,7 +352,7 @@ Docs: [Helm Schema](https://uselifecycle.com/docs/schema/helm), [Native Helm Dep
 Pass env as Helm values directly in `key=value` format. See the "Template: Public chart" example below.
 
 **Approach 2: Via `docker.app.env` + `envMapping`** (for local/org charts with a Docker build)
-Define env vars in `docker.app.env`, then use `envMapping` to tell Lifecycle where to inject them in the chart's values. Without `envMapping`, the env vars are defined but NOT passed to the Helm chart. See the "Template: Local chart with Docker build" example below.
+Define env vars in `docker.app.env`, then use `envMapping` to tell Lifecycle where to inject them in the chart's values. Without a service-level `envMapping`, env vars will only be passed if a chart-level default is configured in `global_config`; otherwise they are not injected. See the "Template: Local chart with Docker build" example below.
 
 **Template: Public chart (e.g. Bitnami PostgreSQL)**
 ```yaml
@@ -680,7 +680,7 @@ Before finalizing a lifecycle.yaml, verify:
 - [ ] Every service in `defaultServices` has a matching definition in `services`
 - [ ] All `github` services have: `repository`, `branchName`, `docker.defaultTag`, `docker.app.dockerfilePath`, `docker.app.ports`
 - [ ] All `docker` services have: `dockerImage`, `defaultTag`, `ports`
-- [ ] All `helm` services have: `chart.name` and `chart.repoUrl` (for public charts); `repository` + `branchName` only required when using `docker:` build step
+- [ ] All `helm` services have: `chart.name` and `chart.repoUrl` (for public charts); when using a `docker:` build step also verify `repository`, `branchName`, `docker.defaultTag`, `docker.app.dockerfilePath`, and `docker.app.ports`
 - [ ] Template variables are wrapped in quotes (e.g., `"{{{postgres_internalHostname}}}"`)
 - [ ] Template variables reference existing service names
 - [ ] Public services have `deployment.public: true`
