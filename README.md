@@ -4,6 +4,22 @@ Documentation for Lifecycle.
 
 ---
 
+## Writing guidance
+
+Lifecycle docs should be user-facing by default.
+
+- Write product docs, not implementation notes.
+- Start with what the reader is trying to do, what they need, and what outcome
+  they should expect.
+- Prefer task-oriented guidance, prerequisites, examples, and plain-language
+  limits over backend architecture details.
+- Include implementation details only when they help the reader configure the
+  product correctly or troubleshoot a real failure.
+- Avoid internal file paths, queue names, storage choices, and code structure
+  in user-facing docs unless the reader must act on them directly.
+
+---
+
 ## Making a post
 
 Making a post can be done in a few steps.

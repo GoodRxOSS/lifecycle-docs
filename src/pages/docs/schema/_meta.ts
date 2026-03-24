@@ -44,5 +44,8 @@ export default {
   },
   "configuration": {
     "title": "Configuration Service"
+  },
+  "dev": {
+    "title": "Dev Mode Configuration"
   }
 };

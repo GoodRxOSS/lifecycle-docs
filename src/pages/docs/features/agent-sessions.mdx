@@ -1,0 +1,341 @@
+---
+title: Agent Sessions & Sandboxes
+description: Launch a live coding session against an environment or fork an isolated sandbox from it
+tags:
+  - ai
+  - agent
+  - session
+  - sandbox
+  - dev
+---
+
+import { Callout } from "nextra/components";
+
+Agent Sessions give you a live coding workspace for a Lifecycle environment.
+Lifecycle clones one or more repositories into a shared workspace, starts an
+agent runtime, and can switch selected services into dev mode so your code
+changes show up immediately. If you need isolation, Lifecycle can fork a
+sandbox from the environment and start the session there instead.
+
+<Callout type="info">
+  The `dev` block in `lifecycle.yaml` is what makes a service selectable for dev
+  mode and sandbox sessions. For the field-by-field schema, see [Dev Mode
+  Configuration](/docs/schema/dev).
+</Callout>
+
+## Choose the right mode
+
+| Mode                      | Best for                                                                                                  | What Lifecycle changes                                                                                                          |
+| ------------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Environment agent session | Iterating directly against the current environment                                                        | Selected services are switched into dev mode in the existing environment                                                        |
+| Sandbox agent session     | Isolating changes, testing risky edits, or working while someone else already has the environment session | Lifecycle creates a sandbox build and namespace, clones the selected service and its dependencies, and starts the session there |
+
+<Callout type="warning">
+  Lifecycle allows only one active environment-backed agent session per
+  environment build. If an environment session is already running, start a
+  sandbox session instead.
+</Callout>
+
+## What users need
+
+- Access to the **Agent Session** feature in Lifecycle.
+- A saved Anthropic API key in Agent Session settings.
+- A running environment build.
+
+You can still start an agent session without selecting any services. In that
+case, Lifecycle gives you a coding workspace but does not switch any running
+service into dev mode. This applies only to environment-backed sessions.
+Sandbox sessions always require one eligible service because Lifecycle needs a
+specific service to fork.
+
+## What administrators need
+
+- AI Agent enabled and models configured in Lifecycle.
+- Agent session runtime images configured in `agentSessionDefaults`.
+- Cluster storage that supports a shared workspace volume between the agent pod
+  and dev-mode workloads.
+- Outbound DNS and HTTPS access from agent session pods to GitHub and Anthropic.
+- Configured `secretProviders` if any selected service forwards native secret
+  references into the agent with `dev.forwardEnvVarsToAgent`.
+
+Example `agentSessionDefaults`:
+
+```json
+{
+  "agentSessionDefaults": {
+    "image": "registry.example.com/lifecycle-agent:latest",
+    "editorImage": "registry.example.com/lifecycle-editor:latest",
+    "scheduling": {
+      "nodeSelector": {
+        "app-long": "deployments-m7i"
+      }
+    },
+    "readiness": {
+      "timeoutMs": 120000,
+      "pollMs": 2000
+    },
+    "resources": {
+      "agent": {
+        "requests": {
+          "cpu": "500m",
+          "memory": "1Gi"
+        },
+        "limits": {
+          "cpu": "2",
+          "memory": "4Gi"
+        }
+      },
+      "editor": {
+        "requests": {
+          "cpu": "250m",
+          "memory": "512Mi"
+        },
+        "limits": {
+          "cpu": "1",
+          "memory": "1Gi"
+        }
+      }
+    }
+  }
+}
+```
+
+For the full runtime configuration, see [AI Agent
+Configuration](/docs/features/ai-agent-configuration#agent-session-runtime).
+
+## Configure a service for agent sessions
+
+Add a `dev` block to each service you want Lifecycle to run in dev mode during
+an agent session:
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "web"
+    dev:
+      image: "node:20-bookworm"
+      command: "pnpm dev"
+      installCommand: "cd /workspace/apps/web && pnpm install --frozen-lockfile"
+      workDir: "/workspace/apps/web"
+      agentSession:
+        readiness:
+          timeoutMs: 120000
+      ports:
+        - 3000
+      env:
+        NODE_ENV: "development"
+    github:
+      repository: "example-org/web"
+      branchName: "main"
+      docker:
+        defaultTag: "main"
+        app:
+          dockerfilePath: "apps/web/Dockerfile"
+          ports:
+            - 8080
+```
+
+When you select this service in an agent session, Lifecycle:
+
+1. Clones the service repository into the session workspace.
+2. Runs `installCommand` during workspace bootstrap.
+3. Replaces the running workload container with the `dev.image`.
+4. Starts `dev.command` from `dev.workDir`.
+5. Repoints service traffic to the dev server port, when `ports` is configured.
+
+Use `dev.agentSession.readiness` when a specific service routinely needs more
+startup time than the global default.
+
+## Give the agent a secret
+
+Sometimes the service can run in dev mode without extra configuration, but the
+agent session still needs a secret during workspace bootstrap. A common example
+is a package registry token required by `installCommand`.
+
+Use `forwardEnvVarsToAgent` in the service's `dev` block to allowlist specific
+environment variables from the selected service and inject them into the agent
+session:
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "web"
+    github:
+      repository: "example-org/web"
+      branchName: "main"
+      docker:
+        defaultTag: "main"
+        app:
+          dockerfilePath: "apps/web/Dockerfile"
+          env:
+            PRIVATE_REGISTRY_TOKEN: "{{aws:example/web-registry-token}}"
+    dev:
+      image: "node:20-bookworm"
+      command: "pnpm dev:web"
+      installCommand: "cd /workspace/apps/web && pnpm install --frozen-lockfile"
+      workDir: "/workspace/apps/web"
+      forwardEnvVarsToAgent:
+        - PRIVATE_REGISTRY_TOKEN
+```
+
+Lifecycle copies the allowlisted keys into the per-session Kubernetes Secret and
+injects them into the agent bootstrap and runtime containers.
+
+Use this when:
+
+- `installCommand` needs a secret before dev mode starts
+- the agent needs a token for local tooling such as package managers or CLIs
+- you want to expose only a narrow allowlist instead of the full service
+  environment
+
+Literal values and native secret references both use that per-session secret
+path. For more on secret reference syntax, see [Cloud Secrets](/docs/features/secrets).
+
+## Which services are eligible
+
+A service is selectable for dev mode only when all of the following are true:
+
+- The service is part of the environment and has an active deploy.
+- The service has a `dev` block in `lifecycle.yaml`.
+- Lifecycle manages the service's application image build.
+
+Current implementation support is intentionally narrow:
+
+- GitHub services are eligible when `github.docker.app.dockerfilePath` is set.
+- Helm services are eligible when `helm.docker.app.dockerfilePath` is set.
+- Services that only reference externally managed images are not selectable.
+
+If a service has no `dev` block, it still deploys normally, but it will not
+appear in the agent session or sandbox service picker.
+
+Use `repository` and `branch` on the matching `environment.defaultServices`,
+`environment.optionalServices`, or `requires` references whenever a selected
+service comes from another repo or branch.
+
+Keep selectable service names unique within an environment so the UI can tell
+them apart.
+
+## Runtime configuration precedence
+
+- `agentSessionDefaults` in Lifecycle `global_config` supplies the default
+  agent image, editor image, node selector, readiness, and container resources.
+- `environment.agentSession.resources` in `lifecycle.yaml` overrides the agent
+  and editor resource defaults for that repository.
+- `services[].dev.agentSession.readiness` overrides readiness for the selected
+  service.
+- If you select multiple services in one environment-backed session, Lifecycle
+  uses the longest `timeoutMs` and shortest `pollMs` across those selected
+  services.
+
+## How sandbox sessions work
+
+Sandbox sessions start from an existing environment build:
+
+1. Choose an environment build.
+2. Lifecycle reads the environment `lifecycle.yaml` from the source
+   repository and branch attached to that build.
+3. Lifecycle lists eligible services from the environment's `defaultServices`
+   and `optionalServices`.
+4. Choose one eligible service to sandbox.
+5. Lifecycle creates a sandbox build and a new namespace.
+6. Lifecycle copies the selected service plus its recursive `requires`
+   dependencies from the active environment into the sandbox.
+7. Lifecycle deploys those sandbox resources.
+8. Lifecycle starts the agent session against the sandbox instead of the
+   original environment.
+
+Use a sandbox session when:
+
+- You do not want to mutate the shared environment.
+- Another developer already has the environment-backed session open.
+- You want to validate changes against a copy of the service dependency graph.
+
+Sandbox sessions must start from an environment build, not from another
+sandboxed build.
+
+### Sandbox rules and limits
+
+- Each sandbox launch targets exactly one selected service.
+- Sandbox candidates come from the environment's `defaultServices` and
+  `optionalServices`, including any `repository` or `branch` overrides on those
+  references.
+- Sandbox candidates must already be actively deployed in the base
+  environment.
+- A candidate service must have a `dev` block and a Lifecycle-managed Docker
+  build.
+- Dependencies are included recursively from the selected service's
+  `requires` chain.
+- Dependency resolution can cross repository and branch boundaries when the
+  selected service's config references them.
+- If any required dependency is missing from the active base environment, the
+  sandbox launch fails instead of starting with a partial graph.
+- Keep sandboxable service names unique within the base environment so the
+  service picker can identify the right target.
+
+### Sandbox launch progress
+
+Lifecycle tracks sandbox launches in stages:
+
+1. Load the base build and resolve service config.
+2. Create the sandbox build and namespace.
+3. Resolve environment variables and deploy sandbox resources.
+4. Start the agent session and open the sandbox editor.
+
+If the sandbox launch fails before the session is ready, Lifecycle cleans up
+the in-progress sandbox resources and reports the failure back to the launch
+screen so you can retry.
+
+## Workspace layout
+
+- Environment-backed sessions can include services from multiple repositories.
+- Lifecycle mounts the primary repository at `/workspace`.
+- Additional repositories are mounted at
+  `/workspace/repos/<owner>/<repo>`.
+- The browser editor workspace includes every cloned repository automatically.
+- `workDir` controls where the dev command starts for each selected service.
+- If `installCommand` needs a secret, use `forwardEnvVarsToAgent`. `dev.env`
+  only affects the patched service container, not the earlier bootstrap step.
+- If you select multiple services in one environment session, Lifecycle runs
+  each selected service's `installCommand` during workspace initialization.
+
+### Path rewriting for multi-repo sessions
+
+Lifecycle adjusts each selected service's dev-mode settings to match the repo
+mount where that service was cloned.
+
+- Relative `workDir` values are resolved inside that repository.
+- `/workspace` paths in `workDir`, `command`, `installCommand`, and `dev.env`
+  are rewritten to the correct repo mount for services outside the primary
+  repo.
+- If an `installCommand` is just a repo-local command such as `pnpm install`,
+  Lifecycle runs it from that repo's root automatically.
+
+## Connecting more services later
+
+After an environment-backed session starts, you can add more services only when
+the existing workspace is still centered on one repository.
+
+- This is supported only for active environment sessions, not sandbox sessions.
+- If the session already spans multiple repositories, start a new session with
+  the full set of services instead.
+- Additional services must come from the same repository and branch as the
+  existing workspace checkout.
+- Services that use `forwardEnvVarsToAgent` must be selected before the session
+  starts, because Lifecycle injects those values during bootstrap.
+
+## Port and traffic behavior
+
+- `dev.ports` is optional.
+- When present, Lifecycle uses the first listed port as the service target port
+  while the session is active.
+- When omitted, Lifecycle patches the deployment for dev mode but leaves service
+  port routing unchanged.
+
+## Ending a session
+
+When the session ends, Lifecycle restores the environment:
+
+- Dev mode patches are reverted.
+- The service is redeployed back to its normal runtime.
+- Agent runtime resources are cleaned up.
+
+For sandbox sessions, the sandbox build remains the isolated target of the
+session and does not replace the original environment.

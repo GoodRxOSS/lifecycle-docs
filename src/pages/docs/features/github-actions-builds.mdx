@@ -1,0 +1,203 @@
+---
+title: GitHub Actions Builds
+description: Configure Lifecycle to build images with GitHub Actions
+tags:
+  - features
+  - github
+  - actions
+  - build
+  - ci
+---
+
+import { Callout } from "nextra/components";
+
+Lifecycle can use GitHub Actions as the image build engine for `github` and `helm.docker` services.
+
+With this mode, Lifecycle still controls deployment, but your repository workflow performs the image build and push.
+
+## Prerequisites
+
+- Full-YAML mode is enabled for the environment.
+- Service uses `github` or `helm` with `docker` config.
+- Your GitHub App installation token used by Lifecycle has Actions permissions for target repositories:
+  - `Actions: Read and write`
+  - plus existing repository permissions needed by Lifecycle.
+- Your workflow has credentials to push images to ECR (or your configured registry).
+
+<Callout type="warning">
+  GitHub Actions builder is not supported in classic mode
+  (`enableFullYaml=false`).
+</Callout>
+
+## Lifecycle YAML Configuration
+
+### GitHub Service Example
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "api"
+    github:
+      repository: "myorg/api"
+      branchName: "main"
+      docker:
+        defaultTag: "main"
+        builder:
+          engine: "github-actions" # "github_actions" alias is also accepted
+          githubActions:
+            workflowId: "build-and-push.yml"
+            timeoutMinutes: 45
+            pollIntervalSeconds: 10
+            workflowInputs:
+              IMAGE_CONTEXT: "."
+              TARGET_STAGE: "production"
+        app:
+          dockerfilePath: "Dockerfile"
+```
+
+### Helm Service Example
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "worker"
+    helm:
+      repository: "myorg/worker"
+      branchName: "main"
+      chart:
+        name: "./charts/worker"
+      docker:
+        defaultTag: "main"
+        builder:
+          engine: "github-actions"
+          githubActions:
+            workflowId: "build-and-push.yml"
+        app:
+          dockerfilePath: "Dockerfile"
+        init:
+          dockerfilePath: "Dockerfile.init"
+```
+
+## Workflow Contract
+
+Lifecycle dispatches your workflow with two reserved inputs:
+
+- `lifecycle_payload_json`
+- `lifecycle_correlation_id`
+
+`lifecycle_payload_json` contains build context data such as:
+
+- repository, branch, SHA
+- dockerfile paths for app/init
+- target ECR repo/domain
+- app/init tags
+- full resolved build args map
+
+<Callout type="info">
+  Reserved inputs are protected by Lifecycle and cannot be overridden by
+  `workflowInputs`.
+</Callout>
+
+## Example GitHub Actions Workflow
+
+```yaml filename=".github/workflows/build-and-push.yml"
+name: Build And Push
+
+on:
+  workflow_dispatch:
+    inputs:
+      lifecycle_payload_json:
+        required: true
+        type: string
+      lifecycle_correlation_id:
+        required: true
+        type: string
+      IMAGE_CONTEXT:
+        required: false
+        type: string
+      TARGET_STAGE:
+        required: false
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse lifecycle payload
+        id: payload
+        run: |
+          echo '${{ inputs.lifecycle_payload_json }}' > payload.json
+          echo "ecr_repo=$(jq -r '.ecrRepo' payload.json)" >> "$GITHUB_OUTPUT"
+          echo "ecr_domain=$(jq -r '.ecrDomain' payload.json)" >> "$GITHUB_OUTPUT"
+          echo "tag=$(jq -r '.tag' payload.json)" >> "$GITHUB_OUTPUT"
+          echo "init_tag=$(jq -r '.initTag // empty' payload.json)" >> "$GITHUB_OUTPUT"
+          echo "dockerfile=$(jq -r '.dockerfilePath' payload.json)" >> "$GITHUB_OUTPUT"
+          echo "init_dockerfile=$(jq -r '.initDockerfilePath // empty' payload.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Build build-arg flags
+        id: args
+        run: |
+          mapfile -t entries < <(jq -r '.buildArgs | to_entries[] | "--build-arg \(.key)=\(.value)"' payload.json)
+          {
+            echo "flags<<EOF"
+            printf '%s\n' "${entries[@]}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      # Add your AWS auth/login steps here
+      # - uses: aws-actions/configure-aws-credentials@v4
+      # - uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push app image
+        run: |
+          docker build \
+            -f "${{ steps.payload.outputs.dockerfile }}" \
+            ${{ steps.args.outputs.flags }} \
+            -t "${{ steps.payload.outputs.ecr_domain }}/${{ steps.payload.outputs.ecr_repo }}:${{ steps.payload.outputs.tag }}" \
+            "${{ inputs.IMAGE_CONTEXT || '.' }}"
+          docker push "${{ steps.payload.outputs.ecr_domain }}/${{ steps.payload.outputs.ecr_repo }}:${{ steps.payload.outputs.tag }}"
+
+      - name: Build and push init image (optional)
+        if: ${{ steps.payload.outputs.init_dockerfile != '' && steps.payload.outputs.init_tag != '' }}
+        run: |
+          docker build \
+            -f "${{ steps.payload.outputs.init_dockerfile }}" \
+            ${{ steps.args.outputs.flags }} \
+            -t "${{ steps.payload.outputs.ecr_domain }}/${{ steps.payload.outputs.ecr_repo }}:${{ steps.payload.outputs.init_tag }}" \
+            "${{ inputs.IMAGE_CONTEXT || '.' }}"
+          docker push "${{ steps.payload.outputs.ecr_domain }}/${{ steps.payload.outputs.ecr_repo }}:${{ steps.payload.outputs.init_tag }}"
+```
+
+## Build Args Behavior
+
+Lifecycle passes the full resolved env/build-args map inside `lifecycle_payload_json.buildArgs`.
+
+Recommendations:
+
+- Filter arguments if your Docker build should only receive a subset.
+- Do not echo sensitive values.
+- Avoid printing full payload JSON in logs when it can contain secrets.
+
+## Runtime Behavior and Limits
+
+- Lifecycle triggers one workflow dispatch in the same source repository.
+- Lifecycle polls workflow run status until complete or timeout.
+- Default timeout is `45` minutes.
+- Default poll interval is `10` seconds.
+- On success, Lifecycle verifies app/init image tags exist before deployment continues.
+- `afterBuildPipelineId` is ignored for `github-actions` engine.
+- No dedicated GitHub Actions log UI is added in legacy Lifecycle UI; use stored build output and run URL.
+
+## Troubleshooting
+
+- Build is stuck in `BUILDING`:
+  - Check Actions runner availability and queue delays.
+  - Confirm workflow file exists at configured `workflowId` on the target branch.
+- Build fails with missing image tag:
+  - Confirm workflow pushes exactly the app/init tags provided in payload.
+- Dispatch fails:
+  - Verify GitHub App has `Actions: Read and write` for the repository.
+- Build output is too large error:
+  - Reduce `workflowInputs` size or trim build args passed from Lifecycle config.
+
+For additional troubleshooting patterns, see [Build Issues](/docs/troubleshooting/build-issues).

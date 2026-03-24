@@ -15,15 +15,16 @@ The `environment` section controls how Lifecycle deploys and manages your epheme
 
 ## Fields Reference
 
-| Field                    | Type    | Required | Description                              |
-| ------------------------ | ------- | -------- | ---------------------------------------- |
-| `autoDeploy`             | boolean | No       | Automatically deploy on PR updates       |
-| `defaultServices`        | array   | Yes      | Services deployed with every environment |
-| `optionalServices`       | array   | No       | Services available on-demand             |
-| `webhooks`               | array   | No       | Automation triggers on state changes     |
-| `enabledFeatures`        | array   | No       | Feature flags for the environment        |
-| `githubDeployments`      | boolean | No       | Create GitHub deployment records         |
-| `useGithubStatusComment` | boolean | No       | Post status comments on PRs              |
+| Field                    | Type    | Required | Description                                             |
+| ------------------------ | ------- | -------- | ------------------------------------------------------- |
+| `autoDeploy`             | boolean | No       | Automatically deploy on PR updates                      |
+| `defaultServices`        | array   | Yes      | Services deployed with every environment                |
+| `optionalServices`       | array   | No       | Services available on-demand                            |
+| `agentSession`           | object  | No       | Agent session overrides for this repository/environment |
+| `webhooks`               | array   | No       | Automation triggers on state changes                    |
+| `enabledFeatures`        | array   | No       | Feature flags for the environment                       |
+| `githubDeployments`      | boolean | No       | Create GitHub deployment records                        |
+| `useGithubStatusComment` | boolean | No       | Post status comments on PRs                             |
 
 ## defaultServices
 
@@ -55,6 +56,14 @@ environment:
       repository: "myorg/api" # Optional - override repository
       branch: "develop" # Optional - override branch
 ```
+
+These overrides also affect Agent Sessions and sandbox sessions:
+
+- Sandbox service discovery starts from `defaultServices` and `optionalServices`.
+- `repository` and `branch` tell Lifecycle which repo config to read when a
+  service is selected for dev mode or sandboxing.
+- Keep selectable service names unique within an environment so the UI can tell
+  them apart.
 
 ## optionalServices
 
@@ -111,6 +120,79 @@ environment:
         image: "myorg/e2e-tests:latest"
       env:
         TEST_URL: "https://{{api_publicUrl}}"
+```
+
+## agentSession
+
+Use `environment.agentSession` for repository-level agent session overrides that
+should apply to both environment-backed sessions and sandbox sessions launched
+from this environment configuration.
+
+Today, the supported override is `resources`, which lets you tune the default
+CPU and memory requests and limits for the agent and editor containers.
+
+```yaml filename="lifecycle.yaml"
+environment:
+  defaultServices:
+    - name: "api"
+  agentSession:
+    resources:
+      agent:
+        requests:
+          cpu: "1"
+          memory: "2Gi"
+        limits:
+          cpu: "2"
+          memory: "6Gi"
+      editor:
+        requests:
+          cpu: "250m"
+          memory: "512Mi"
+        limits:
+          cpu: "1"
+          memory: "1Gi"
+```
+
+Behavior:
+
+- These values override the platform defaults from
+  `global_config.agentSessionDefaults.resources`.
+- They apply to the agent session runtime, not to your normal deployed
+  application workloads.
+- Service-specific readiness overrides belong under
+  `services[].dev.agentSession.readiness`, not under `environment.agentSession`.
+
+## Agent Session and sandbox service resolution
+
+Use explicit service references when your environment spans multiple
+repositories or branches.
+
+- `defaultServices` and `optionalServices` define the pool of services that
+  sandbox sessions can fork from the base environment.
+- Add `repository` and `branch` when a service comes from a different repo than
+  the environment source, or when the same service name appears more than once
+  across active deploys.
+- Keep selectable service names unique within one environment so the UI can
+  distinguish them cleanly.
+- If a selected service's `requires` dependencies cross repo or branch
+  boundaries, add `repository` and `branch` to those dependency references too
+  so sandbox dependency resolution stays unambiguous.
+
+Example:
+
+```yaml filename="lifecycle.yaml"
+environment:
+  defaultServices:
+    - name: "web"
+      repository: "example-org/ui"
+      branch: "feature/ui"
+    - name: "api"
+      repository: "example-org/platform"
+      branch: "feature/api"
+  optionalServices:
+    - name: "worker"
+      repository: "example-org/platform"
+      branch: "feature/api"
 ```
 
 ## Examples

@@ -1,0 +1,216 @@
+---
+title: Dev Mode Configuration
+description: Configure `services[].dev` so agent sessions can run a service in live dev mode or fork it into a sandbox
+tags:
+  - schema
+  - dev
+  - agent
+  - sandbox
+---
+
+import { Callout } from "nextra/components";
+
+The `dev` block is an optional service-level configuration used by Agent
+Sessions and sandbox sessions. It does not change normal builds or deployments
+on its own. Lifecycle only applies it while a session is active.
+
+<Callout type="info">
+  For the workflow and prerequisites, see [Agent Sessions &
+  Sandboxes](/docs/features/agent-sessions).
+</Callout>
+
+## Example
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "api"
+    dev:
+      image: "node:20-bookworm"
+      command: "pnpm dev"
+      installCommand: "cd /workspace/services/api && pnpm install"
+      workDir: "/workspace/services/api"
+      ports:
+        - 3000
+      env:
+        APP_ENV: "development"
+      forwardEnvVarsToAgent:
+        - PRIVATE_REGISTRY_TOKEN
+    helm:
+      repository: "example-org/platform"
+      branchName: "main"
+      chart:
+        name: "./charts/api"
+      docker:
+        defaultTag: "main"
+        app:
+          dockerfilePath: "services/api/Dockerfile"
+```
+
+## Fields
+
+| Field                              | Required | Description                                                                                                                    |
+| ---------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `image`                            | Yes      | Container image used for the service while dev mode is active                                                                  |
+| `command`                          | Yes      | Shell command Lifecycle runs inside the dev container                                                                          |
+| `installCommand`                   | No       | Bootstrap command run after the repository is cloned and before the session starts                                             |
+| `workDir`                          | No       | Working directory for `command`. Defaults to `/workspace`                                                                      |
+| `ports`                            | No       | Dev server ports. Lifecycle currently uses the first port when routing service traffic to dev mode                             |
+| `env`                              | No       | Extra environment variables applied only while the service is in dev mode                                                      |
+| `forwardEnvVarsToAgent`            | No       | Names of existing service environment variables that Lifecycle should also inject into the agent session bootstrap and runtime |
+| `agentSession.readiness.timeoutMs` | No       | Per-service override for how long Lifecycle waits for the agent pod to become ready before failing                             |
+| `agentSession.readiness.pollMs`    | No       | Per-service override for how often Lifecycle checks readiness while waiting                                                    |
+
+## Behavior notes
+
+- Lifecycle clones the selected service repository into the shared workspace.
+- In multi-repo sessions, the primary repository is mounted at `/workspace` and
+  additional repositories are mounted at `/workspace/repos/<owner>/<repo>`.
+- `installCommand` runs during workspace bootstrap. If your command already
+  uses `/workspace/...`, Lifecycle rewrites that path to the correct repo mount
+  for services outside the primary repository.
+- If `installCommand` is just a repo-local command such as `pnpm install`,
+  Lifecycle runs it from that repository's root automatically.
+- `workDir` controls where Lifecycle starts `command`.
+- Relative `workDir` values are resolved inside the selected repository's mount
+  path.
+- `env` adds dev-mode-specific environment variables to the running workload.
+- `forwardEnvVarsToAgent` is for values the agent itself needs, such as package
+  registry tokens used by `installCommand`.
+- `ports` is only needed when the dev server listens on a different port than
+  the deployed runtime.
+
+## Multi-repo selection behavior
+
+Lifecycle matches selectable services using their repository and branch as well
+as their name.
+
+- If the same service name appears in multiple repositories or branches, add
+  `repository` and `branch` to the relevant `environment.defaultServices`,
+  `environment.optionalServices`, or `requires` references so Lifecycle can
+  resolve the right service.
+- Keep selectable service names unique within an environment so the UI can
+  distinguish them.
+- Lifecycle rewrites `/workspace` references in `workDir`, `command`,
+  `installCommand`, and `dev.env` for services cloned into additional repo
+  mounts.
+- The browser editor opens all cloned repositories in one workspace.
+
+## Tune agent session readiness
+
+Use `dev.agentSession.readiness` when this service usually needs longer than
+the global default to finish agent bootstrap or become ready:
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "api"
+    dev:
+      image: "node:20-bookworm"
+      command: "pnpm dev"
+      installCommand: "cd /workspace/services/api && pnpm install"
+      workDir: "/workspace/services/api"
+      agentSession:
+        readiness:
+          timeoutMs: 120000
+          pollMs: 2000
+```
+
+Behavior:
+
+- The default comes from `agentSessionDefaults.readiness` in Lifecycle
+  `global_config`.
+- The selected service's `dev.agentSession.readiness` overrides that default.
+- In environment-backed sessions with multiple selected services, Lifecycle
+  uses the longest `timeoutMs` and shortest `pollMs` across those services.
+- Sandbox sessions select one service at a time, so only that service's
+  readiness override applies.
+
+## Forward secrets to the agent
+
+Use `forwardEnvVarsToAgent` when the agent session needs access to an existing
+service environment variable during workspace bootstrap or interactive work.
+
+This is most useful when:
+
+- `installCommand` needs a package registry token
+- the agent needs an API key to run local tooling
+- the value already exists on the service and you only want to expose a small,
+  explicit subset to the agent
+
+`dev.env` is not enough for this case. `dev.env` only applies to the patched
+service container after dev mode starts. `installCommand` runs earlier, during
+agent session bootstrap.
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "web"
+    github:
+      repository: "example-org/web"
+      branchName: "main"
+      docker:
+        defaultTag: "main"
+        app:
+          dockerfilePath: "apps/web/Dockerfile"
+          env:
+            PRIVATE_REGISTRY_TOKEN: "{{aws:example/web-registry-token}}"
+    dev:
+      image: "node:20-bookworm"
+      command: "pnpm dev:web"
+      installCommand: "cd /workspace/apps/web && pnpm install --frozen-lockfile"
+      workDir: "/workspace/apps/web"
+      forwardEnvVarsToAgent:
+        - PRIVATE_REGISTRY_TOKEN
+```
+
+Lifecycle copies only the listed keys from the selected service's resolved
+environment into the per-session agent secret, then injects them into the
+bootstrap and runtime containers. Native secret references such as
+`{{aws:...}}` or `{{gcp:...}}` are also supported when secret provider support
+is configured.
+
+Forwarding rules:
+
+- Each forwarded key must already exist on the selected service and resolve to a
+  scalar value.
+- If multiple selected services forward the same key, they must resolve to the
+  same value or session startup fails.
+- If a forwarded value is a native secret reference, Lifecycle must have
+  `secretProviders` configured so it can materialize the secret for the agent
+  session.
+
+## Eligibility notes
+
+Adding a `dev` block is necessary but not sufficient. A service is only
+selectable for Agent Sessions when Lifecycle also manages its application image
+build.
+
+Current implementation support is:
+
+- GitHub services with `github.docker.app.dockerfilePath`
+- Helm services with `helm.docker.app.dockerfilePath`
+
+Services that only reference external images remain deployable, but they are not
+selectable for dev mode or sandbox sessions.
+
+## Monorepo example
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "worker"
+    dev:
+      image: "node:20-bookworm"
+      command: "pnpm dev"
+      installCommand: "cd /workspace/apps/worker && pnpm install"
+      workDir: "/workspace/apps/worker"
+      ports:
+        - 3100
+    github:
+      repository: "example-org/monorepo"
+      branchName: "main"
+      docker:
+        defaultTag: "main"
+        app:
+          dockerfilePath: "apps/worker/Dockerfile"
+```
+
+This keeps the shared workspace at `/workspace` while running the service from
+its own subdirectory.

@@ -45,10 +45,16 @@ export default {
   "ai-agent": {
     "title": "AI Agent"
   },
+  "agent-sessions": {
+    "title": "Agent Sessions & Sandboxes"
+  },
   "ai-agent-configuration": {
     "title": "AI Agent Configuration"
   },
   "mcp-integration": {
     "title": "MCP Integration"
+  },
+  "github-actions-builds": {
+    "title": "GitHub Actions Builds"
   }
 };

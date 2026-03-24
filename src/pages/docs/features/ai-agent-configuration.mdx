@@ -169,6 +169,139 @@ Example with pricing configured:
 
 ---
 
+## Agent session runtime
+
+Agent Sessions and sandbox sessions use a separate runtime configuration under
+`agentSessionDefaults`. This controls the container images and Claude bootstrap
+behavior used when Lifecycle starts an interactive coding session.
+
+### Fields
+
+| Field                               | Type       | Required | Description                                                                            |
+| ----------------------------------- | ---------- | -------- | -------------------------------------------------------------------------------------- |
+| `image`                             | `string`   | Yes      | Agent runtime image used for the interactive session pod                               |
+| `editorImage`                       | `string`   | Yes      | Browser editor image attached to the same workspace volume                             |
+| `scheduling.nodeSelector`           | `object`   | No       | Node selector applied to the agent pod and editor sidecar                              |
+| `readiness.timeoutMs`               | `integer`  | No       | Default maximum wait for the agent pod to become ready                                 |
+| `readiness.pollMs`                  | `integer`  | No       | Default polling interval while Lifecycle waits for readiness                           |
+| `resources.agent.requests`          | `object`   | No       | Default resource requests for the agent container and bootstrap init containers        |
+| `resources.agent.limits`            | `object`   | No       | Default resource limits for the agent container and bootstrap init containers          |
+| `resources.editor.requests`         | `object`   | No       | Default resource requests for the browser editor container                             |
+| `resources.editor.limits`           | `object`   | No       | Default resource limits for the browser editor container                               |
+| `claude.permissions.allow`          | `string[]` | No       | Allowed Claude Code tools. Defaults to shell, read, write, edit, glob, and grep access |
+| `claude.permissions.deny`           | `string[]` | No       | Explicitly denied Claude Code tools                                                    |
+| `claude.attribution.commitTemplate` | `string`   | No       | Commit attribution template                                                            |
+| `claude.attribution.prTemplate`     | `string`   | No       | Pull request attribution template                                                      |
+| `claude.appendSystemPrompt`         | `string`   | No       | Extra prompt text appended to the Claude bootstrap prompt                              |
+
+Example:
+
+```json
+{
+  "agentSessionDefaults": {
+    "image": "registry.example.com/lifecycle-agent:latest",
+    "editorImage": "registry.example.com/lifecycle-editor:latest",
+    "scheduling": {
+      "nodeSelector": {
+        "app-long": "deployments-m7i"
+      }
+    },
+    "readiness": {
+      "timeoutMs": 120000,
+      "pollMs": 2000
+    },
+    "resources": {
+      "agent": {
+        "requests": {
+          "cpu": "500m",
+          "memory": "1Gi"
+        },
+        "limits": {
+          "cpu": "2",
+          "memory": "4Gi"
+        }
+      },
+      "editor": {
+        "requests": {
+          "cpu": "250m",
+          "memory": "512Mi"
+        },
+        "limits": {
+          "cpu": "1",
+          "memory": "1Gi"
+        }
+      }
+    },
+    "claude": {
+      "permissions": {
+        "allow": [
+          "Bash(*)",
+          "Read(*)",
+          "Write(*)",
+          "Edit(*)",
+          "Glob(*)",
+          "Grep(*)"
+        ],
+        "deny": []
+      },
+      "attribution": {
+        "commitTemplate": "Generated with {appName}",
+        "prTemplate": "Generated with {appName}"
+      }
+    }
+  }
+}
+```
+
+<Callout type="warning">
+  If `image` or `editorImage` is missing, Lifecycle rejects agent session and
+  sandbox session creation until the runtime is configured.
+</Callout>
+
+<Callout type="info">
+  Lifecycle creates the session pod with a namespace-scoped read-only service
+  account. This lets the agent inspect common namespace resources and logs
+  without granting write access to Kubernetes objects.
+</Callout>
+
+<Callout type="info">
+  Multi-repo sessions do not need extra runtime fields. Lifecycle applies one
+  agent runtime to the whole session and mounts every selected repository into
+  the same shared workspace volume.
+</Callout>
+
+### `lifecycle.yaml` overrides
+
+`agentSessionDefaults` provides the platform-wide defaults. Repositories can
+override part of that runtime from `lifecycle.yaml`:
+
+- `environment.agentSession.resources` overrides the default agent and editor
+  resource requests and limits for sessions launched from that repository.
+- `services[].dev.agentSession.readiness` overrides readiness timing for the
+  selected service.
+
+This means the effective configuration is:
+
+1. Lifecycle `global_config.agentSessionDefaults`
+2. Repository `environment.agentSession.resources`
+3. Selected service `services[].dev.agentSession.readiness`
+
+For the end-user workflow and `lifecycle.yaml` service configuration, see
+[Agent Sessions & Sandboxes](/docs/features/agent-sessions) and [Dev Mode
+Configuration](/docs/schema/dev).
+
+### Secret provider prerequisite for forwarded agent env
+
+If a selected service uses `dev.forwardEnvVarsToAgent` and one of those values
+resolves to a native secret reference such as `{{aws:...}}` or `{{gcp:...}}`,
+Lifecycle also needs global `secretProviders` configured.
+
+Without `secretProviders`, the session cannot materialize those secrets into the
+session namespace and startup fails before the workspace opens. See [Cloud
+Secrets](/docs/features/secrets) for the user-facing setup pattern.
+
+---
+
 ## Prompt customization
 
 ### Additive rules
