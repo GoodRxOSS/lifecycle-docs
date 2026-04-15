@@ -270,6 +270,39 @@ Configuration for an init container that runs before the main application. Uses 
 | `deploymentMethod` | string  | No         | `"native"` or `"ci"`                                                                     |
 | `envLens`          | boolean | No         | Enable environment lens ingress banner. Overrides the global `features.envLens` default. |
 
+## Native Helm Configuration
+
+When `deploymentMethod: "native"` is enabled, you can further customize the
+native Helm job with the `nativeHelm` block.
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "api"
+    helm:
+      deploymentMethod: "native"
+      nativeHelm:
+        image: "registry.example.com/helm-runner:1.0.0"
+        postRenderer:
+          enabled: true
+          command: "/opt/bin/post-renderer"
+          args:
+            - "--mode=preview"
+      chart:
+        name: "./charts/api"
+```
+
+| Field                             | Type    | Required | Description                                                           |
+| --------------------------------- | ------- | -------- | --------------------------------------------------------------------- |
+| `nativeHelm.enabled`              | boolean | No       | Enables native Helm globally when defined in global config            |
+| `nativeHelm.defaultHelmVersion`   | string  | No       | Default Helm CLI version for native Helm jobs                         |
+| `nativeHelm.defaultArgs`          | string  | No       | Default Helm arguments automatically appended to native Helm commands |
+| `nativeHelm.jobTimeout`           | number  | No       | Timeout in seconds for the native Helm Kubernetes job                 |
+| `nativeHelm.serviceAccount`       | string  | No       | Service account used by the native Helm job                           |
+| `nativeHelm.image`                | string  | No       | Container image used for the native Helm runner job                   |
+| `nativeHelm.postRenderer.enabled` | boolean | No       | Enables or disables a configured post-renderer                        |
+| `nativeHelm.postRenderer.command` | string  | No       | Executable passed to Helm with `--post-renderer`                      |
+| `nativeHelm.postRenderer.args`    | array   | No       | Arguments passed to Helm as repeated `--post-renderer-args` flags     |
+
 ## Templated Variables
 
 Use templated variables in chart values to reference dynamic deployment values. See the [Template Variables](/docs/features/template-variables) guide for the complete list.

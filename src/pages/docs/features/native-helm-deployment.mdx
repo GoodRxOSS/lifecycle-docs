@@ -117,7 +117,13 @@ Stored in database with key `helmDefaults`:
   "nativeHelm": {
     "enabled": true,
     "defaultArgs": "--wait --timeout 30m",
-    "defaultHelmVersion": "3.12.0"
+    "defaultHelmVersion": "3.12.0",
+    "image": "registry.example.com/helm-runner:1.0.0",
+    "postRenderer": {
+      "enabled": true,
+      "command": "/opt/bin/post-renderer",
+      "args": ["--mode=preview"]
+    }
   }
 }
 ```
@@ -127,6 +133,10 @@ Stored in database with key `helmDefaults`:
 - `enabled`: When `true`, enables native Helm deployment for all services unless they explicitly set `deploymentMethod: "ci"`
 - `defaultArgs`: Arguments automatically appended to every Helm command (appears before service-specific args)
 - `defaultHelmVersion`: The Helm version to use when not specified at the service or chart level
+- `image`: Custom runner image for the native Helm job
+- `postRenderer.enabled`: Enables or disables the configured Helm post-renderer
+- `postRenderer.command`: Executable passed to Helm with `--post-renderer`
+- `postRenderer.args`: Arguments passed to Helm as repeated `--post-renderer-args` flags
 
 #### Chart-specific Configuration
 
@@ -149,6 +159,104 @@ Example: PostgreSQL configuration stored with key `postgresql`:
   These global configurations are managed by administrators and stored in the
   database. They provide consistent defaults across all environments and can be
   overridden at the service level.
+</Callout>
+
+### Custom Runner Images and Post-Renderers
+
+Native Helm supports two related customization points:
+
+- `nativeHelm.image` changes the container image used for the Helm job
+- `nativeHelm.postRenderer` configures Helm's `--post-renderer` integration
+
+This keeps the model aligned with Helm itself: Lifecycle configures the runner
+image and optionally tells Helm which post-renderer executable to invoke.
+
+#### Global Defaults Only
+
+```json
+{
+  "nativeHelm": {
+    "enabled": true,
+    "defaultArgs": "--wait --timeout 30m",
+    "image": "registry.example.com/helm-runner:1.0.0"
+  }
+}
+```
+
+Services can then opt into native Helm without repeating the runner image:
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: api
+    helm:
+      deploymentMethod: "native"
+      chart:
+        name: "./charts/api"
+```
+
+#### Global Custom Image with Post-Renderer
+
+```json
+{
+  "nativeHelm": {
+    "enabled": true,
+    "image": "registry.example.com/helm-runner:1.0.0",
+    "postRenderer": {
+      "enabled": true,
+      "command": "/opt/bin/post-renderer",
+      "args": ["--mode=preview"]
+    }
+  }
+}
+```
+
+#### Service-Level Override
+
+Service config can override either the image or the post-renderer settings:
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: api
+    helm:
+      deploymentMethod: "native"
+      nativeHelm:
+        image: "registry.example.com/custom-runner:2.0.0"
+        postRenderer:
+          enabled: true
+          command: "/custom/bin/render"
+          args:
+            - "--tenant=preview"
+      chart:
+        name: "./charts/api"
+```
+
+#### Disable an Inherited Post-Renderer
+
+If a post-renderer is defined globally, a service can explicitly disable it:
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: api
+    helm:
+      deploymentMethod: "native"
+      nativeHelm:
+        postRenderer:
+          enabled: false
+      chart:
+        name: "./charts/api"
+```
+
+<Callout type="warning">
+  Custom runner images must include the tools expected by the current native
+  Helm job script. At minimum, that means a compatible shell, Helm, `wget`, and
+  `jq` must already be present in the image.
+</Callout>
+
+<Callout type="info">
+  Repo-local post-renderer commands for public charts are not supported today
+  unless the deployment already clones the repository for another reason. For
+  public charts, prefer a post-renderer binary that already exists in the runner
+  image.
 </Callout>
 
 ## Usage Examples
