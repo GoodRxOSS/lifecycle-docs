@@ -8,12 +8,7 @@ tags:
   - native
 ---
 
-import { Callout, Steps } from "nextra/components";
-import { Image } from "@lifecycle-docs/components";
-
-<Callout type="warning">
-  This feature is still in alpha and might change with breaking changes.
-</Callout>
+import { Callout } from "nextra/components";
 
 **Native Helm** is an alternative deployment method that runs Helm deployments directly within Kubernetes jobs, eliminating the need for external CI/CD systems. This provides a more self-contained and portable deployment solution.
 
@@ -117,16 +112,26 @@ Stored in database with key `helmDefaults`:
   "nativeHelm": {
     "enabled": true,
     "defaultArgs": "--wait --timeout 30m",
-    "defaultHelmVersion": "3.12.0"
+    "defaultHelmVersion": "3.12.0",
+    "image": "registry.example.com/helm-runner:1.0.0",
+    "postRenderer": {
+      "enabled": true,
+      "command": "/opt/bin/post-renderer",
+      "args": ["--mode=preview"]
+    }
   }
 }
 ```
 
 **Field Descriptions**:
 
-- `enabled`: When `true`, enables native Helm deployment for all services unless they explicitly set `deploymentMethod: "ci"`
+- `enabled`: Enables default native Helm behavior in global config. Services still typically opt in with `deploymentMethod: "native"` or service-level native Helm settings.
 - `defaultArgs`: Arguments automatically appended to every Helm command (appears before service-specific args)
 - `defaultHelmVersion`: The Helm version to use when not specified at the service or chart level
+- `image`: Custom runner image for the native Helm job
+- `postRenderer.enabled`: Enables or disables the configured Helm post-renderer
+- `postRenderer.command`: Executable passed to Helm with `--post-renderer`
+- `postRenderer.args`: Arguments passed to Helm as repeated `--post-renderer-args` flags
 
 #### Chart-specific Configuration
 
@@ -149,6 +154,104 @@ Example: PostgreSQL configuration stored with key `postgresql`:
   These global configurations are managed by administrators and stored in the
   database. They provide consistent defaults across all environments and can be
   overridden at the service level.
+</Callout>
+
+### Custom Runner Images and Post-Renderers
+
+Native Helm supports two related customization points:
+
+- `nativeHelm.image` changes the container image used for the Helm job
+- `nativeHelm.postRenderer` configures Helm's `--post-renderer` integration
+
+This keeps the model aligned with Helm itself: Lifecycle configures the runner
+image and optionally tells Helm which post-renderer executable to invoke.
+
+#### Global Defaults Only
+
+```json
+{
+  "nativeHelm": {
+    "enabled": true,
+    "defaultArgs": "--wait --timeout 30m",
+    "image": "registry.example.com/helm-runner:1.0.0"
+  }
+}
+```
+
+Services can then opt into native Helm without repeating the runner image:
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: api
+    helm:
+      deploymentMethod: "native"
+      chart:
+        name: "./charts/api"
+```
+
+#### Global Custom Image with Post-Renderer
+
+```json
+{
+  "nativeHelm": {
+    "enabled": true,
+    "image": "registry.example.com/helm-runner:1.0.0",
+    "postRenderer": {
+      "enabled": true,
+      "command": "/opt/bin/post-renderer",
+      "args": ["--mode=preview"]
+    }
+  }
+}
+```
+
+#### Service-Level Override
+
+Service config can override either the image or the post-renderer settings:
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: api
+    helm:
+      deploymentMethod: "native"
+      nativeHelm:
+        image: "registry.example.com/custom-runner:2.0.0"
+        postRenderer:
+          enabled: true
+          command: "/custom/bin/render"
+          args:
+            - "--tenant=preview"
+      chart:
+        name: "./charts/api"
+```
+
+#### Disable an Inherited Post-Renderer
+
+If a post-renderer is defined globally, a service can explicitly disable it:
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: api
+    helm:
+      deploymentMethod: "native"
+      nativeHelm:
+        postRenderer:
+          enabled: false
+      chart:
+        name: "./charts/api"
+```
+
+<Callout type="info">
+  Custom runner images should include Helm and any post-renderer binary
+  referenced by `nativeHelm.postRenderer.command`. A common pattern is to start
+  from an existing Helm image and add your post-renderer binary on top.
+</Callout>
+
+<Callout type="info">
+  Repo-local post-renderer commands for public charts are not supported today
+  unless the deployment already clones the repository for another reason. For
+  public charts, prefer a post-renderer binary that already exists in the runner
+  image.
 </Callout>
 
 ## Usage Examples
@@ -392,7 +495,7 @@ services:
           dockerfilePath: "frontend/Dockerfile"
           env:
             REACT_APP_API_URL: "https://api.example.com"
-            REACT_APP_VERSION: "{{build.uuid}}"
+            REACT_APP_VERSION: "{{{buildUUID}}}"
 
   # Service using map format (common for custom charts)
   - name: backend
@@ -431,150 +534,10 @@ services:
           - "deploy/helm/mysql-values.yaml"
 ```
 
-## Templated Variables
-
-Lifecycle supports template variables in Helm values that are resolved at deployment time. These variables allow you to reference dynamic values like build UUIDs, docker tags, and internal hostnames.
-
-### Available Variables
-
-Template variables use the format `{{{variableName}}}` and are replaced with actual values during deployment:
-
-| Variable                             | Description               | Example Value                            |
-| ------------------------------------ | ------------------------- | ---------------------------------------- |
-| `{{{serviceName_dockerTag}}}`        | Docker tag for a service  | `main-abc123`                            |
-| `{{{serviceName_dockerImage}}}`      | Full docker image path    | `registry.com/org/repo:main-abc123`      |
-| `{{{serviceName_internalHostname}}}` | Internal service hostname | `api-service.env-uuid.svc.cluster.local` |
-| `{{{build.uuid}}}`                   | Build UUID                | `env-12345`                              |
-| `{{{build.namespace}}}`              | Kubernetes namespace      | `env-12345`                              |
-
-### Usage in Values
-
-```yaml filename="lifecycle.yaml"
-services:
-  - name: web-api
-    helm:
-      deploymentMethod: "native"
-      chart:
-        name: "./charts/app"
-        values:
-          - "image.tag={{{web-api_dockerTag}}}"
-          - "backend.url=http://{{{backend-service_internalHostname}}}:8080"
-          - "env.BUILD_ID={{{build.uuid}}}"
-```
-
 <Callout type="info">
-**Docker Image Mapping**: When using custom charts, you'll need to map `{{{serviceName_dockerImage}}}` or `{{{serviceName_dockerTag}}}` to your chart's expected value path. Common patterns include:
-- `image.repository` and `image.tag` (most common)
-- `deployment.image` (single image string)
-- `app.image` or `application.image`
-- Custom paths specific to your chart
-
-Check your chart's `values.yaml` to determine the correct path.
-
+  For supported template variables, see the [Template Variables
+  guide](/docs/features/template-variables).
 </Callout>
-
-#### Image Mapping Examples
-
-```yaml filename="lifecycle.yaml"
-# Example 1: Separate repository and tag (most common)
-services:
-  - name: web-api
-    helm:
-      chart:
-        name: "./charts/standard"
-        values:
-          - "image.repository=registry.com/org/web-api"    # Static repository
-          - "image.tag={{{web-api_dockerTag}}}"            # Dynamic tag only
-
-# Example 2: Combined image string
-services:
-  - name: worker
-    helm:
-      chart:
-        name: "./charts/custom"
-        values:
-          - "deployment.image={{{worker_dockerImage}}}"    # Full image with tag
-
-# Example 3: Nested structure
-services:
-  - name: backend
-    helm:
-      chart:
-        name: "./charts/microservice"
-        values:
-          - "app.container.image={{{backend_dockerImage}}}"  # Full image with tag
-```
-
-<Callout type="warning">
-**Important**: Always use triple braces `{{{variable}}}` instead of double braces `{{variable}}` for Lifecycle template variables. This prevents Helm from trying to process them as Helm template functions and ensures they are passed through correctly for Lifecycle to resolve.
-</Callout>
-
-### Template Resolution Order
-
-1. Lifecycle resolves `{{{variables}}}` before passing values to Helm
-2. The resolved values are then passed to Helm using `--set` flags
-3. Helm processes its own template functions (if any) after receiving the resolved values
-
-### Example with Service Dependencies
-
-```yaml filename="lifecycle.yaml"
-services:
-  - name: api-gateway
-    helm:
-      chart:
-        name: "./charts/gateway"
-        values:
-          - "config.authServiceUrl=http://{{{auth-service_internalHostname}}}:3000"
-          - "config.userServiceUrl=http://{{{user-service_internalHostname}}}:3000"
-          - "image.tag={{{api-gateway_dockerTag}}}"
-
-  - name: auth-service
-    helm:
-      chart:
-        name: "./charts/microservice"
-        values:
-          - "image.tag={{{auth-service_dockerTag}}}"
-          - "database.host={{{postgres-db_internalHostname}}}"
-```
-
-## Deployment Process
-
-<Steps>
-  1. **Job Creation**: A Kubernetes job is created in the ephemeral namespace 2.
-  **RBAC Setup**: Service account with namespace-scoped permissions is created
-  3. **Git Clone**: Init container clones the repository 4. **Helm Deploy**:
-  Main container executes the Helm deployment 5. **Monitoring**: Logs are
-  streamed in real-time via WebSocket
-</Steps>
-
-### Concurrent Deployment Handling
-
-Native Helm automatically handles concurrent deployments by:
-
-- Detecting existing deployment jobs
-- Force-deleting the old job
-- Starting the new deployment
-
-This ensures the newest deployment always takes precedence.
-
-## Monitoring Deployments
-
-### Deploy Logs Access
-
-For services using native Helm deployment, you can access deployment logs through the Lifecycle PR comment:
-
-1. Add the `lifecycle-status-comments!` label to your PR
-2. In the status comment that appears, you'll see a **Deploy Logs** link for each service using native Helm
-3. Click the link to view real-time deployment logs
-
-### Log Contents
-
-The deployment logs show:
-
-- Git repository cloning progress (`clone-repo` container)
-- Helm deployment execution (`helm-deploy` container)
-- Real-time streaming of all deployment output
-- Success or failure status
 
 ## Chart Types
 
@@ -739,7 +702,6 @@ services:
       chart:
         name: "./charts/microservices"
         values:
-          - 'image.tag="{{{api-gateway_dockerTag}}}"'
           - "service.type=LoadBalancer"
           - "ingress.enabled=true"
         valueFiles:
@@ -752,7 +714,7 @@ services:
         app:
           dockerfilePath: "docker/api.dockerfile"
           env:
-            BACKEND_URL: "{{backend-service_internalHostname}}:3000"
+            BACKEND_URL: "{{{backend-service_internalHostname}}}:3000"
             LOG_LEVEL: "info"
             ENV_NAME: "production"
           ports:
@@ -771,7 +733,6 @@ services:
       chart:
         name: "./charts/microservices"
         values:
-          - 'image.tag="{{{backend-service_dockerTag}}}"'
           - "replicaCount=2"
         valueFiles:
           - "deploy/helm/base-values.yaml"

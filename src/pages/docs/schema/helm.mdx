@@ -270,6 +270,32 @@ Configuration for an init container that runs before the main application. Uses 
 | `deploymentMethod` | string  | No         | `"native"` or `"ci"`                                                                     |
 | `envLens`          | boolean | No         | Enable environment lens ingress banner. Overrides the global `features.envLens` default. |
 
+## Native Helm Configuration
+
+When `deploymentMethod: "native"` is enabled, you can further customize the
+native Helm job with the `nativeHelm` block.
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "api"
+    helm:
+      deploymentMethod: "native"
+      nativeHelm:
+        postRenderer:
+          enabled: true
+          command: "/opt/bin/post-renderer"
+          args:
+            - "--mode=preview"
+      chart:
+        name: "./charts/api"
+```
+
+| Field                             | Type    | Required | Description                                                       |
+| --------------------------------- | ------- | -------- | ----------------------------------------------------------------- |
+| `nativeHelm.postRenderer.enabled` | boolean | No       | Enables or disables an inherited post-renderer                    |
+| `nativeHelm.postRenderer.command` | string  | No       | Executable passed to Helm with `--post-renderer`                  |
+| `nativeHelm.postRenderer.args`    | array   | No       | Arguments passed to Helm as repeated `--post-renderer-args` flags |
+
 ## Templated Variables
 
 Use templated variables in chart values to reference dynamic deployment values. See the [Template Variables](/docs/features/template-variables) guide for the complete list.
