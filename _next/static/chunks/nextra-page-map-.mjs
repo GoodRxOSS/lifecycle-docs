@@ -157,6 +157,14 @@ export const pageMap = [{
       }
     }]
   }, {
+    name: "index",
+    route: "/docs",
+    frontMatter: {
+      "title": "What is Lifecycle?",
+      "description": "Lifecycle is your effortless way to test and create ephemeral environments",
+      "tags": ["core", "lifecycle", "intro"]
+    }
+  }, {
     name: "schema",
     route: "/docs/schema",
     children: [{
@@ -339,8 +347,8 @@ export const pageMap = [{
   name: "index",
   route: "/",
   frontMatter: {
-    "title": "Lifecycle",
-    "description": "Enterprise-grade ephemeral environments that grow with you"
+    "title": "Lifecycle · every pull request gets a real environment",
+    "description": "Each pull request gets a connected multi-service preview. Builds itself, runs on its own URL, tears down on merge. Apache 2.0, maintained by GoodRx OSS."
   }
 }, {
   name: "tags",
