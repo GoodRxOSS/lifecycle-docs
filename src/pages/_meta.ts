@@ -19,7 +19,7 @@ export default {
     "type": "page"
   },
   "index": {
-    "title": "Lifecycle — every pull request gets a real environment",
+    "title": "Lifecycle · every pull request gets a real environment",
     "display": "hidden",
     "theme": {
       "layout": "full"
