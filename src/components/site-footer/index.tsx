@@ -61,7 +61,7 @@ export function SiteFooter() {
             className="rounded"
             aria-hidden="true"
           />
-          <span className="font-semibold tracking-tight text-foreground">
+          <span className="font-mono text-sm font-semibold uppercase tracking-[0.08em] text-foreground">
             Lifecycle
           </span>
         </div>

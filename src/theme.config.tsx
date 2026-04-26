@@ -34,7 +34,9 @@ const logo = (
       height={28}
       className="rounded logo-image"
     />
-    <span className="text-base font-semibold tracking-tight">Lifecycle</span>
+    <span className="font-mono text-sm font-semibold uppercase tracking-[0.08em]">
+      Lifecycle
+    </span>
   </div>
 );
 

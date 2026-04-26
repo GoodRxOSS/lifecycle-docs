@@ -16,7 +16,7 @@
 
 import { useEffect, useState } from "react";
 import type { AppProps } from "next/app";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { IBM_Plex_Sans, Inter, JetBrains_Mono } from "next/font/google";
 import { useConfig } from "nextra-theme-docs";
 import { MotionConfig } from "framer-motion";
 import TagContent from "@/components/tags";
@@ -25,6 +25,11 @@ import "@xyflow/react/dist/style.css";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], display: "swap" });
+const ibmPlexSans = IBM_Plex_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
 
 export default function App({ Component, pageProps }: AppProps) {
   const [isClient, setIsClient] = useState(false);
@@ -51,6 +56,7 @@ export default function App({ Component, pageProps }: AppProps) {
         :root {
           --font-sans: ${inter.style.fontFamily};
           --font-mono: ${jetbrainsMono.style.fontFamily};
+          --font-docs: ${ibmPlexSans.style.fontFamily};
         }
       `}</style>
       <Component {...pageProps} />
