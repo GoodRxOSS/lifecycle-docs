@@ -22,8 +22,8 @@ import { steps } from "./data";
 export function HowItWorks() {
   return (
     <section aria-labelledby="how-it-works-heading" className="py-20 md:py-28">
-      <div className="container mx-auto px-4">
-        <header className="mx-auto max-w-2xl">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <header className="max-w-2xl">
           <p className="kicker text-muted-foreground">{"// the path"}</p>
           <h2
             id="how-it-works-heading"

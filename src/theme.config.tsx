@@ -35,12 +35,6 @@ const logo = (
       className="rounded logo-image"
     />
     <span className="text-base font-semibold tracking-tight">Lifecycle</span>
-    <span
-      className="ml-1 hidden items-center rounded-sm border border-border/60 bg-muted/40 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground md:inline-flex"
-      aria-hidden="true"
-    >
-      oss
-    </span>
   </div>
 );
 

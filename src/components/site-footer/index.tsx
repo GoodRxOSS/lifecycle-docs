@@ -64,9 +64,6 @@ export function SiteFooter() {
           <span className="font-semibold tracking-tight text-foreground">
             Lifecycle
           </span>
-          <span className="kicker text-muted-foreground">
-            Apache 2.0 · © 2025 GoodRx OSS
-          </span>
         </div>
 
         <nav

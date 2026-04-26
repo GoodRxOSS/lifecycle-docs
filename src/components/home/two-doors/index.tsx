@@ -50,7 +50,7 @@ export function TwoDoors() {
         whileInView="visible"
         viewport={{ once: true, amount: 0.2 }}
         variants={sectionVariants}
-        className="container mx-auto px-4"
+        className="mx-auto max-w-6xl px-4 sm:px-6"
       >
         <motion.header variants={blockVariants} className="max-w-2xl">
           <p className="kicker text-muted-foreground">{"// pick a door"}</p>

@@ -114,15 +114,15 @@
   background-color: hsl(var(--background));
 }
 
-article.nextra-content :is(p, ul, ol, blockquote) {
+article.nextra-content main:not(.layout-full) :is(p, ul, ol, blockquote) {
   max-width: 72ch;
 }
 
-article.nextra-content :is(h2, h3, h4) {
+article.nextra-content main:not(.layout-full) :is(h2, h3, h4) {
   max-width: 60ch;
 }
 
-article.nextra-content :is(table, pre, .nextra-code-block) {
+article.nextra-content main:not(.layout-full) :is(table, pre, .nextra-code-block) {
   max-width: none;
 }
 

@@ -69,13 +69,13 @@ export function Contrast() {
       aria-labelledby="contrast-heading"
       className="relative border-y border-border/60 py-20 md:py-28"
     >
-      <div className="container mx-auto px-4">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <motion.header
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.4 }}
           variants={headerVariants}
-          className="mx-auto max-w-2xl"
+          className="max-w-2xl"
         >
           <p className="kicker text-muted-foreground">{"// the shift"}</p>
           <h2

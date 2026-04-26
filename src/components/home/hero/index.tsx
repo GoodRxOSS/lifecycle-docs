@@ -24,7 +24,7 @@ const easeOutQuart = [0.25, 1, 0.5, 1] as const;
 export function Hero() {
   return (
     <section className="relative pt-20 pb-16 md:pt-28 md:pb-20 lg:pt-32 lg:pb-24">
-      <div className="container mx-auto px-4">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <HeroContent />
 
         <motion.figure

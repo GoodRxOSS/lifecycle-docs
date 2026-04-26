@@ -15,6 +15,7 @@
  */
 
 import { GridPattern } from "@/components/home/bg/grid";
+import { GridPulses } from "@/components/home/bg/pulses";
 
 export const Bg = () => {
   return (
@@ -29,6 +30,7 @@ export const Bg = () => {
         y="-1"
         className="absolute inset-0 h-full w-full stroke-foreground/[0.05] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,black_30%,transparent_75%)] dark:stroke-foreground/[0.07]"
       />
+      <GridPulses />
     </div>
   );
 };
