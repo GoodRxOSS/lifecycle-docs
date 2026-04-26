@@ -21,33 +21,33 @@ export const steps: Step[] = [
   {
     id: "open-pr",
     number: 1,
-    title: "Open a Pull Request",
+    title: "Open a pull request",
     description:
-      "Push your code and open a pull request as you normally would. Lifecycle detects the PR automatically.",
+      "Push your branch. Lifecycle picks it up the moment the pull request opens.",
     icon: GitPullRequest,
   },
   {
     id: "provision",
     number: 2,
-    title: "Environment Provisioned",
+    title: "Lifecycle builds it",
     description:
-      "Lifecycle spins up a complete, isolated environment with all your services configured and connected.",
+      "Every service builds, deploys, and wires together from one config.",
     icon: Rocket,
   },
   {
     id: "access",
     number: 3,
-    title: "Access Your Environment",
+    title: "Test on a real URL",
     description:
-      "Get a unique URL posted to your PR. Share it with teammates for testing and review.",
+      "A unique URL lands in the pull request. Share with reviewers, QA, designers.",
     icon: Globe,
   },
   {
     id: "merge",
     number: 4,
-    title: "Merge and Cleanup",
+    title: "Merge, it’s gone",
     description:
-      "Merge your PR when ready. Lifecycle automatically tears down the environment, freeing up resources.",
+      "Close or merge. The env tears itself down. No stale envs, no orphan costs.",
     icon: GitMerge,
   },
 ];

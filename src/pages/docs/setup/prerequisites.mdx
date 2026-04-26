@@ -69,44 +69,47 @@ _Update your domain's DNS records with NS records provided by Google Cloud DNS. 
   **[AWS Route 53](https://aws.amazon.com/route53/)**: Amazon's scalable DNS web
   service designed to route end users to Internet applications.
 
-  **Manual Setup**:
+**Manual Setup**:
 
-  - Authenticate with AWS CLI using the role/usr you desire.
-  - Ensure you have [your domain provisioned to accept wildcards](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingNewSubdomain.html); eg `*.lifecycle.<your-domain>.com`
+- Authenticate with AWS CLI using the role/usr you desire.
+- Ensure you have [your domain provisioned to accept wildcards](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingNewSubdomain.html); eg `*.lifecycle.<your-domain>.com`
 
-  **CLI Setup**:
+**CLI Setup**:
 
-  ```sh
-  aws configure
-  ```
+```sh
+aws configure
+```
 
-  ```sh
-  aws route53 change-resource-record-sets --hosted-zone-id <hosted-zone> --change-batch '{
-    "Comment": "CREATE wildcard for <your-domain>",
-    "Changes": [
-      {
-        "Action": "CREATE",
-        "ResourceRecordSet": {
-          "Name": "<subdomain>.<your-domain>.com",
-          "Type": "A",
-          "TTL": 300,
-          "ResourceRecords": [
-            {
-              "Value": "*********"
-            }
-          ]
-        }
+```sh
+aws route53 change-resource-record-sets --hosted-zone-id <hosted-zone> --change-batch '{
+  "Comment": "CREATE wildcard for <your-domain>",
+  "Changes": [
+    {
+      "Action": "CREATE",
+      "ResourceRecordSet": {
+        "Name": "<subdomain>.<your-domain>.com",
+        "Type": "A",
+        "TTL": 300,
+        "ResourceRecords": [
+          {
+            "Value": "*********"
+          }
+        ]
       }
-    ]
-  }'
-  ```
+    }
+  ]
+}'
+```
 
 </Tabs.Tab>
 
 <Tabs.Tab>
-  If you want to use Cloudflare as your primary DNS provider and manage your DNS records on Cloudflare, your domain should be using a full setup.
-  This means that you are using Cloudflare for your authoritative DNS nameservers.
-  Follow the steps [here](https://developers.cloudflare.com/dns/zone-setups/full-setup/setup/) to setup a public DNS zone in Cloudflare.
+  If you want to use Cloudflare as your primary DNS provider and manage your DNS
+  records on Cloudflare, your domain should be using a full setup. This means
+  that you are using Cloudflare for your authoritative DNS nameservers. Follow
+  the steps
+  [here](https://developers.cloudflare.com/dns/zone-setups/full-setup/setup/) to
+  setup a public DNS zone in Cloudflare.
 </Tabs.Tab>
 
 </Tabs>

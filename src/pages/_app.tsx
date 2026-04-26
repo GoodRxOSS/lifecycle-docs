@@ -17,6 +17,7 @@
 import { useEffect, useState } from "react";
 import type { AppProps } from "next/app";
 import { useConfig } from "nextra-theme-docs";
+import { MotionConfig } from "framer-motion";
 import TagContent from "@/components/tags";
 import "../styles/globals.css";
 import "@xyflow/react/dist/style.css";
@@ -41,9 +42,9 @@ export default function App({ Component, pageProps }: AppProps) {
   }, []);
 
   return (
-    <>
+    <MotionConfig reducedMotion="user">
       <Component {...pageProps} />
       {frontMatter?.tags?.length > 0 && <TagContent tags={frontMatter.tags} />}
-    </>
+    </MotionConfig>
   );
 }

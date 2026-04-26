@@ -18,21 +18,48 @@
 
 import { motion } from "framer-motion";
 import { HeroContent } from "./HeroContent";
-import { Iframe } from "@/components/iframe";
+
+const easeOutQuart = [0.25, 1, 0.5, 1] as const;
 
 export function Hero() {
   return (
-    <section className="relative py-16 md:py-24 lg:py-32">
+    <section className="relative pt-20 pb-16 md:pt-28 md:pb-20 lg:pt-32 lg:pb-24">
       <div className="container mx-auto px-4">
         <HeroContent />
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
+
+        <motion.figure
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="mt-12 max-w-5xl mx-auto"
+          transition={{ duration: 0.7, ease: easeOutQuart, delay: 0.3 }}
+          className="mx-auto mt-16 max-w-5xl"
         >
-          <Iframe src="https://www.youtube.com/embed/ld9rWBPU3R8?si=1TTGy7cPhaqoF2Ev" />
-        </motion.div>
+          <div className="overflow-hidden rounded-md border border-border bg-card">
+            <div className="flex items-center justify-between border-b border-border px-4 py-2 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+              <span className="flex items-center gap-2">
+                <span
+                  className="inline-block h-1.5 w-1.5 rounded-full bg-primary"
+                  aria-hidden="true"
+                />
+                demo · 14 min walkthrough
+              </span>
+              <span className="hidden sm:inline">lifecycle.dev</span>
+            </div>
+            <div className="relative aspect-video">
+              <iframe
+                src="https://www.youtube.com/embed/ld9rWBPU3R8?si=1TTGy7cPhaqoF2Ev"
+                title="Lifecycle 14-minute walkthrough"
+                loading="lazy"
+                allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                className="absolute inset-0 h-full w-full"
+              />
+            </div>
+          </div>
+          <figcaption className="sr-only">
+            Fourteen-minute walkthrough showing a pull request creating an
+            ephemeral environment.
+          </figcaption>
+        </motion.figure>
       </div>
     </section>
   );
