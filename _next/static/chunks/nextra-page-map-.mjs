@@ -63,6 +63,14 @@ export const pageMap = [{
         "tags": ["ttl", "cleanup", "lifecycle-keep", "inactivity", "global-config"]
       }
     }, {
+      name: "ignore-file-patterns",
+      route: "/docs/features/ignore-file-patterns",
+      frontMatter: {
+        "title": "Ignore File Patterns",
+        "description": "Skip unnecessary push redeploys for documentation, metadata, and other non-runtime changes.",
+        "tags": ["ignoreFiles", "push", "redeploy", "configuration"]
+      }
+    }, {
       name: "mcp-integration",
       route: "/docs/features/mcp-integration",
       frontMatter: {
@@ -706,6 +714,13 @@ export const pageMap = [{
       "description": "Lifecycle \"helm\" docs"
     }
   }, {
+    name: "ignorefiles",
+    route: "/tags/ignorefiles",
+    frontMatter: {
+      "title": "ignorefiles",
+      "description": "Lifecycle \"ignorefiles\" docs"
+    }
+  }, {
     name: "inactivity",
     route: "/tags/inactivity",
     frontMatter: {
@@ -942,6 +957,20 @@ export const pageMap = [{
     frontMatter: {
       "title": "pull request",
       "description": "Lifecycle \"pull request\" docs"
+    }
+  }, {
+    name: "push",
+    route: "/tags/push",
+    frontMatter: {
+      "title": "push",
+      "description": "Lifecycle \"push\" docs"
+    }
+  }, {
+    name: "redeploy",
+    route: "/tags/redeploy",
+    frontMatter: {
+      "title": "redeploy",
+      "description": "Lifecycle \"redeploy\" docs"
     }
   }, {
     name: "redis",
