@@ -1,0 +1,145 @@
+---
+title: Ignore File Patterns
+description: Skip unnecessary push redeploys for documentation, metadata, and other non-runtime changes.
+tags:
+  - ignoreFiles
+  - push
+  - redeploy
+  - configuration
+---
+
+import { Callout } from "nextra/components";
+
+## Use Case
+
+Use `ignoreFiles` when changes to certain files should not redeploy an active
+Lifecycle environment. Common examples are docs, generated metadata, examples,
+or workflow files that do not affect a running service.
+
+<Callout type="info">
+  Lifecycle skips a push redeploy only when every changed file is ignored by
+  every active affected service. If Lifecycle cannot prove the push is safe to
+  skip, it redeploys.
+</Callout>
+
+## Config
+
+Define shared patterns under `environment.ignoreFiles`. Add service-specific
+patterns under `services[].ignoreFiles`.
+
+```yaml filename="lifecycle.yaml"
+environment:
+  ignoreFiles:
+    - "docs/**"
+    - "**/*.md"
+
+  defaultServices:
+    - name: "api"
+    - name: "frontend"
+
+services:
+  - name: "api"
+    ignoreFiles:
+      - "openapi/**"
+    github:
+      repository: "lifecycle/web-app"
+      branchName: "main"
+      docker:
+        defaultTag: "main"
+        app:
+          dockerfilePath: "api/Dockerfile"
+
+  - name: "frontend"
+    github:
+      repository: "lifecycle/web-app"
+      branchName: "main"
+      docker:
+        defaultTag: "main"
+        app:
+          dockerfilePath: "frontend/Dockerfile"
+```
+
+This config means:
+
+- `docs/**` and `**/*.md` apply to both `api` and `frontend`.
+- `openapi/**` applies only to `api`.
+- A push that changes only `docs/readme.md` can skip both services.
+- A push that changes only `openapi/schema.yaml` can skip only when every active
+  affected service ignores that path.
+
+<Callout type="info">
+  Environment patterns are inherited by each service. Service patterns only
+  apply to that service.
+</Callout>
+
+## Rules
+
+Patterns are matched against GitHub file paths.
+
+| Rule             | Example                                      |
+| ---------------- | -------------------------------------------- |
+| Use `/` paths    | `docs/setup.md`, not `docs\\setup.md`        |
+| Repo-relative    | `docs/**`, not `/docs/**`                    |
+| Case-sensitive   | `docs/**` does not match `Docs/guide.md`     |
+| Dotfiles match   | `.github/**` matches `.github/workflows.yml` |
+| Broad globs work | `**/*` matches all files                     |
+
+<Callout type="warning">
+  Paths are repo-relative and case-sensitive. `docs/**` and `Docs/**` are
+  different paths, and patterns should not start with `/`.
+</Callout>
+
+Common patterns:
+
+```yaml filename="lifecycle.yaml"
+environment:
+  ignoreFiles:
+    - "docs/**"
+    - "**/*.md"
+    - ".github/**"
+    - "examples/**"
+```
+
+<Callout type="warning">
+  Broad patterns like `**/*` are allowed, but use them only when the service
+  should ignore all push file changes from that repo.
+</Callout>
+
+## Active Services
+
+Only active services affected by the pushed repository and branch need matching
+ignore patterns.
+
+<Callout type="info">
+  Optional services only count when they are deployed in the current
+  environment. If `worker` is optional and not deployed, its `ignoreFiles`
+  config does not affect the skip decision.
+</Callout>
+
+If one active affected service does not ignore a changed file, Lifecycle
+redeploys instead of skipping.
+
+## Always Redeploys
+
+<Callout type="warning">
+  Lifecycle always redeploys when `lifecycle.yaml` or `lifecycle.yml` changes,
+  when the current deploy is already failing, and for static environments.
+</Callout>
+
+Lifecycle also redeploys when:
+
+- a changed file does not match every active affected service's ignore patterns
+- Lifecycle cannot safely read the changed file list
+
+## Debug
+
+If a push redeployed when you expected it to skip, check:
+
+1. Did the push change `lifecycle.yaml` or `lifecycle.yml`?
+2. Did every changed file match the patterns exactly, including casing?
+3. Did every active affected service inherit or define a matching pattern?
+4. Is an optional service currently deployed in the environment?
+5. Is the current deploy already in an error state?
+
+When in doubt, keep the pattern narrow. It is better to redeploy one extra time
+than to skip a change that affects a running service.

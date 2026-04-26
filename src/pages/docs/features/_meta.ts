@@ -21,6 +21,9 @@ export default {
   "auto-deployment": {
     "title": "Auto Deploy & Labels"
   },
+  "ignore-file-patterns": {
+    "title": "Ignore File Patterns"
+  },
   "configurable-labels": {
     "title": "Configurable Labels"
   },
