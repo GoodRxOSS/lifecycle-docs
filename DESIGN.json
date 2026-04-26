@@ -1,0 +1,439 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-04-26T00:00:00Z",
+  "title": "Design System: Lifecycle Docs",
+  "extensions": {
+    "colorMeta": {
+      "hi-vis-yellow": {
+        "role": "primary",
+        "displayName": "Hi-Vis Yellow",
+        "canonical": "oklch(89% 0.18 100)",
+        "tonalRamp": [
+          "oklch(20% 0.04 100)",
+          "oklch(32% 0.07 100)",
+          "oklch(46% 0.11 100)",
+          "oklch(58% 0.14 100)",
+          "oklch(70% 0.16 100)",
+          "oklch(82% 0.18 100)",
+          "oklch(89% 0.18 100)",
+          "oklch(96% 0.06 100)"
+        ]
+      },
+      "late-sun-gold": {
+        "role": "primary",
+        "displayName": "Late Sun Gold",
+        "canonical": "oklch(87% 0.17 89)",
+        "tonalRamp": [
+          "oklch(20% 0.04 89)",
+          "oklch(32% 0.07 89)",
+          "oklch(46% 0.11 89)",
+          "oklch(58% 0.14 89)",
+          "oklch(70% 0.16 89)",
+          "oklch(80% 0.17 89)",
+          "oklch(87% 0.17 89)",
+          "oklch(95% 0.06 89)"
+        ]
+      },
+      "blueprint-indigo": {
+        "role": "secondary",
+        "displayName": "Blueprint Indigo",
+        "canonical": "oklch(46% 0.14 252)",
+        "tonalRamp": [
+          "oklch(15% 0.04 252)",
+          "oklch(25% 0.08 252)",
+          "oklch(35% 0.12 252)",
+          "oklch(46% 0.14 252)",
+          "oklch(58% 0.15 252)",
+          "oklch(70% 0.13 252)",
+          "oklch(82% 0.08 252)",
+          "oklch(95% 0.02 252)"
+        ]
+      },
+      "signal-amber": {
+        "role": "tertiary",
+        "displayName": "Signal Amber",
+        "canonical": "oklch(75% 0.16 70)",
+        "tonalRamp": [
+          "oklch(20% 0.04 70)",
+          "oklch(32% 0.08 70)",
+          "oklch(45% 0.11 70)",
+          "oklch(58% 0.14 70)",
+          "oklch(68% 0.16 70)",
+          "oklch(75% 0.16 70)",
+          "oklch(85% 0.13 70)",
+          "oklch(95% 0.05 70)"
+        ]
+      },
+      "destructive-red": {
+        "role": "tertiary",
+        "displayName": "Destructive Red",
+        "canonical": "oklch(64% 0.22 28)",
+        "tonalRamp": [
+          "oklch(20% 0.06 28)",
+          "oklch(32% 0.11 28)",
+          "oklch(46% 0.17 28)",
+          "oklch(56% 0.21 28)",
+          "oklch(64% 0.22 28)",
+          "oklch(74% 0.18 28)",
+          "oklch(85% 0.12 28)",
+          "oklch(96% 0.04 28)"
+        ]
+      },
+      "schematic-black": {
+        "role": "neutral",
+        "displayName": "Schematic Black",
+        "canonical": "oklch(15% 0.03 264)",
+        "tonalRamp": [
+          "oklch(15% 0.03 264)",
+          "oklch(25% 0.025 264)",
+          "oklch(38% 0.02 264)",
+          "oklch(50% 0.018 264)",
+          "oklch(62% 0.015 264)",
+          "oklch(75% 0.012 264)",
+          "oklch(87% 0.008 264)",
+          "oklch(96% 0.005 264)"
+        ]
+      },
+      "graphite-mute": {
+        "role": "neutral",
+        "displayName": "Graphite Mute",
+        "canonical": "oklch(54% 0.025 252)",
+        "tonalRamp": [
+          "oklch(15% 0.025 252)",
+          "oklch(25% 0.025 252)",
+          "oklch(38% 0.025 252)",
+          "oklch(54% 0.025 252)",
+          "oklch(68% 0.022 252)",
+          "oklch(80% 0.018 252)",
+          "oklch(90% 0.012 252)",
+          "oklch(97% 0.006 252)"
+        ]
+      },
+      "drafting-line": {
+        "role": "neutral",
+        "displayName": "Drafting Line",
+        "canonical": "oklch(91% 0.012 252)",
+        "tonalRamp": [
+          "oklch(15% 0.012 252)",
+          "oklch(28% 0.012 252)",
+          "oklch(42% 0.012 252)",
+          "oklch(58% 0.012 252)",
+          "oklch(72% 0.012 252)",
+          "oklch(82% 0.012 252)",
+          "oklch(91% 0.012 252)",
+          "oklch(98% 0.006 252)"
+        ]
+      },
+      "blueprint-paper": {
+        "role": "neutral",
+        "displayName": "Blueprint Paper",
+        "canonical": "oklch(99% 0.003 252)",
+        "tonalRamp": [
+          "oklch(15% 0.012 252)",
+          "oklch(30% 0.012 252)",
+          "oklch(45% 0.012 252)",
+          "oklch(60% 0.01 252)",
+          "oklch(75% 0.008 252)",
+          "oklch(87% 0.006 252)",
+          "oklch(94% 0.005 252)",
+          "oklch(99% 0.003 252)"
+        ]
+      },
+      "workshop-coal": {
+        "role": "neutral",
+        "displayName": "Workshop Coal",
+        "canonical": "oklch(13% 0.005 50)",
+        "tonalRamp": [
+          "oklch(13% 0.005 50)",
+          "oklch(22% 0.008 50)",
+          "oklch(34% 0.01 50)",
+          "oklch(48% 0.012 50)",
+          "oklch(62% 0.012 50)",
+          "oklch(76% 0.01 50)",
+          "oklch(88% 0.008 50)",
+          "oklch(98% 0.003 50)"
+        ]
+      },
+      "workshop-cream": {
+        "role": "neutral",
+        "displayName": "Workshop Cream",
+        "canonical": "oklch(98% 0.003 95)",
+        "tonalRamp": [
+          "oklch(15% 0.005 95)",
+          "oklch(28% 0.005 95)",
+          "oklch(42% 0.006 95)",
+          "oklch(58% 0.006 95)",
+          "oklch(72% 0.005 95)",
+          "oklch(86% 0.004 95)",
+          "oklch(93% 0.004 95)",
+          "oklch(98% 0.003 95)"
+        ]
+      },
+      "workshop-graphite": {
+        "role": "neutral",
+        "displayName": "Workshop Graphite",
+        "canonical": "oklch(22% 0.008 25)",
+        "tonalRamp": [
+          "oklch(13% 0.005 25)",
+          "oklch(22% 0.008 25)",
+          "oklch(34% 0.012 25)",
+          "oklch(48% 0.012 25)",
+          "oklch(62% 0.012 25)",
+          "oklch(76% 0.01 25)",
+          "oklch(88% 0.008 25)",
+          "oklch(98% 0.003 25)"
+        ]
+      },
+      "workshop-mute": {
+        "role": "neutral",
+        "displayName": "Workshop Mute",
+        "canonical": "oklch(70% 0.012 50)",
+        "tonalRamp": [
+          "oklch(15% 0.005 50)",
+          "oklch(28% 0.008 50)",
+          "oklch(42% 0.01 50)",
+          "oklch(56% 0.012 50)",
+          "oklch(70% 0.012 50)",
+          "oklch(82% 0.01 50)",
+          "oklch(91% 0.008 50)",
+          "oklch(98% 0.003 50)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Hero headlines on the home. One per page maximum."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section openers in marketing pages, doc page titles."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Component headings, sidebar group labels, callout titles."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "All long-form prose. Cap at 65-75ch line length."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Tag chips, badges, button text, table headers. The few uppercase moments."
+      },
+      "mono": {
+        "displayName": "Mono",
+        "purpose": "Inline code, file paths, flags, env vars, schema keys. A first-class voice."
+      }
+    },
+    "shadows": [
+      {
+        "name": "shadow-sm",
+        "value": "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+        "purpose": "Default reassurance shadow on cards in light mode. Almost imperceptible."
+      },
+      {
+        "name": "shadow-lg",
+        "value": "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
+        "purpose": "Hover state on cards, dropdowns, popovers. Always paired with translate-y-1 lift."
+      },
+      {
+        "name": "ring-focus-light",
+        "value": "0 0 0 2px #FFFFFE, 0 0 0 4px #0F55A6",
+        "purpose": "Focus ring in light mode. Blueprint Indigo with paper offset."
+      },
+      {
+        "name": "ring-focus-dark",
+        "value": "0 0 0 2px #0C0A09, 0 0 0 4px #FDDB00",
+        "purpose": "Focus ring in dark mode. Hi-Vis Yellow with coal offset."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out-quart",
+        "value": "cubic-bezier(0.25, 1, 0.5, 1)",
+        "purpose": "Default easing for state transitions. Sharp out, no bounce."
+      },
+      {
+        "name": "ease-out-expo",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Hero entrance and large surface lifts. More dramatic out-curve."
+      },
+      {
+        "name": "duration-fast",
+        "value": "150ms",
+        "purpose": "Buttons, hovers, color shifts."
+      },
+      {
+        "name": "duration-medium",
+        "value": "300ms",
+        "purpose": "Card lift on hover, accordion expansion."
+      },
+      {
+        "name": "duration-slow",
+        "value": "600ms",
+        "purpose": "Hero entrance choreography (framer-motion opacity + translate)."
+      }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" },
+      { "name": "2xl", "value": "1400px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button (light)",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Dominant CTA in light mode. Blueprint Indigo on paper. Used for 'Get Started' on the hero.",
+      "html": "<button class=\"ds-btn-primary\">Get Started <svg class=\"ds-btn-icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14\"/><path d=\"m12 5 7 7-7 7\"/></svg></button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 32px; background: #0F55A6; color: #FFFFFE; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 15px; font-weight: 500; letter-spacing: 0; border: none; border-radius: 6px; cursor: pointer; transition: background 150ms cubic-bezier(0.25, 1, 0.5, 1), transform 150ms cubic-bezier(0.25, 1, 0.5, 1); } .ds-btn-primary:hover { background: oklch(46% 0.14 252 / 0.9); } .ds-btn-primary:hover .ds-btn-icon { transform: translateX(4px); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 2px #FFFFFE, 0 0 0 4px #0F55A6; } .ds-btn-icon { width: 16px; height: 16px; transition: transform 150ms cubic-bezier(0.25, 1, 0.5, 1); }"
+    },
+    {
+      "name": "Primary Button (dark)",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Dominant CTA in dark mode. Hi-Vis Yellow on Workshop Coal. The yellow is structural here, not decorative.",
+      "html": "<button class=\"ds-btn-primary-dark\">Get Started <svg class=\"ds-btn-icon-dark\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14\"/><path d=\"m12 5 7 7-7 7\"/></svg></button>",
+      "css": ".ds-btn-primary-dark { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 32px; background: #FDDB00; color: #0C0A09; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 15px; font-weight: 500; border: none; border-radius: 6px; cursor: pointer; transition: background 150ms cubic-bezier(0.25, 1, 0.5, 1); } .ds-btn-primary-dark:hover { background: oklch(89% 0.18 100 / 0.9); } .ds-btn-primary-dark:hover .ds-btn-icon-dark { transform: translateX(4px); } .ds-btn-primary-dark:focus-visible { outline: none; box-shadow: 0 0 0 2px #0C0A09, 0 0 0 4px #FDDB00; } .ds-btn-icon-dark { width: 16px; height: 16px; transition: transform 150ms cubic-bezier(0.25, 1, 0.5, 1); }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary CTA. Used next to Primary on the hero (e.g. 'View on GitHub'). Border-defined, not fill-defined.",
+      "html": "<button class=\"ds-btn-outline\"><svg class=\"ds-btn-outline-icon\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z\"/></svg> View on GitHub</button>",
+      "css": ".ds-btn-outline { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 32px; background: #FFFFFE; color: #020817; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 15px; font-weight: 500; border: 1px solid #E2E8F0; border-radius: 6px; cursor: pointer; transition: background 150ms cubic-bezier(0.25, 1, 0.5, 1), border-color 150ms cubic-bezier(0.25, 1, 0.5, 1); } .ds-btn-outline:hover { background: #E2E8F0; border-color: #0F55A6; } .ds-btn-outline:focus-visible { outline: none; box-shadow: 0 0 0 2px #FFFFFE, 0 0 0 4px #0F55A6; } .ds-btn-outline-icon { width: 16px; height: 16px; }"
+    },
+    {
+      "name": "Feature Card",
+      "kind": "card",
+      "refersTo": "feature-card",
+      "description": "The signature surface on the home page. Flat at rest, lift on intent.",
+      "html": "<div class=\"ds-feature-card\"><div class=\"ds-feature-icon\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M13 2 3 14h9l-1 8 10-12h-9l1-8z\"/></svg></div><h3 class=\"ds-feature-title\">Per-PR Environments</h3><p class=\"ds-feature-body\">Every pull request becomes a fully-functional preview environment. Connected services, real data, automatic cleanup on merge.</p></div>",
+      "css": ".ds-feature-card { display: flex; flex-direction: column; padding: 24px; background: #FFFFFE; color: #020817; border: 1px solid #E2E8F0; border-radius: 12px; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); transition: transform 300ms cubic-bezier(0.25, 1, 0.5, 1), border-color 300ms cubic-bezier(0.25, 1, 0.5, 1), box-shadow 300ms cubic-bezier(0.25, 1, 0.5, 1); cursor: pointer; max-width: 360px; } .ds-feature-card:hover { transform: translateY(-4px); border-color: oklch(46% 0.14 252 / 0.5); box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); } .ds-feature-card:hover .ds-feature-icon { background: oklch(46% 0.14 252 / 0.2); } .ds-feature-icon { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: oklch(46% 0.14 252 / 0.1); color: #0F55A6; border-radius: 8px; margin-bottom: 16px; transition: background 300ms cubic-bezier(0.25, 1, 0.5, 1); } .ds-feature-icon svg { width: 24px; height: 24px; } .ds-feature-title { font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 18px; font-weight: 600; line-height: 1.4; margin: 0 0 8px; } .ds-feature-body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 14px; font-weight: 400; line-height: 1.65; color: #64748B; margin: 0; }"
+    },
+    {
+      "name": "Generic Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Static doc card. Tighter radius than Feature Card. Static content, no hover lift.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-header\"><h3 class=\"ds-card-title\">Database connection</h3><p class=\"ds-card-description\">PostgreSQL connection string used during environment bootstrap.</p></div><div class=\"ds-card-content\"><code class=\"ds-card-code\">postgres://lifecycle:****@db.svc:5432/app</code></div></div>",
+      "css": ".ds-card { background: #FFFFFE; color: #020817; border: 1px solid #E2E8F0; border-radius: 8px; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); max-width: 480px; } .ds-card-header { display: flex; flex-direction: column; gap: 6px; padding: 24px; } .ds-card-title { font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 18px; font-weight: 600; line-height: 1.4; margin: 0; } .ds-card-description { font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 14px; font-weight: 400; line-height: 1.5; color: #64748B; margin: 0; } .ds-card-content { padding: 0 24px 24px; } .ds-card-code { display: inline-block; padding: 2px 6px; background: #E2E8F0; color: #020817; font-family: ui-monospace, SFMono-Regular, 'JetBrains Mono', Menlo, Consolas, monospace; font-size: 13px; border-radius: 4px; }"
+    },
+    {
+      "name": "Input",
+      "kind": "input",
+      "refersTo": "input-default",
+      "description": "Text field. Border-defined edge. Focus ring sits outside the border.",
+      "html": "<label class=\"ds-input-label\">Repository<input class=\"ds-input\" type=\"text\" placeholder=\"GoodRxOSS/lifecycle\" /></label>",
+      "css": ".ds-input-label { display: flex; flex-direction: column; gap: 6px; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 13px; font-weight: 600; color: #020817; max-width: 320px; } .ds-input { height: 40px; padding: 0 12px; background: #FFFFFE; color: #020817; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 14px; font-weight: 400; border: 1px solid #E2E8F0; border-radius: 6px; transition: border-color 150ms cubic-bezier(0.25, 1, 0.5, 1), box-shadow 150ms cubic-bezier(0.25, 1, 0.5, 1); } .ds-input::placeholder { color: #64748B; } .ds-input:focus-visible { outline: none; border-color: #0F55A6; box-shadow: 0 0 0 2px #FFFFFE, 0 0 0 4px #0F55A6; }"
+    },
+    {
+      "name": "Tag Chip",
+      "kind": "chip",
+      "refersTo": "chip-tag",
+      "description": "Doc page tag. Pill, label typography, neutral background. Used for 'core', 'lifecycle', 'intro'.",
+      "html": "<div class=\"ds-chip-row\"><span class=\"ds-chip\">core</span><span class=\"ds-chip\">lifecycle</span><span class=\"ds-chip ds-chip-new\">new</span></div>",
+      "css": ".ds-chip-row { display: inline-flex; gap: 6px; } .ds-chip { display: inline-flex; align-items: center; padding: 4px 10px; background: #E2E8F0; color: #020817; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; border-radius: 9999px; } .ds-chip-new { background: #FDDB00; color: #020817; }"
+    },
+    {
+      "name": "Inline Code",
+      "kind": "custom",
+      "refersTo": "code-inline",
+      "description": "Inline mono setting for file names, flags, env vars, schema keys. Carries the prose voice.",
+      "html": "<p class=\"ds-prose\">Set the <code class=\"ds-code-inline\">--cleanup-after</code> flag in your <code class=\"ds-code-inline\">lifecycle.yaml</code> to control TTL. Defaults to <code class=\"ds-code-inline\">PR_CLOSED</code>.</p>",
+      "css": ".ds-prose { font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 16px; font-weight: 400; line-height: 1.65; color: #020817; max-width: 65ch; margin: 0; } .ds-code-inline { padding: 2px 6px; background: #E2E8F0; color: #020817; font-family: ui-monospace, SFMono-Regular, 'JetBrains Mono', Menlo, Consolas, monospace; font-size: 14px; font-weight: 500; border-radius: 4px; }"
+    },
+    {
+      "name": "Nav Link",
+      "kind": "nav",
+      "refersTo": "nav-link",
+      "description": "Top-nav link with default + active states. Active state in Blueprint Indigo (light) or Hi-Vis Yellow (dark).",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-link\" href=\"#\">Documentation</a><a class=\"ds-nav-link ds-nav-link-active\" href=\"#\">Features</a><a class=\"ds-nav-link\" href=\"#\">Setup</a></nav>",
+      "css": ".ds-nav { display: inline-flex; gap: 4px; padding: 4px; } .ds-nav-link { display: inline-flex; align-items: center; padding: 6px 10px; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 14px; font-weight: 500; color: #020817; text-decoration: none; border-radius: 4px; transition: background 150ms cubic-bezier(0.25, 1, 0.5, 1), color 150ms cubic-bezier(0.25, 1, 0.5, 1); } .ds-nav-link:hover { background: #E2E8F0; } .ds-nav-link-active { color: #0F55A6; } .ds-nav-link-active:hover { background: oklch(46% 0.14 252 / 0.1); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Built System",
+    "overview": "Lifecycle is a tool for engineers who care about how things are built. The site is itself an artifact of that care: pixel-aligned, fast, well-typeset, with code and diagrams treated as first-class voices instead of decorative content. A skeptical platform engineer should land on this site, scan for thirty seconds, and conclude 'these people sweat the details, the product probably does too.' That conclusion is the entire job of the visual system. The system has a deliberate two-mode personality. Light mode is the blueprint: cool slate neutrals, deep indigo authority, generous negative space, the brand yellow used sparingly as a highlighter on a technical document. Dark mode is the workshop: warm near-black, a cream foreground that feels like paper under a lamp, and the brand yellow stepping forward as the primary signal. The same architecture, two atmospheres. Neither mode is the default; both are first-class.",
+    "keyCharacteristics": [
+      "Two-mode personality: light is the blueprint, dark is the workshop. Not skinning, repositioning.",
+      "Brand yellow is decorative in light, structural in dark. Its rarity in light is the point.",
+      "Type-led, not image-led. Real diagrams (React Flow) and real code (CodeHike) over stock graphics.",
+      "Flat at rest, lift on intent. Surfaces stay calm; hover and focus do the talking.",
+      "Monospace is a first-class voice, not a code-block formatting choice."
+    ],
+    "rules": [
+      {
+        "name": "The Highlighter Rule",
+        "body": "In light mode, Hi-Vis Yellow appears on no more than 5-10% of the visible surface and is reserved for moments that genuinely matter. The rest of the page belongs to slate and indigo. Yellow stops being a brand and starts being noise the moment it spreads.",
+        "section": "colors"
+      },
+      {
+        "name": "The Hue Inversion Rule",
+        "body": "Light mode and dark mode use different neutral hue families on purpose. Light is cool-slate (220 hue, low chroma). Dark is warm-coal (12-60 hue, low chroma). Do not unify them to a single grey ramp. The cool/warm split is what makes light feel like a blueprint and dark feel like a workshop.",
+        "section": "colors"
+      },
+      {
+        "name": "The No Pure Extremes Rule",
+        "body": "Never #000, never #fff. Light backgrounds tint slightly cool; dark backgrounds tint slightly warm. Pure extremes look clinical and undermine the lived-in atmosphere.",
+        "section": "colors"
+      },
+      {
+        "name": "The Mono-As-Voice Rule",
+        "body": "When body prose names a file, flag, command, env var, or schema key, it is set in mono, never quoted, never italicized, never both. Mono is how the docs speak about the system, not just how they format a code block.",
+        "section": "typography"
+      },
+      {
+        "name": "The Long-Line Floor Rule",
+        "body": "Body prose never exceeds 75 characters per line. Fixed, not advisory. Wide screens widen the gutters, not the text column.",
+        "section": "typography"
+      },
+      {
+        "name": "The Display-Once Rule",
+        "body": "Display weight (the largest, tightest setting) appears at most once per page. If a page wants two display headlines, the second one steps down to Headline. Hierarchy collapses the moment it repeats.",
+        "section": "typography"
+      },
+      {
+        "name": "The Lift-On-Intent Rule",
+        "body": "Elevation is a response, never a default. Cards, callouts, and feature tiles ship flat. They lift only when the user signals interest (hover, focus). The lift is translateY(-4px) plus shadow-lg, never one without the other. A flat card with a heavy shadow looks broken.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Border-Over-Shadow Rule",
+        "body": "In dark mode, a 1px border in Workshop Graphite does the work that shadow-sm does in light mode. Shadows on dark surfaces almost always read as soot, not depth.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do treat Hi-Vis Yellow as decorative in light mode and structural in dark mode. The mode-asymmetry is the point.",
+      "Do lead with type and information density. DevOps readers scan; reward fast eyes with crisp hierarchy and short scannable blocks.",
+      "Do set file names, flag names, command names, env vars, and schema keys in mono inline. Prose talks about the system; mono is how it names parts of it.",
+      "Do keep body prose to 65-75ch on every viewport. Wider gutters, not wider text.",
+      "Do use real diagrams (React Flow) and real code walks (CodeHike) over stock illustrations or screenshots.",
+      "Do use Drafting Line (light) / Workshop Graphite (dark) 1px borders to define surface edges. Borders carry more weight than ambient shadows in this system.",
+      "Do ship motion that respects prefers-reduced-motion. The existing keyframes (fade-up, slide-in, draw-line, pulse, shake) all need motion-safe variants.",
+      "Do verify AA contrast in both themes before shipping. The brand yellow on a white background fails, never use Hi-Vis as a body-text color in light mode.",
+      "Do keep the logo shake animation. It is the system's one sanctioned wink."
+    ],
+    "donts": [
+      "Don't ship the old-school Jekyll/MkDocs default theme (sidebar + content + zero typographic care).",
+      "Don't ship crypto / web3 neon-on-black styling: no glassmorphism cards, no animated gradient text, no high-saturation glow, no matrix hero effects.",
+      "Don't borrow the consumer GoodRx healthcare aesthetic (rounded warmth, photography-led marketing, the consumer color palette from goodrx.com).",
+      "Don't ship generic enterprise SaaS patterns: no stock isometric illustrations, no gradient blobs, no hero-metric template, no identical icon-card grids beyond the existing six-card Features section.",
+      "Don't use border-left or border-right greater than 1px as a colored stripe on cards, callouts, or alerts.",
+      "Don't use background-clip: text with a gradient. No gradient headlines, ever. Emphasis goes through weight, size, or a single color shift.",
+      "Don't use #000 or #fff. All neutrals tint toward the mode's hue family.",
+      "Don't spread Hi-Vis Yellow onto more than ~10% of any light-mode screen. It is a highlighter, not a fill.",
+      "Don't put a heavy shadow on a flat card. The lift is translateY(-1) plus shadow-lg, never shadow alone.",
+      "Don't introduce a third font. Inter + system mono is the entire stack.",
+      "Don't use modal dialogs as a first thought. Exhaust inline, drawer, popover, and routed-page alternatives first.",
+      "Don't use em dashes in any UI copy. Commas, colons, semicolons, periods, parentheses.",
+      "Don't repeat the hero gradient on docs pages or as a section divider. Its rarity is what makes it land on the home."
+    ]
+  }
+}

@@ -149,3 +149,6 @@ public/styles.css
 # GitHub Pages deployment
 deployment-issues/
 .quokka
+
+# Local Claude Code state (permission allowlist, session lockfiles)
+.claude/
