@@ -16,39 +16,31 @@
 
 "use client";
 
-import { motion } from "framer-motion";
 import { Step } from "./Step";
 import { steps } from "./data";
 
 export function HowItWorks() {
   return (
-    <section className="py-16 md:py-24 bg-muted/30">
-      <div className="container mx-auto px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-16"
-        >
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            How it works
+    <section aria-labelledby="how-it-works-heading" className="py-20 md:py-28">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <header className="max-w-2xl">
+          <p className="kicker text-muted-foreground">{"// the path"}</p>
+          <h2
+            id="how-it-works-heading"
+            className="mt-3 text-headline text-foreground"
+          >
+            From pull request to live URL in four steps.
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            From PR to production-like environment in seconds. No configuration
-            headaches, no DevOps bottlenecks.
+          <p className="mt-4 text-base leading-relaxed text-muted-foreground sm:text-lg">
+            No tickets, no provisioning calls, no cleanup chores.
           </p>
-        </motion.div>
+        </header>
 
-        <div className="max-w-2xl mx-auto">
-          {steps.map((step, index) => (
-            <Step
-              key={step.id}
-              step={step}
-              isLast={index === steps.length - 1}
-            />
+        <ol className="mt-14 grid gap-x-6 gap-y-12 md:grid-cols-2 lg:grid-cols-4">
+          {steps.map((step, i) => (
+            <Step key={step.id} step={step} index={i} />
           ))}
-        </div>
+        </ol>
       </div>
     </section>
   );

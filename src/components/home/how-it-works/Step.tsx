@@ -16,56 +16,132 @@
 
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import type { Step as StepType } from "./types";
+
+const easeOutQuart = [0.25, 1, 0.5, 1] as const;
+const easeOutExpo = [0.16, 1, 0.3, 1] as const;
+
+const container = (index: number): Variants => ({
+  hidden: {},
+  visible: {
+    transition: {
+      delayChildren: index * 0.2,
+      staggerChildren: 0.08,
+    },
+  },
+});
+
+const fadeUp: Variants = {
+  hidden: { opacity: 0, y: 8 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.55, ease: easeOutQuart },
+  },
+};
+
+const popIn: Variants = {
+  hidden: { opacity: 0, scale: 0.6 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: { duration: 0.45, ease: easeOutExpo },
+  },
+};
+
+const dotIn: Variants = {
+  hidden: { scale: 0 },
+  visible: {
+    scale: 1,
+    transition: { duration: 0.35, ease: easeOutExpo },
+  },
+};
+
+const haloPulse: Variants = {
+  hidden: { scale: 0.6, opacity: 0 },
+  visible: {
+    scale: [0.6, 2.6],
+    opacity: [0.55, 0],
+    transition: { duration: 0.9, ease: easeOutExpo, delay: 0.2 },
+  },
+};
+
+const drawLine: Variants = {
+  hidden: { scaleX: 0 },
+  visible: {
+    scaleX: 1,
+    transition: { duration: 0.7, ease: easeOutExpo },
+  },
+};
 
 interface StepProps {
   step: StepType;
-  isLast: boolean;
+  index: number;
+  isLast?: boolean;
 }
 
-export function Step({ step, isLast }: StepProps) {
+export function Step({ step, index, isLast = false }: StepProps) {
   const Icon = step.icon;
-  const isEven = step.number % 2 === 0;
+  const num = String(step.number).padStart(2, "0");
 
   return (
-    <div className="relative flex items-start gap-6">
-      {/* Connector line */}
-      {!isLast && (
-        <div className="absolute left-6 top-14 w-0.5 h-[calc(100%-2rem)] bg-gradient-to-b from-primary/50 to-primary/10" />
-      )}
+    <motion.li
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, amount: 0.3 }}
+      variants={container(index)}
+      className="relative flex flex-col"
+    >
+      <div className="flex items-center justify-between gap-4">
+        <motion.span
+          variants={fadeUp}
+          className="kicker text-muted-foreground tabular-nums"
+        >
+          {num}
+        </motion.span>
+        <motion.span variants={popIn} className="inline-flex">
+          <Icon
+            className="h-4 w-4 text-muted-foreground"
+            aria-hidden="true"
+            strokeWidth={1.75}
+          />
+        </motion.span>
+      </div>
 
-      {/* Number circle */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
-        whileInView={{ opacity: 1, scale: 1 }}
-        viewport={{ once: true, margin: "-50px" }}
-        transition={{ duration: 0.4, delay: step.number * 0.1 }}
-        className="relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-lg shadow-lg"
-      >
-        {step.number}
-      </motion.div>
+      <div className="relative mt-4 flex h-3 items-center" aria-hidden="true">
+        <span className="relative flex h-1.5 w-1.5 shrink-0 items-center justify-center">
+          <motion.span
+            variants={haloPulse}
+            className="absolute inset-0 rounded-full bg-primary"
+            style={{ transformOrigin: "center" }}
+          />
+          <motion.span
+            variants={dotIn}
+            className="relative h-1.5 w-1.5 rounded-full bg-primary"
+          />
+        </span>
+        {!isLast && (
+          <motion.span
+            variants={drawLine}
+            style={{ transformOrigin: "left center" }}
+            className="ml-1 h-px flex-1 bg-primary/30"
+          />
+        )}
+      </div>
 
-      {/* Content */}
-      <motion.div
-        initial={{ opacity: 0, x: isEven ? 20 : -20 }}
-        whileInView={{ opacity: 1, x: 0 }}
-        viewport={{ once: true, margin: "-50px" }}
-        transition={{ duration: 0.5, delay: step.number * 0.1 + 0.1 }}
-        className="flex-1 pb-12"
+      <motion.h3
+        variants={fadeUp}
+        className="mt-5 text-lg font-semibold tracking-tight text-foreground"
       >
-        <div className="flex items-center gap-3 mb-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-            <Icon className="h-5 w-5 text-primary" />
-          </div>
-          <h3 className="text-xl font-semibold text-foreground">
-            {step.title}
-          </h3>
-        </div>
-        <p className="text-muted-foreground leading-relaxed pl-[52px]">
-          {step.description}
-        </p>
-      </motion.div>
-    </div>
+        {step.title}
+      </motion.h3>
+      <motion.p
+        variants={fadeUp}
+        className="mt-2 max-w-xs text-sm leading-relaxed text-muted-foreground"
+      >
+        {step.description}
+      </motion.p>
+    </motion.li>
   );
 }

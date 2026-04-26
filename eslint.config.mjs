@@ -51,5 +51,11 @@ export default [
         version: "detect",
       },
     },
+    rules: {
+      "react/no-unknown-property": [
+        "error",
+        { ignore: ["jsx", "global"] },
+      ],
+    },
   },
 ];

@@ -15,6 +15,10 @@
  */
 
 export default {
+  "index": {
+    "title": "What is Lifecycle?",
+    "display": "hidden"
+  },
   "what-is-lifecycle": {
     "title": "What is Lifecycle?"
   },

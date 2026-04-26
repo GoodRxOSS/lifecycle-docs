@@ -19,7 +19,8 @@ import { ServicesFlow as Services, Static } from "@/components/home/flows";
 export { Main } from "@/components/home/main";
 export { Bg, Services, Static };
 
-// New homepage sections
 export { Hero } from "@/components/home/hero";
-export { Features } from "@/components/home/features";
+export { Contrast } from "@/components/home/contrast";
 export { HowItWorks } from "@/components/home/how-it-works";
+export { Capabilities } from "@/components/home/capabilities";
+export { TwoDoors } from "@/components/home/two-doors";

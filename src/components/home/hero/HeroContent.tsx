@@ -17,46 +17,133 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, Github } from "lucide-react";
+import { ArrowRight, Check, Copy, Github } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+const installCommand = "git clone https://github.com/GoodRxOSS/lifecycle";
+const easeOutQuart = [0.25, 1, 0.5, 1] as const;
+
+type CopyState = "idle" | "copied" | "failed";
+
 export function HeroContent() {
+  const [copyState, setCopyState] = useState<CopyState>("idle");
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(installCommand);
+      setCopyState("copied");
+      setTimeout(() => setCopyState("idle"), 1800);
+    } catch {
+      setCopyState("failed");
+      setTimeout(() => setCopyState("idle"), 2400);
+    }
+  };
+
   return (
-    <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
-      <motion.h1
-        initial={{ opacity: 0, y: 20 }}
+    <div className="mx-auto flex max-w-3xl flex-col items-start text-left motion-reduce:transition-none">
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground"
+        transition={{ duration: 0.5, ease: easeOutQuart }}
+        className="inline-flex items-center gap-2 kicker text-muted-foreground"
       >
-        Enterprise-grade ephemeral environments{" "}
-        <span className="text-primary">that grow with you</span>
+        <span className="h-px w-8 bg-foreground/30" aria-hidden="true" />
+        <span>Apache 2.0 · Ephemeral environments · GoodRx OSS</span>
+      </motion.div>
+
+      <motion.h1
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: easeOutQuart, delay: 0.05 }}
+        className="mt-6 text-balance text-display text-foreground"
+      >
+        Every pull request gets a{" "}
+        <span className="text-primary">real environment.</span>
       </motion.h1>
 
       <motion.p
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.15 }}
-        className="mt-6 text-lg sm:text-xl text-muted-foreground max-w-2xl"
+        transition={{ duration: 0.6, ease: easeOutQuart, delay: 0.12 }}
+        className="mt-5 max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground sm:text-xl"
       >
-        Instantly spin up connected multi-service development environments from
-        any pull request. Review, test, and iterate faster than ever before.
+        A multi-service env per pull request. Builds itself. Tears itself down
+        on merge.
       </motion.p>
 
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.3 }}
-        className="mt-10 flex flex-col sm:flex-row gap-4"
+        transition={{ duration: 0.6, ease: easeOutQuart, delay: 0.18 }}
+        className="mt-8 w-full max-w-xl"
+      >
+        <div className="flex items-stretch overflow-hidden rounded-md border border-border bg-muted/40 font-mono text-[13px]">
+          <span className="flex shrink-0 items-center px-3 text-muted-foreground">
+            $
+          </span>
+          <code className="flex-1 truncate py-2.5 pr-2 text-foreground">
+            {installCommand}
+          </code>
+          <button
+            type="button"
+            onClick={handleCopy}
+            aria-label={
+              copyState === "copied"
+                ? "Copied"
+                : copyState === "failed"
+                  ? "Copy failed"
+                  : "Copy install command"
+            }
+            className="flex shrink-0 items-center gap-1.5 border-l border-border px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
+          >
+            {copyState === "copied" ? (
+              <>
+                <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                copied
+              </>
+            ) : (
+              <>
+                <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+                copy
+              </>
+            )}
+          </button>
+        </div>
+        <p
+          role="status"
+          aria-live="polite"
+          className={cn(
+            "mt-2 kicker transition-opacity",
+            copyState === "failed"
+              ? "text-foreground/80 opacity-100"
+              : "opacity-0",
+          )}
+        >
+          {copyState === "failed" ? "copy blocked · use ⌘C / Ctrl+C" : " "}
+        </p>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: easeOutQuart, delay: 0.24 }}
+        className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4"
       >
         <Link
           href="/docs/getting-started/create-environment"
-          className={cn(buttonVariants({ size: "lg" }), "group text-base px-8")}
+          className={cn(
+            buttonVariants({ size: "lg" }),
+            "group h-11 px-6 text-base",
+          )}
         >
-          Get Started
-          <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+          Get started
+          <ArrowRight
+            className="ml-2 h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none"
+            aria-hidden="true"
+          />
         </Link>
         <Link
           href="https://github.com/GoodRxOSS/lifecycle"
@@ -64,10 +151,10 @@ export function HeroContent() {
           rel="noopener noreferrer"
           className={cn(
             buttonVariants({ variant: "outline", size: "lg" }),
-            "text-base px-8",
+            "h-11 px-6 text-base",
           )}
         >
-          <Github className="mr-2 h-4 w-4" />
+          <Github className="mr-2 h-4 w-4" aria-hidden="true" />
           View on GitHub
         </Link>
       </motion.div>

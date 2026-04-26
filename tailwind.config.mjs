@@ -33,6 +33,51 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans: [
+          "var(--font-sans)",
+          "ui-sans-serif",
+          "system-ui",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "Segoe UI",
+          "sans-serif",
+        ],
+        mono: [
+          "var(--font-mono)",
+          "ui-monospace",
+          "SFMono-Regular",
+          "Menlo",
+          "Consolas",
+          "monospace",
+        ],
+      },
+      fontSize: {
+        display: [
+          "clamp(2.25rem, 5.5vw, 4.5rem)",
+          { lineHeight: "1.05", letterSpacing: "-0.02em", fontWeight: "700" },
+        ],
+        headline: [
+          "clamp(1.75rem, 3vw, 2.5rem)",
+          { lineHeight: "1.15", letterSpacing: "-0.01em", fontWeight: "700" },
+        ],
+        title: [
+          "1.125rem",
+          { lineHeight: "1.4", letterSpacing: "0", fontWeight: "600" },
+        ],
+        body: [
+          "1rem",
+          { lineHeight: "1.65", letterSpacing: "0", fontWeight: "400" },
+        ],
+        label: [
+          "0.75rem",
+          { lineHeight: "1.2", letterSpacing: "0.18em", fontWeight: "600" },
+        ],
+        codeline: [
+          "0.875rem",
+          { lineHeight: "1.55", letterSpacing: "0", fontWeight: "500" },
+        ],
+      },
       colors: {
         "primary-brand-default": "hsl(var(--primary-brand-default))",
         "primary-brand-gold": "hsl(var(--primary-brand-gold))",
