@@ -25,7 +25,7 @@ const navLinks: ReadonlyArray<{
   label: string;
   external?: boolean;
 }> = [
-  { href: "/docs/what-is-lifecycle", label: "Docs" },
+  { href: "/docs", label: "Docs" },
   {
     href: "https://github.com/GoodRxOSS/lifecycle",
     label: "GitHub",
