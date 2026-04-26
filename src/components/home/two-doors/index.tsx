@@ -53,12 +53,10 @@ export function TwoDoors() {
         className="container mx-auto px-4"
       >
         <motion.header variants={blockVariants} className="max-w-2xl">
-          <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">
-            {"// pick a door"}
-          </p>
+          <p className="kicker text-muted-foreground">{"// pick a door"}</p>
           <h2
             id="two-doors-heading"
-            className="mt-3 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl"
+            className="mt-3 text-headline text-foreground"
           >
             Run it, or build it with us.
           </h2>
@@ -69,9 +67,7 @@ export function TwoDoors() {
             variants={blockVariants}
             className="flex flex-col bg-background p-7 sm:p-9"
           >
-            <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">
-              01 · run it
-            </p>
+            <p className="kicker text-muted-foreground">01 · run it</p>
             <h3 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
               Get it running on a sample repo.
             </h3>
@@ -101,9 +97,7 @@ export function TwoDoors() {
             variants={blockVariants}
             className="flex flex-col bg-background p-7 sm:p-9"
           >
-            <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">
-              02 · community
-            </p>
+            <p className="kicker text-muted-foreground">02 · community</p>
             <h3 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
               Star it, hang out, send pull requests.
             </h3>

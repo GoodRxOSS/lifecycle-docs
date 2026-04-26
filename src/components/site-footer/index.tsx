@@ -64,7 +64,7 @@ export function SiteFooter() {
           <span className="font-semibold tracking-tight text-foreground">
             Lifecycle
           </span>
-          <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+          <span className="kicker text-muted-foreground">
             Apache 2.0 · © 2025 GoodRx OSS
           </span>
         </div>
@@ -89,7 +89,7 @@ export function SiteFooter() {
           <button
             type="button"
             onClick={handleBackToTop}
-            className="ml-1 inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
+            className="ml-1 inline-flex items-center gap-1.5 kicker text-muted-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
             aria-label="Back to top"
           >
             <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" />

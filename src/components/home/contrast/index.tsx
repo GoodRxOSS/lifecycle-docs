@@ -77,12 +77,10 @@ export function Contrast() {
           variants={headerVariants}
           className="mx-auto max-w-2xl"
         >
-          <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">
-            {"// the shift"}
-          </p>
+          <p className="kicker text-muted-foreground">{"// the shift"}</p>
           <h2
             id="contrast-heading"
-            className="mt-3 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl"
+            className="mt-3 text-headline text-foreground"
           >
             Stop sharing one staging.
             <br />
@@ -102,7 +100,7 @@ export function Contrast() {
           >
             <motion.h3
               variants={itemVariants}
-              className="flex items-center gap-3 font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground"
+              className="flex items-center gap-3 kicker text-muted-foreground"
             >
               <span
                 className="inline-flex h-5 w-5 items-center justify-center rounded-sm border border-border text-foreground/60"
@@ -138,7 +136,7 @@ export function Contrast() {
           >
             <motion.h3
               variants={itemVariants}
-              className="flex items-center gap-3 font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground"
+              className="flex items-center gap-3 kicker text-muted-foreground"
             >
               <span
                 className="inline-flex h-5 w-5 items-center justify-center rounded-sm bg-primary text-primary-foreground"

@@ -96,7 +96,7 @@ export function Step({ step, index, isLast = false }: StepProps) {
       <div className="flex items-center justify-between gap-4">
         <motion.span
           variants={fadeUp}
-          className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground"
+          className="kicker text-muted-foreground tabular-nums"
         >
           {num}
         </motion.span>

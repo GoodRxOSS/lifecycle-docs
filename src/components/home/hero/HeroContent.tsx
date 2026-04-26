@@ -48,7 +48,7 @@ export function HeroContent() {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: easeOutQuart }}
-        className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground"
+        className="inline-flex items-center gap-2 kicker text-muted-foreground"
       >
         <span className="h-px w-8 bg-foreground/30" aria-hidden="true" />
         <span>Apache 2.0 · Ephemeral environments · GoodRx OSS</span>
@@ -58,7 +58,7 @@ export function HeroContent() {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: easeOutQuart, delay: 0.05 }}
-        className="mt-6 text-balance text-4xl font-semibold tracking-tight text-foreground sm:text-5xl md:text-6xl"
+        className="mt-6 text-balance text-display text-foreground"
       >
         Every pull request gets a{" "}
         <span className="text-primary">real environment.</span>
@@ -116,7 +116,7 @@ export function HeroContent() {
           role="status"
           aria-live="polite"
           className={cn(
-            "mt-2 font-mono text-[11px] uppercase tracking-[0.16em] transition-opacity",
+            "mt-2 kicker transition-opacity",
             copyState === "failed"
               ? "text-foreground/80 opacity-100"
               : "opacity-0",

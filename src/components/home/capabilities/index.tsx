@@ -126,14 +126,14 @@ export function Capabilities() {
           <div className="md:col-span-5">
             <motion.p
               variants={headerItem}
-              className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground"
+              className="kicker text-muted-foreground"
             >
               {"// what it does"}
             </motion.p>
             <motion.h2
               variants={headerItem}
               id="capabilities-heading"
-              className="mt-3 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl"
+              className="mt-3 text-headline text-foreground"
             >
               Connected multi-service.
               <br />
@@ -157,7 +157,7 @@ export function Capabilities() {
           transition={{ duration: 0.6, ease: easeOutQuart }}
           className="mt-12 overflow-hidden rounded-md border border-border bg-card"
         >
-          <div className="flex items-center justify-between gap-3 border-b border-border pl-4 pr-1 py-1 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+          <div className="flex items-center justify-between gap-3 border-b border-border pl-4 pr-1 py-1 kicker text-muted-foreground">
             <span>lifecycle.yaml</span>
             <button
               type="button"
@@ -212,9 +212,7 @@ export function Capabilities() {
             transition={{ duration: 0.5, ease: easeOutQuart, delay: 0.55 }}
             className="border-t border-border px-5 py-4 text-sm text-muted-foreground sm:px-6"
           >
-            <span className="font-mono text-[11px] uppercase tracking-[0.16em]">
-              result ›
-            </span>{" "}
+            <span className="kicker">result ›</span>{" "}
             <span className="text-foreground">
               one pull request builds api + postgres, wired through ephemeral
               DNS.
@@ -236,7 +234,7 @@ export function Capabilities() {
               }}
               className="grid grid-cols-[auto_1fr] items-baseline gap-4 border-b border-border/60 pb-5"
             >
-              <span className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">
+              <span className="kicker text-muted-foreground tabular-nums">
                 {String(i + 1).padStart(2, "0")}
               </span>
               <div>
@@ -256,7 +254,7 @@ export function Capabilities() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-60px" }}
           transition={{ duration: 0.55, ease: easeOutQuart }}
-          className="mt-12 font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground"
+          className="mt-12 kicker text-muted-foreground"
         >
           Self-hosted on your Kubernetes · brings its own controller · no SaaS
           lock-in

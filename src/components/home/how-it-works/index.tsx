@@ -24,12 +24,10 @@ export function HowItWorks() {
     <section aria-labelledby="how-it-works-heading" className="py-20 md:py-28">
       <div className="container mx-auto px-4">
         <header className="mx-auto max-w-2xl">
-          <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">
-            {"// the path"}
-          </p>
+          <p className="kicker text-muted-foreground">{"// the path"}</p>
           <h2
             id="how-it-works-heading"
-            className="mt-3 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl"
+            className="mt-3 text-headline text-foreground"
           >
             From pull request to live URL in four steps.
           </h2>

@@ -34,7 +34,7 @@ export function Hero() {
           className="mx-auto mt-16 max-w-5xl"
         >
           <div className="overflow-hidden rounded-md border border-border bg-card">
-            <div className="flex items-center justify-between border-b border-border px-4 py-2 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+            <div className="flex items-center justify-between border-b border-border px-4 py-2 kicker text-muted-foreground">
               <span className="flex items-center gap-2">
                 <span
                   className="inline-block h-1.5 w-1.5 rounded-full bg-primary"
