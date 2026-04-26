@@ -115,14 +115,6 @@
 }
 
 article.nextra-content main:not(.layout-full) {
-  font-family:
-    var(--font-docs),
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
   font-size: 1.0625rem;
   line-height: 1.7;
   letter-spacing: -0.005em;
@@ -138,7 +130,6 @@ article.nextra-content main:not(.layout-full) :is(p, li) {
 }
 
 article.nextra-content main:not(.layout-full) :is(h1, h2, h3, h4, h5, h6) {
-  font-family: var(--font-docs), ui-sans-serif, system-ui, sans-serif;
   color: hsl(var(--foreground));
   letter-spacing: -0.018em;
   text-wrap: balance;
