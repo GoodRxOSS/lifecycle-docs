@@ -30,6 +30,9 @@ export default {
   "template-variables": {
     "title": "Template Variables"
   },
+  "build-metadata-links": {
+    "title": "Metadata Links"
+  },
   "webhooks": {
     "title": "Webhooks"
   },

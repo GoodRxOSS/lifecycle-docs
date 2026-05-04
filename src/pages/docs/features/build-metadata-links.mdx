@@ -1,0 +1,110 @@
+---
+title: Metadata Links
+tags:
+  - build
+  - metadata
+  - links
+  - observability
+  - template
+  - variables
+---
+
+import { Callout } from "nextra/components";
+
+Build metadata links let your Lifecycle installation show useful links for each ephemeral environment. They are most commonly used for observability links, but they can point to any tool that helps your team understand, debug, or operate an environment.
+
+When metadata links are configured, Lifecycle renders them from the current build context. That means one link template can work for every environment because Lifecycle fills in values like the build UUID, namespace, branch name, pull request number, repository name, and service-specific variables.
+
+## Common Use Case: Observability
+
+The environment details page can show a row of observability buttons for the current build. Teams often use these buttons for:
+
+- Container or pod views
+- Distributed traces
+- Environment logs
+- Build or job logs
+- Edge, gateway, or ingress logs
+
+These links help reviewers and service owners jump directly from a Lifecycle environment to the right view in their observability platform.
+
+<Callout type="info">
+  Build metadata links are configured centrally for a Lifecycle installation. If
+  your team needs a new link, ask the person or team that manages your Lifecycle
+  configuration.
+</Callout>
+
+## How Links Are Configured
+
+Each link has a few display fields and a URL template:
+
+| Field      | Purpose                                                  |
+| ---------- | -------------------------------------------------------- |
+| `text`     | The button label shown to users                          |
+| `icon`     | The icon shown next to the label                         |
+| `link`     | The URL template rendered for each build                 |
+| `position` | The order links appear in the UI and other build outputs |
+
+The `link` field supports Mustache syntax. For example, a link can include `{{{buildUUID}}}` so Lifecycle replaces it with the current environment UUID before showing the link.
+
+```txt
+https://observability.example.com/logs?env={{{buildUUID}}}
+```
+
+For a build named `calm-river-123456`, the rendered link would point to:
+
+```txt
+https://observability.example.com/logs?env=calm-river-123456
+```
+
+## Template Variables
+
+Metadata links can use the same build environment template variables that Lifecycle uses elsewhere. `buildUUID` is the most common variable for observability links, but templates can also use variables such as:
+
+- `namespace`
+- `branchName`
+- `repoName`
+- `pullRequestNumber`
+- service-specific variables like `<service_name>_publicUrl`, `<service_name>_internalHostname`, or `<service_name>_sha`
+
+Use triple curly braces, such as `{{{buildUUID}}}`, when you want the raw value inserted into a URL without HTML escaping.
+
+See [Template Variables](/docs/features/template-variables) for the full list of supported variables and service-specific naming rules.
+
+<Callout>
+  If a template references a variable that is not available for a build,
+  Lifecycle renders that value as an empty string. Make sure important links use
+  variables that are available for the environments your team creates.
+</Callout>
+
+## Icons
+
+Lifecycle supports a small set of link icons in the UI. Common observability icon names include:
+
+- `Container`
+- `Route`
+- `FileCog`
+- `ClipboardList`
+- `Timer`
+
+If a configured icon is not recognized by the UI, Lifecycle falls back to a generic link icon.
+
+## What Makes A Good Metadata Link
+
+Good metadata links are specific, stable, and useful during review. Prefer links that take users directly to the relevant environment, service, trace, log query, dashboard, run, or external system page.
+
+Useful links might include:
+
+- Observability dashboards filtered to the current build
+- Logs filtered to a namespace, build UUID, or service
+- CI or deployment job pages
+- Feature flag dashboards scoped to the environment
+- Runbooks or support pages for a service
+- External tools that understand a Lifecycle environment identifier
+
+Avoid broad landing pages that require users to search manually after clicking.
+
+## Safety
+
+Lifecycle validates rendered URLs before returning them to the UI. Unsafe schemes such as `javascript:` and `data:` are rejected.
+
+Because metadata links can use build and service variables, treat them as shared team configuration. Avoid adding links that expose sensitive values or send environment-specific data to systems your team does not trust.
