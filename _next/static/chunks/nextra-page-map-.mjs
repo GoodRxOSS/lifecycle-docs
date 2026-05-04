@@ -49,6 +49,13 @@ export const pageMap = [{
         "tags": ["deploy", "auto", "labels", "lifecycle-deploy", "lifecycle-disabled"]
       }
     }, {
+      name: "build-metadata-links",
+      route: "/docs/features/build-metadata-links",
+      frontMatter: {
+        "title": "Metadata Links",
+        "tags": ["build", "metadata", "links", "observability", "template", "variables"]
+      }
+    }, {
       name: "configurable-labels",
       route: "/docs/features/configurable-labels",
       frontMatter: {
@@ -840,6 +847,13 @@ export const pageMap = [{
       "description": "Lifecycle \"lifecycle.yaml\" docs"
     }
   }, {
+    name: "links",
+    route: "/tags/links",
+    frontMatter: {
+      "title": "links",
+      "description": "Lifecycle \"links\" docs"
+    }
+  }, {
     name: "llm",
     route: "/tags/llm",
     frontMatter: {
@@ -859,6 +873,13 @@ export const pageMap = [{
     frontMatter: {
       "title": "mcp",
       "description": "Lifecycle \"mcp\" docs"
+    }
+  }, {
+    name: "metadata",
+    route: "/tags/metadata",
+    frontMatter: {
+      "title": "metadata",
+      "description": "Lifecycle \"metadata\" docs"
     }
   }, {
     name: "metrics",
