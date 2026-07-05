@@ -1,0 +1,229 @@
+---
+title: MCP Server
+tags:
+  - ai
+  - mcp
+  - tools
+  - claude
+  - cursor
+  - vscode
+  - codex
+---
+
+import { Callout, Steps } from "nextra/components";
+
+Lifecycle ships a built-in **MCP server**, so AI assistants like Claude Code, Cursor, VS Code, and
+Codex can look at your preview environments for you. Once connected, you can ask your AI tool
+things like:
+
+- _"Is the environment for my PR up? What's the frontend URL?"_
+- _"Why did the backend build fail in `snowy-field-978044`? Show me the logs."_
+- _"List my environments and tell me which ones errored."_
+
+The assistant answers by calling Lifecycle directly — no copy-pasting UUIDs, dashboards, or log
+snippets into the chat.
+
+<Callout type="info">
+  Looking for the opposite direction — connecting **external** MCP servers to
+  Lifecycle's built-in [AI Agent](/docs/features/ai-agent)? See [MCP
+  Integration](/docs/features/mcp-integration).
+</Callout>
+
+## Connect your AI tool
+
+You only need one thing: your Lifecycle MCP URL, which is your Lifecycle app host plus `/mcp` —
+for example `https://app.lifecycle.example.com/mcp`. Everything else (registration, login) happens
+automatically.
+
+The first time you connect, your browser opens your organization's normal single sign-on page —
+the same login as the Lifecycle UI and `lfc` CLI — followed by a one-time consent screen. That's
+it.
+
+### Claude Code
+
+```bash
+claude mcp add --transport http lifecycle https://app.lifecycle.example.com/mcp
+claude mcp login lifecycle
+```
+
+Or run `/mcp` inside a session and pick **lifecycle → Authenticate**.
+
+### Cursor
+
+Add the server to `~/.cursor/mcp.json` (or per-project `.cursor/mcp.json`):
+
+```json filename="~/.cursor/mcp.json"
+{
+  "mcpServers": {
+    "lifecycle": { "url": "https://app.lifecycle.example.com/mcp" }
+  }
+}
+```
+
+Cursor shows a **Needs login** prompt next to the server in _Settings → MCP_; clicking it opens
+the browser sign-in.
+
+### VS Code
+
+Add the server to `.vscode/mcp.json` in your workspace (or your user-level `mcp.json`):
+
+```json filename=".vscode/mcp.json"
+{
+  "servers": {
+    "lifecycle": {
+      "type": "http",
+      "url": "https://app.lifecycle.example.com/mcp"
+    }
+  }
+}
+```
+
+VS Code prompts you to trust and authenticate the server the first time Copilot Chat uses it.
+
+### Codex CLI
+
+Add the server to `~/.codex/config.toml`, then log in:
+
+```toml filename="~/.codex/config.toml"
+[mcp_servers.lifecycle]
+url = "https://app.lifecycle.example.com/mcp"
+```
+
+```bash
+codex mcp login lifecycle
+```
+
+<Callout type="tip">
+  Try it with a prompt like _"using the lifecycle tools, list my environments"_.
+  Your assistant only sees environments through your own account — the same
+  access you have in the UI.
+</Callout>
+
+## What you can do
+
+All v1 tools are **read-only**: your assistant can look things up, but it cannot deploy, delete,
+or change anything.
+
+| Tool            | What it answers                                                                                    |
+| --------------- | -------------------------------------------------------------------------------------------------- |
+| `list_builds`   | "What environments exist?" — searchable, pageable, with a _my environments only_ filter            |
+| `get_build`     | "What's the status of environment X?" — services, URLs, branch, and PR details for one build       |
+| `list_services` | "Which services are in this environment, and where are they running?" — status, branch, image, URL |
+| `get_job_logs`  | "Why did the build/deploy fail?" — build-job or deploy-job logs, live from the cluster or archived |
+| `list_sites`    | "What static sites are published?"                                                                 |
+| `get_site`      | "Where is site X and when does it expire?"                                                         |
+
+It also exposes one MCP **resource**, `lifecycle://builds/{uuid}`, which returns a build's detail
+document as JSON for clients that support attaching resources.
+
+### Tool reference
+
+| Tool            | Parameters                                                                                                                                                                                                                 |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `list_builds`   | `search` (string, optional) · `myEnvironmentsOnly` (boolean, optional) · `page` (int, optional) · `limit` (int, optional, max 100)                                                                                         |
+| `get_build`     | `uuid` (string, required)                                                                                                                                                                                                  |
+| `list_services` | `uuid` (string, required)                                                                                                                                                                                                  |
+| `get_job_logs`  | `uuid` (string, required) · `service` (string, required) · `jobType` (`build` \| `deploy`, required) · `jobName` (string, optional — defaults to the most recent job) · `tailLines` (int, optional, default 200, max 2000) |
+| `list_sites`    | `mineOnly` (boolean, optional) · `page` (int, optional) · `limit` (int, optional, max 100)                                                                                                                                 |
+| `get_site`      | `siteId` (string, required)                                                                                                                                                                                                |
+
+## How it works
+
+A one-page tour for the curious:
+
+1. **One endpoint on the web service.** The MCP server is part of the Lifecycle web deployment,
+   served over MCP's Streamable HTTP transport at `/mcp`. There is nothing extra to run — it reads
+   the same data the UI and API do, and it's stateless, so it scales with your web replicas.
+
+2. **Login is your normal SSO.** Lifecycle's Keycloak realm acts as the OAuth 2.1 authorization
+   server. When a tool connects for the first time it discovers the auth settings automatically
+   (via standard OAuth metadata), registers itself with Keycloak, and sends you through the same
+   browser single sign-on used by the UI and the `lfc` CLI. A one-time consent screen shows what
+   the tool is asking for.
+
+3. **Tokens only work here.** Access tokens issued for the MCP server are bound to its exact URL
+   (the OAuth _audience_). A CLI or UI token is rejected at `/mcp`, and an MCP token is rejected
+   by the REST API — one leaked token never unlocks the other surface.
+
+4. **Everything runs as you.** Each tool call executes under the identity in your token, so
+   filters like _my environments only_ use your account. Tool output never includes service
+   environment variables, which can contain secrets.
+
+## Setup (operators)
+
+Enabling the MCP server for your Lifecycle deployment is two switches — one on the app, one on
+Keycloak.
+
+<Steps>
+### Enable the endpoint on the web service
+
+Set two environment variables on the Lifecycle web deployment:
+
+```yaml filename="values.yaml (lifecycle chart, web component)"
+components:
+  web:
+    deployment:
+      extraEnv:
+        - name: MCP_SERVER_ENABLED
+          value: "true"
+        - name: MCP_RESOURCE_URL
+          value: "https://app.lifecycle.example.com/mcp"
+```
+
+`MCP_RESOURCE_URL` is the canonical URL clients will use — access tokens are audience-bound to
+this exact value. The endpoint is absent unless `MCP_SERVER_ENABLED` is `true`.
+
+### Configure the Keycloak realm
+
+The realm needs an `mcp` client scope (with audience and identity mappers) and, optionally,
+anonymous dynamic client registration so tools can self-register. The `lifecycle-keycloak` chart
+does this for you with an idempotent post-install/post-upgrade job:
+
+```yaml filename="values.yaml (lifecycle-keycloak chart)"
+mcp:
+  enabled: true
+  resourceUrl: "https://app.lifecycle.example.com/mcp"
+```
+
+For an existing deployment where you'd rather not run a Helm upgrade, the same changes can be
+applied directly with the maintained script in the Lifecycle repo:
+
+```bash
+./scripts/mcp-keycloak-setup.py \
+  --keycloak-url https://auth.lifecycle.example.com \
+  --realm lifecycle \
+  --admin-user admin \
+  --mcp-resource-url https://app.lifecycle.example.com/mcp
+```
+
+It's idempotent and supports `--dry-run` to preview changes.
+
+### Verify
+
+```bash
+curl https://app.lifecycle.example.com/.well-known/oauth-protected-resource/mcp
+```
+
+should return the server's OAuth metadata, and connecting any MCP client to
+`https://app.lifecycle.example.com/mcp` should walk you through browser login.
+
+</Steps>
+
+<Callout type="error" emoji="⚠️">
+  Anonymous dynamic client registration means anyone who can reach your Keycloak
+  host can register an OAuth client (registering grants no access by itself — a
+  real SSO login is still required for tokens). It's intended for deployments
+  where Keycloak is **not** reachable from the public internet. If yours is
+  public, disable it (`mcp.dcr.enabled: false` or `--skip-dcr`) and pre-register
+  a client for your users instead.
+</Callout>
+
+## Troubleshooting
+
+| Symptom                                                         | Likely cause                                                                                                            |
+| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Client says the server needs authentication and nothing happens | Run the client's login step (`claude mcp login …`, `codex mcp login …`, or the login prompt in Cursor/VS Code settings) |
+| Browser login loops or shows `invalid_scope`                    | The Keycloak realm is missing the `mcp` client scope configuration — re-run the setup job or script                     |
+| `401` with a valid login                                        | The token audience doesn't match `MCP_RESOURCE_URL` — make sure the URL configured in your client matches it exactly    |
+| Tools list is empty or calls fail after login                   | The endpoint may be disabled (`MCP_SERVER_ENABLED`) on the web deployment                                               |
+| Registration rejected                                           | Dynamic client registration is disabled or restricted — ask your Lifecycle operator                                     |
