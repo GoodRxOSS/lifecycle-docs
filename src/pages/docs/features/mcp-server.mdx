@@ -193,7 +193,8 @@ applied directly with the maintained script in the Lifecycle repo:
   --keycloak-url https://auth.lifecycle.example.com \
   --realm lifecycle \
   --admin-user admin \
-  --mcp-resource-url https://app.lifecycle.example.com/mcp
+  --mcp-resource-url https://app.lifecycle.example.com/mcp \
+  --enable-anonymous-dcr
 ```
 
 It's idempotent and supports `--dry-run` to preview changes.
@@ -214,8 +215,9 @@ should return the server's OAuth metadata, and connecting any MCP client to
   host can register an OAuth client (registering grants no access by itself — a
   real SSO login is still required for tokens). It's intended for deployments
   where Keycloak is **not** reachable from the public internet. If yours is
-  public, disable it (`mcp.dcr.enabled: false` or `--skip-dcr`) and pre-register
-  a client for your users instead.
+  public, leave it off (`mcp.dcr.enabled: false`, or omit
+  `--enable-anonymous-dcr` with the script) and pre-register a client for your
+  users instead.
 </Callout>
 
 ## Troubleshooting
