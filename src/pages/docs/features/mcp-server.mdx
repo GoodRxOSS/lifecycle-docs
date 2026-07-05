@@ -12,9 +12,9 @@ tags:
 
 import { Callout, Steps } from "nextra/components";
 
-Lifecycle ships a built-in **MCP server**, so AI assistants like Claude Code, Cursor, VS Code, and
-Codex can look at your preview environments for you. Once connected, you can ask your AI tool
-things like:
+Lifecycle ships a built-in **MCP server** (Model Context Protocol — a standard way for AI
+assistants to call tools), so assistants like Claude Code, Cursor, VS Code, and Codex can look at
+your preview environments for you. Once connected, you can ask your AI tool things like:
 
 - _"Is the environment for my PR up? What's the frontend URL?"_
 - _"Why did the backend build fail in `snowy-field-978044`? Show me the logs."_
@@ -35,9 +35,15 @@ You only need one thing: your Lifecycle MCP URL, which is your Lifecycle app hos
 for example `https://app.lifecycle.example.com/mcp`. Everything else (registration, login) happens
 automatically.
 
+<Callout type="info">
+  Two prerequisites: your Lifecycle operator must have the MCP server
+  **enabled**, and you need network access to your Lifecycle app host (e.g. VPN)
+  — the same reachability as the Lifecycle UI.
+</Callout>
+
 The first time you connect, your browser opens your organization's normal single sign-on page —
 the same login as the Lifecycle UI and `lfc` CLI — followed by a one-time consent screen. That's
-it.
+it. When your session eventually expires, just run the client's login step again.
 
 ### Claude Code
 
@@ -101,8 +107,9 @@ codex mcp login lifecycle
 
 ## What you can do
 
-All v1 tools are **read-only**: your assistant can look things up, but it cannot deploy, delete,
-or change anything.
+All v1 tools are **read-only**: your assistant can look things up, but it cannot deploy, redeploy,
+delete, or change environment variables from here — use the Lifecycle UI or the `lfc` CLI for
+those.
 
 | Tool            | What it answers                                                                                    |
 | --------------- | -------------------------------------------------------------------------------------------------- |
@@ -120,11 +127,11 @@ document as JSON for clients that support attaching resources.
 
 | Tool            | Parameters                                                                                                                                                                                                                 |
 | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `list_builds`   | `search` (string, optional) · `myEnvironmentsOnly` (boolean, optional) · `page` (int, optional) · `limit` (int, optional, max 100)                                                                                         |
+| `list_builds`   | `search` (string, optional) · `myEnvironmentsOnly` (boolean, optional) · `page` (int, optional) · `limit` (int, optional, default 25, max 100)                                                                             |
 | `get_build`     | `uuid` (string, required)                                                                                                                                                                                                  |
 | `list_services` | `uuid` (string, required)                                                                                                                                                                                                  |
 | `get_job_logs`  | `uuid` (string, required) · `service` (string, required) · `jobType` (`build` \| `deploy`, required) · `jobName` (string, optional — defaults to the most recent job) · `tailLines` (int, optional, default 200, max 2000) |
-| `list_sites`    | `mineOnly` (boolean, optional) · `page` (int, optional) · `limit` (int, optional, max 100)                                                                                                                                 |
+| `list_sites`    | `mineOnly` (boolean, optional) · `page` (int, optional) · `limit` (int, optional, default 25, max 100)                                                                                                                     |
 | `get_site`      | `siteId` (string, required)                                                                                                                                                                                                |
 
 ## How it works
@@ -171,7 +178,9 @@ components:
 ```
 
 `MCP_RESOURCE_URL` is the canonical URL clients will use — access tokens are audience-bound to
-this exact value. The endpoint is absent unless `MCP_SERVER_ENABLED` is `true`.
+this exact value, so it **must match** the `resourceUrl` you give Keycloak below, byte for byte
+(scheme, host, port, path). The endpoint is served only by the web process (`LIFECYCLE_MODE`
+`web`/`all`) and is absent unless `MCP_SERVER_ENABLED` is `true`.
 
 ### Configure the Keycloak realm
 
@@ -183,6 +192,12 @@ does this for you with an idempotent post-install/post-upgrade job:
 mcp:
   enabled: true
   resourceUrl: "https://app.lifecycle.example.com/mcp"
+  # Only when Keycloak is NOT reachable from the public internet — see the warning below.
+  dcr:
+    enabled: true
+  # If several MCP deployments share this realm, list the others here:
+  # extraAudiences:
+  #   - "https://app.staging.example.com/mcp"
 ```
 
 For an existing deployment where you'd rather not run a Helm upgrade, the same changes can be
@@ -197,7 +212,8 @@ applied directly with the maintained script in the Lifecycle repo:
   --enable-anonymous-dcr
 ```
 
-It's idempotent and supports `--dry-run` to preview changes.
+It's idempotent and supports `--dry-run` to preview changes. Pass `--mcp-resource-url` more than
+once when several MCP deployments share one realm.
 
 ### Verify
 
@@ -211,13 +227,15 @@ should return the server's OAuth metadata, and connecting any MCP client to
 </Steps>
 
 <Callout type="error" emoji="⚠️">
-  Anonymous dynamic client registration means anyone who can reach your Keycloak
-  host can register an OAuth client (registering grants no access by itself — a
-  real SSO login is still required for tokens). It's intended for deployments
-  where Keycloak is **not** reachable from the public internet. If yours is
-  public, leave it off (`mcp.dcr.enabled: false`, or omit
-  `--enable-anonymous-dcr` with the script) and pre-register a client for your
-  users instead.
+  **Anonymous dynamic client registration is off by default and one-way to
+  enable.** It lets anyone who can reach your Keycloak host register an OAuth
+  client (registering grants no access by itself — a real SSO login is still
+  required for tokens), and turning it on **deletes** the realm's anonymous
+  Trusted Hosts policy, which cannot be undone by disabling the setting later.
+  Only enable it (`mcp.dcr.enabled: true` in the chart, or
+  `--enable-anonymous-dcr` with the script) when Keycloak is **not** reachable
+  from the public internet. Otherwise leave it off and pre-register a client for
+  your users. Back up the realm first if you may want to revert.
 </Callout>
 
 ## Troubleshooting
