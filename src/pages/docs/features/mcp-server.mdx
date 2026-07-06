@@ -200,20 +200,9 @@ mcp:
   #   - "https://app.staging.example.com/mcp"
 ```
 
-For an existing deployment where you'd rather not run a Helm upgrade, the same changes can be
-applied directly with the maintained script in the Lifecycle repo:
-
-```bash
-./scripts/mcp-keycloak-setup.py \
-  --keycloak-url https://auth.lifecycle.example.com \
-  --realm lifecycle \
-  --admin-user admin \
-  --mcp-resource-url https://app.lifecycle.example.com/mcp \
-  --enable-anonymous-dcr
-```
-
-It's idempotent and supports `--dry-run` to preview changes. Pass `--mcp-resource-url` more than
-once when several MCP deployments share one realm.
+The Job is idempotent and runs on both fresh installs and existing realms, so a Helm upgrade with
+these values is all that's needed — no separate script to run by hand. Pass `extraAudiences` (as
+shown above) when several MCP deployments share one realm.
 
 ### Verify
 
