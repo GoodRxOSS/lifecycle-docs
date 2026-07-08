@@ -56,5 +56,8 @@ export default {
   },
   "mcp-integration": {
     "title": "MCP Integration"
+  },
+  "cli": {
+    "title": "CLI (lfc)"
   }
 };
