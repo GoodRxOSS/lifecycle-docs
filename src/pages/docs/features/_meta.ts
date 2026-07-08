@@ -15,6 +15,9 @@
  */
 
 export default {
+  "cli": {
+    "title": "CLI (lfc)"
+  },
   "authentication": {
     "title": "Authentication"
   },
