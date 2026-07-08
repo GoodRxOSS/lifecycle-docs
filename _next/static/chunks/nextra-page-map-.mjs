@@ -56,6 +56,13 @@ export const pageMap = [{
         "tags": ["build", "metadata", "links", "observability", "template", "variables"]
       }
     }, {
+      name: "cli",
+      route: "/docs/features/cli",
+      frontMatter: {
+        "title": "CLI (lfc)",
+        "tags": ["cli", "lfc", "operators", "tooling", "automation"]
+      }
+    }, {
       name: "configurable-labels",
       route: "/docs/features/configurable-labels",
       frontMatter: {
@@ -483,6 +490,13 @@ export const pageMap = [{
       "description": "Lifecycle \"cleanup\" docs"
     }
   }, {
+    name: "cli",
+    route: "/tags/cli",
+    frontMatter: {
+      "title": "cli",
+      "description": "Lifecycle \"cli\" docs"
+    }
+  }, {
     name: "close",
     route: "/tags/close",
     frontMatter: {
@@ -812,6 +826,13 @@ export const pageMap = [{
       "description": "Lifecycle \"labels\" docs"
     }
   }, {
+    name: "lfc",
+    route: "/tags/lfc",
+    frontMatter: {
+      "title": "lfc",
+      "description": "Lifecycle \"lfc\" docs"
+    }
+  }, {
     name: "lifecycle-deploy",
     route: "/tags/lifecycle-deploy",
     frontMatter: {
@@ -929,6 +950,13 @@ export const pageMap = [{
     frontMatter: {
       "title": "onboard",
       "description": "Lifecycle \"onboard\" docs"
+    }
+  }, {
+    name: "operators",
+    route: "/tags/operators",
+    frontMatter: {
+      "title": "operators",
+      "description": "Lifecycle \"operators\" docs"
     }
   }, {
     name: "optionalservices",
@@ -1153,6 +1181,13 @@ export const pageMap = [{
     frontMatter: {
       "title": "todo",
       "description": "Lifecycle \"todo\" docs"
+    }
+  }, {
+    name: "tooling",
+    route: "/tags/tooling",
+    frontMatter: {
+      "title": "tooling",
+      "description": "Lifecycle \"tooling\" docs"
     }
   }, {
     name: "tools",
