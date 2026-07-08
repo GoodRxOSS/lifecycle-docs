@@ -15,9 +15,6 @@
  */
 
 export default {
-  "cli": {
-    "title": "CLI (lfc)"
-  },
   "authentication": {
     "title": "Authentication"
   },
@@ -59,5 +56,8 @@ export default {
   },
   "mcp-integration": {
     "title": "MCP Integration"
+  },
+  "cli": {
+    "title": "CLI (lfc)"
   }
 };
