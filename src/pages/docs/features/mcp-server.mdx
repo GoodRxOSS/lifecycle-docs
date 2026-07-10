@@ -31,14 +31,16 @@ snippets into the chat.
 
 ## Connect your AI tool
 
-You only need one thing: your Lifecycle MCP URL, which is your Lifecycle app host plus `/mcp` —
-for example `https://app.lifecycle.example.com/mcp`. Everything else (registration, login) happens
-automatically.
+Your Lifecycle MCP URL is your Lifecycle app host plus `/mcp` — for example
+`https://app.lifecycle.example.com/mcp`. If your admin has enabled dynamic client registration,
+that URL is all you need — registration and login happen automatically. Otherwise (the default),
+you also need an OAuth client ID from your admin — see
+[Without dynamic client registration](#without-dynamic-client-registration).
 
 <Callout type="info">
-  Two prerequisites: your Lifecycle operator must have the MCP server
-  **enabled**, and you need network access to your Lifecycle app host (e.g. VPN)
-  — the same reachability as the Lifecycle UI.
+  Two prerequisites: your Lifecycle admin must have the MCP server **enabled**,
+  and you need network access to your Lifecycle app host (e.g. VPN) — the same
+  reachability as the Lifecycle UI.
 </Callout>
 
 The first time you connect, your browser opens your organization's normal single sign-on page —
@@ -101,8 +103,9 @@ codex mcp login lifecycle
 
 <Callout type="tip">
   Try it with a prompt like _"using the lifecycle tools, list my environments"_.
-  Your assistant only sees environments through your own account — the same
-  access you have in the UI.
+  Every tool call runs under your identity — the same login as the Lifecycle UI
+  — but note that this scopes filters, not visibility; see the note under [What
+  you can do](#what-you-can-do).
 </Callout>
 
 ## What you can do
@@ -110,6 +113,13 @@ codex mcp login lifecycle
 All v1 tools are **read-only**: your assistant can look things up, but it cannot deploy, redeploy,
 delete, or change environment variables from here — use the Lifecycle UI or the `lfc` CLI for
 those.
+
+<Callout type="warning">
+  Like the REST API and UI, any authenticated user can read any build, service,
+  log, or site — `myEnvironmentsOnly`/`mineOnly` are convenience filters, not
+  access controls. If a preview environment's logs may contain sensitive output,
+  treat them as visible to all authenticated Lifecycle users.
+</Callout>
 
 | Tool            | What it answers                                                                                    |
 | --------------- | -------------------------------------------------------------------------------------------------- |
@@ -152,11 +162,12 @@ A one-page tour for the curious:
    (the OAuth _audience_). A CLI or UI token is rejected at `/mcp`, and an MCP token is rejected
    by the REST API — one leaked token never unlocks the other surface.
 
-4. **Everything runs as you.** Each tool call executes under the identity in your token, so
-   filters like _my environments only_ use your account. Tool output never includes service
-   environment variables, which can contain secrets.
+4. **Everything runs under your identity.** Each tool call executes under the identity in your
+   token, so filters like _my environments only_ use your account — though, as in the UI, any
+   authenticated user can read any environment (see [What you can do](#what-you-can-do)). Tool
+   output never includes service environment variables, which can contain secrets.
 
-## Setup (operators)
+## Setup (admins)
 
 Enabling the MCP server for your Lifecycle deployment is two switches — one on the app, one on
 Keycloak.
@@ -195,14 +206,21 @@ mcp:
   # Only when Keycloak is NOT reachable from the public internet — see the warning below.
   dcr:
     enabled: true
-  # If several MCP deployments share this realm, list the others here:
+  # Alternate URLs for the SAME deployment (e.g. in-cluster access, host dev server):
   # extraAudiences:
-  #   - "https://app.staging.example.com/mcp"
+  #   - "http://lifecycle-web.lifecycle-app.svc.cluster.local/mcp"
+  #   - "http://localhost:8000/mcp"
 ```
 
 The Job is idempotent and runs on both fresh installs and existing realms, so a Helm upgrade with
-these values is all that's needed — no separate script to run by hand. Pass `extraAudiences` (as
-shown above) when several MCP deployments share one realm.
+these values is all that's needed — no separate script to run by hand.
+
+<Callout type="warning">
+  All URLs listed (`resourceUrl` + `extraAudiences`) share a single token trust
+  boundary — an access token issued for one is accepted by all of them. Use
+  `extraAudiences` only for alternate URLs of the **same** deployment; do not
+  use it to share one realm across production and staging.
+</Callout>
 
 ### Verify
 
@@ -224,15 +242,49 @@ should return the server's OAuth metadata, and connecting any MCP client to
   Only enable it (`mcp.dcr.enabled: true` in the chart, or
   `--enable-anonymous-dcr` with the script) when Keycloak is **not** reachable
   from the public internet. Otherwise leave it off and pre-register a client for
-  your users. Back up the realm first if you may want to revert.
+  your users, as described below. Back up the realm first if you may want to
+  revert.
 </Callout>
+
+### Without dynamic client registration
+
+When dynamic client registration stays disabled (the default), pre-register one OAuth client in
+the Lifecycle Keycloak realm and distribute its client ID to your users:
+
+1. In the realm, create a **public** client (no client secret) with the **Standard flow** enabled
+   and PKCE enforced (set _Proof Key for Code Exchange Code Challenge Method_ to `S256` in the
+   client's advanced settings).
+2. Add the redirect URIs your users' MCP clients need — CLI tools typically use a localhost
+   callback such as `http://localhost:8080/callback`, while some editors use fixed HTTPS or
+   app-scheme callbacks. Check each client's documentation for its exact callback URL.
+3. Assign the `mcp` client scope to the client (as an optional client scope).
+4. Hand the client ID to your users.
+
+Support for pre-registered client IDs varies by MCP client, so check your client's documentation
+for its current state. At the time of writing:
+
+- **Claude Code** supports it — pass the ID and pin the callback port when adding the server, and
+  register the matching `http://localhost:8080/callback` redirect URI in Keycloak:
+
+  ```bash
+  claude mcp add --transport http --client-id <client-id> --callback-port 8080 \
+    lifecycle https://app.lifecycle.example.com/mcp
+  ```
+
+- **Cursor** supports it — add an `auth` object next to the server's `url` in `mcp.json` with
+  `"CLIENT_ID": "<client-id>"`, and register Cursor's fixed callbacks as redirect URIs:
+  `https://www.cursor.com/agents/mcp/oauth/callback` (web/cloud agents) and
+  `cursor://anysphere.cursor-mcp/oauth/callback` (desktop app).
+
+- **VS Code** and **Codex CLI** rely on dynamic client registration and do not currently document
+  a way to supply a pre-registered client ID — consult their documentation for updates.
 
 ## Troubleshooting
 
-| Symptom                                                         | Likely cause                                                                                                            |
-| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Client says the server needs authentication and nothing happens | Run the client's login step (`claude mcp login …`, `codex mcp login …`, or the login prompt in Cursor/VS Code settings) |
-| Browser login loops or shows `invalid_scope`                    | The Keycloak realm is missing the `mcp` client scope configuration — re-run the setup job or script                     |
-| `401` with a valid login                                        | The token audience doesn't match `MCP_RESOURCE_URL` — make sure the URL configured in your client matches it exactly    |
-| Tools list is empty or calls fail after login                   | The endpoint may be disabled (`MCP_SERVER_ENABLED`) on the web deployment                                               |
-| Registration rejected                                           | Dynamic client registration is disabled or restricted — ask your Lifecycle operator                                     |
+| Symptom                                                         | Likely cause                                                                                                                                                                                                 |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Client says the server needs authentication and nothing happens | Run the client's login step (`claude mcp login …`, `codex mcp login …`, or the login prompt in Cursor/VS Code settings)                                                                                      |
+| Browser login loops or shows `invalid_scope`                    | The Keycloak realm is missing the `mcp` client scope configuration — re-run the setup job or script                                                                                                          |
+| `401` with a valid login                                        | The token audience doesn't match `MCP_RESOURCE_URL` — make sure the URL configured in your client matches it exactly                                                                                         |
+| Tools list is empty or calls fail after login                   | The endpoint may be disabled (`MCP_SERVER_ENABLED`) on the web deployment                                                                                                                                    |
+| Registration rejected                                           | Dynamic client registration is disabled — the expected default. Use a pre-registered client ID (see [Without dynamic client registration](#without-dynamic-client-registration)) or ask your Lifecycle admin |
