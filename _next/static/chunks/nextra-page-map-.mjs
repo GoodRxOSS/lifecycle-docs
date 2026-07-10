@@ -92,6 +92,13 @@ export const pageMap = [{
         "tags": ["ai", "agent", "mcp", "tools", "integration"]
       }
     }, {
+      name: "mcp-server",
+      route: "/docs/features/mcp-server",
+      frontMatter: {
+        "title": "MCP Server",
+        "tags": ["ai", "mcp", "tools", "claude", "cursor", "vscode", "codex"]
+      }
+    }, {
       name: "native-helm-deployment",
       route: "/docs/features/native-helm-deployment",
       frontMatter: {
@@ -483,6 +490,13 @@ export const pageMap = [{
       "description": "Lifecycle \"ci-cd\" docs"
     }
   }, {
+    name: "claude",
+    route: "/tags/claude",
+    frontMatter: {
+      "title": "claude",
+      "description": "Lifecycle \"claude\" docs"
+    }
+  }, {
     name: "cleanup",
     route: "/tags/cleanup",
     frontMatter: {
@@ -516,6 +530,13 @@ export const pageMap = [{
     frontMatter: {
       "title": "codefresh",
       "description": "Lifecycle \"codefresh\" docs"
+    }
+  }, {
+    name: "codex",
+    route: "/tags/codex",
+    frontMatter: {
+      "title": "codex",
+      "description": "Lifecycle \"codex\" docs"
     }
   }, {
     name: "command",
@@ -558,6 +579,13 @@ export const pageMap = [{
     frontMatter: {
       "title": "core",
       "description": "Lifecycle \"core\" docs"
+    }
+  }, {
+    name: "cursor",
+    route: "/tags/cursor",
+    frontMatter: {
+      "title": "cursor",
+      "description": "Lifecycle \"cursor\" docs"
     }
   }, {
     name: "database",
@@ -1223,6 +1251,13 @@ export const pageMap = [{
     frontMatter: {
       "title": "variables",
       "description": "Lifecycle \"variables\" docs"
+    }
+  }, {
+    name: "vscode",
+    route: "/tags/vscode",
+    frontMatter: {
+      "title": "vscode",
+      "description": "Lifecycle \"vscode\" docs"
     }
   }, {
     name: "webhook",
