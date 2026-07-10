@@ -1,0 +1,250 @@
+---
+title: CLI (lfc)
+tags:
+  - cli
+  - lfc
+  - operators
+  - tooling
+  - automation
+---
+
+import { Callout } from "nextra/components";
+
+`lfc` is the command-line interface for Lifecycle. It lets you view and manage
+preview environments (builds), redeploy services, stream logs, host static
+sites, and validate configuration — straight from your terminal. It is built
+for **humans and agents**: every command supports `--json`, human-readable
+messages go to `stderr`, and machine output goes to `stdout`.
+
+<Callout type="info">
+  The CLI ships with **no deployment URLs baked in**. You point it at your own
+  Lifecycle deployment once with `lfc init`. All examples below use generic
+  placeholder hosts such as `https://lifecycle.example.com` and `myorg/myrepo` —
+  substitute your own values.
+</Callout>
+
+## Overview
+
+Requires Node ≥ 20.
+
+```sh
+npm install -g lfc-cli
+lfc --help
+```
+
+- **`--help` everywhere.** `lfc <command> --help` works on every command and
+  subcommand and lists all flags.
+- **`--json` everywhere.** Add `--json` for machine-readable output, or set
+  `LFC_JSON=1` to enable it globally.
+- **Humans and agents.** Interactive prompts appear only on a TTY; without one,
+  commands fail fast and name the missing flag/argument, so scripts and agents
+  stay deterministic. Run `lfc llms` to print agent-oriented instructions.
+
+## How it works
+
+`lfc` is a thin client over your Lifecycle deployment's HTTP API. Nothing about
+your deployment is hard-coded — you configure it once and the CLI stores a
+**profile** locally.
+
+- **Profiles.** Each profile points at one deployment (API URL, optional UI URL,
+  and auth settings). You can keep several (e.g. `default`, `staging`, `local`)
+  and switch between them. Config lives at
+  `~/.config/lifecycle-cli/config.json`.
+- **Authentication.** Deployments that enforce SSO use Keycloak (Authorization
+  Code + PKCE, or device code for headless machines). Tokens are cached per
+  profile under `~/.config/lifecycle-cli/tokens/` and refresh automatically.
+  Auth-less deployments (`authEnabled: false`) skip all of this.
+- **Output & scripting.** JSON goes to `stdout`; informational messages go to
+  `stderr`. Commands return meaningful exit codes:
+
+  | Code | Meaning                                                     |
+  | ---- | ----------------------------------------------------------- |
+  | `0`  | success                                                     |
+  | `1`  | failure (API error, failed build, invalid schema)           |
+  | `2`  | watch timeout (`--watch` did not converge in time)          |
+  | `3`  | not found (unknown uuid, no matching build, no config file) |
+  | `4`  | authentication error (not logged in, expired session)       |
+
+<Callout type="warning">
+  On exit code `4`, run `lfc login` (or `lfc login --device` on a headless
+  machine) and retry. Verify who you are with `lfc whoami`.
+</Callout>
+
+## Configuration
+
+Point the CLI at your deployment. Interactively:
+
+```sh
+lfc init
+```
+
+Or non-interactively (for scripts, dotfiles, onboarding docs):
+
+```sh
+# SSO deployment
+lfc init \
+  --api-url https://lifecycle.example.com \
+  --ui-url  https://lifecycle-ui.example.com \
+  --issuer  https://sso.example.com/realms/lifecycle
+
+# auth-less deployment (e.g. local)
+lfc init --api-url http://localhost:8080 --no-auth --name local
+```
+
+`init` verifies the URL is reachable, writes the profile, and (when auth is on)
+starts the SSO login. Useful flags: `--ui-url` (enables `lfc builds open`),
+`--no-login` (skip the login step), `--device` (device-code login),
+`--name <profile>`, `--force` (overwrite an existing profile).
+
+### Config file structure
+
+Configuration lives at `~/.config/lifecycle-cli/config.json` and holds one entry
+per deployment under `profiles`, with the active one named by `currentProfile`:
+
+```json
+{
+  "currentProfile": "default",
+  "profiles": {
+    "default": {
+      "apiUrl": "https://lifecycle.example.com",
+      "uiUrl": "https://lifecycle-ui.example.com",
+      "authEnabled": true,
+      "keycloak": {
+        "issuer": "https://sso.example.com/realms/lifecycle",
+        "clientId": "lifecycle-cli"
+      }
+    },
+    "local": {
+      "apiUrl": "http://localhost:8080",
+      "authEnabled": false
+    }
+  }
+}
+```
+
+| Field               | Description                                                         |
+| ------------------- | ------------------------------------------------------------------- |
+| `apiUrl`            | Base URL of the Lifecycle API (required).                           |
+| `uiUrl`             | Base URL of the Lifecycle UI (optional; enables `lfc builds open`). |
+| `authEnabled`       | Whether the deployment enforces SSO.                                |
+| `keycloak.issuer`   | Keycloak realm issuer URL (when `authEnabled` is `true`).           |
+| `keycloak.clientId` | OAuth client id (defaults to `lifecycle-cli`).                      |
+
+Manage profiles without editing the file by hand:
+
+```sh
+lfc config list                         # all profiles
+lfc config get                          # active profile as JSON (no secrets)
+lfc config add-profile staging --api-url https://lifecycle-staging.example.com --issuer <url>
+lfc config use-profile staging          # switch the active profile
+lfc --profile staging builds list       # one-off profile override
+```
+
+### Environment variables
+
+| Variable            | Effect                                  |
+| ------------------- | --------------------------------------- |
+| `LIFECYCLE_API_URL` | Override the API base URL.              |
+| `LFC_PROFILE`       | Select the active profile by name.      |
+| `LFC_JSON=1`        | Force JSON output globally.             |
+| `LFC_CONFIG_DIR`    | Override the config directory location. |
+
+One-off usage with no saved config (auth-less deployments only):
+
+```sh
+lfc --api-url http://localhost:8080 builds list
+```
+
+## Commands
+
+### Authentication
+
+```sh
+lfc login                 # SSO in the browser
+lfc login --device        # headless: prints a URL + code to confirm elsewhere
+lfc whoami                # logged-in user, roles, token expiry
+lfc logout
+```
+
+### Builds (preview environments)
+
+```sh
+lfc builds list [--mine] [--search <text>] [--all] [-n <limit>] [-p <page>]
+lfc builds get <uuid> [--manifest]
+lfc builds find --pr <url|number> [--repo myorg/myrepo]   # resolve a PR/branch → build
+lfc builds find --branch <name> --repo myorg/myrepo
+lfc builds status <uuid> [--watch]        # exit 0 deployed, 1 failed, 2 timeout
+lfc builds redeploy <uuid> [--watch]
+lfc builds destroy <uuid> --yes
+lfc builds update-uuid <uuid> <new-uuid>
+lfc builds set <uuid> --static | --no-static | --track-defaults | --no-track-defaults
+lfc builds webhooks <uuid> [--invoke]
+lfc builds open <uuid> [--print]          # open in the Lifecycle UI
+```
+
+`builds find` resolves a build from a PR or branch — useful when you have a PR
+URL but not the uuid. A PR URL is self-contained; a bare PR number or a branch
+needs `--repo`. With `--json` it returns `{ found, build, matches }` (more than
+one `matches` entry means the selector was ambiguous). Exit `0` found, `3` no
+build yet (e.g. the PR was just opened), `1` if the scan was truncated before
+resolving.
+
+Per-build environment-variable overrides:
+
+```sh
+lfc builds env get <uuid>
+lfc builds env set <uuid> KEY=VALUE [KEY=VALUE ...] [--init]
+lfc builds env unset <uuid> KEY [KEY ...]
+```
+
+### Services (within a build)
+
+```sh
+lfc services list <build-uuid> [--all]
+lfc services redeploy <build-uuid> <service>
+lfc services enable | disable <build-uuid> <service>
+lfc services set-branch <build-uuid> <service> <branch-or-url>
+lfc services history <build-uuid> <service>          # build/deploy job history
+lfc services logs <build-uuid> <service> [--deploy] [--job <name>] [-f]
+```
+
+### Pods & runtime logs
+
+```sh
+lfc pods list <build-uuid> [--service <name>]
+lfc pods logs <build-uuid> <pod-name> [-c <container>] [-f] [--tail <n>] [--timestamps]
+```
+
+### Schema validation
+
+```sh
+lfc schema validate [path]                              # finds lifecycle.yaml locally (offline)
+lfc schema validate --repo myorg/myrepo --branch <branch>   # server-side check
+```
+
+Exit `0` valid, `1` invalid (per-field errors printed), `3` no config file found.
+
+### Static sites
+
+```sh
+lfc sites create <file-or-dir> [--name <label>]   # returns a stable URL
+lfc sites list [--mine]
+lfc sites get <id>
+lfc sites update <id> <file-or-dir>
+lfc sites extend <id>                             # push out the expiry
+lfc sites delete <id> --yes
+```
+
+### Diagnostics & agent instructions
+
+```sh
+lfc doctor                # environment/config/auth health checks
+lfc llms                  # print full agent-oriented usage instructions
+lfc --version
+```
+
+<Callout type="info">
+  Every command supports `--help` and `--json`. For scripting and automation,
+  combine `--json` with a JSON processor, e.g.
+  `lfc builds get <uuid> --json | jq '.deploys[] | {name: .deployable.name, url: .publicUrl}'`.
+</Callout>

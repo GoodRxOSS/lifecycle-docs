@@ -59,5 +59,8 @@ export default {
   },
   "mcp-server": {
     "title": "MCP Server"
+  },
+  "cli": {
+    "title": "CLI (lfc)"
   }
 };
