@@ -154,9 +154,10 @@ A one-page tour for the curious:
 
 2. **Login is your normal SSO.** Lifecycle's Keycloak realm acts as the OAuth 2.1 authorization
    server. When a tool connects for the first time it discovers the auth settings automatically
-   (via standard OAuth metadata), registers itself with Keycloak, and sends you through the same
-   browser single sign-on used by the UI and the `lfc` CLI. A one-time consent screen shows what
-   the tool is asking for.
+   (via standard OAuth metadata), identifies itself to Keycloak — by registering itself when your
+   admin has enabled dynamic client registration, or with the client ID your admin pre-registered —
+   and sends you through the same browser single sign-on used by the UI and the `lfc` CLI. A
+   one-time consent screen shows what the tool is asking for.
 
 3. **Tokens only work here.** Access tokens issued for the MCP server are bound to its exact URL
    (the OAuth _audience_). A CLI or UI token is rejected at `/mcp`, and an MCP token is rejected
@@ -254,11 +255,13 @@ the Lifecycle Keycloak realm and distribute its client ID to your users:
 1. In the realm, create a **public** client (no client secret) with the **Standard flow** enabled
    and PKCE enforced (set _Proof Key for Code Exchange Code Challenge Method_ to `S256` in the
    client's advanced settings).
-2. Add the redirect URIs your users' MCP clients need — CLI tools typically use a localhost
+2. Turn on **Consent required** in the client's settings, so users get the same one-time consent
+   screen that dynamically registered clients show.
+3. Add the redirect URIs your users' MCP clients need — CLI tools typically use a localhost
    callback such as `http://localhost:8080/callback`, while some editors use fixed HTTPS or
    app-scheme callbacks. Check each client's documentation for its exact callback URL.
-3. Assign the `mcp` client scope to the client (as an optional client scope).
-4. Hand the client ID to your users.
+4. Assign the `mcp` client scope to the client (as an optional client scope).
+5. Hand the client ID to your users.
 
 Support for pre-registered client IDs varies by MCP client, so check your client's documentation
 for its current state. At the time of writing:
