@@ -1,17 +1,131 @@
 ---
-title: Deploy Issues
-description: Understand how to handle common deploy issues with environments
+title: Troubleshoot a failed deployment
+description: Find the failed Service, inspect the relevant logs, correct the cause, and safely redeploy an Environment.
 tags:
   - deploy
-  - issues
-  - error
-  - todo
-  - codefresh
+  - troubleshooting
+  - errors
+  - logs
 ---
 
 import { Callout } from "nextra/components";
+import { Image } from "@lifecycle-docs/components";
+
+Use this workflow when an Environment shows **Config error** or **Error**, or
+when one of its Services shows **Build failed**, **Deploy failed**, or
+**Error**.
+
+## Resolve a Config error first
+
+A **Config error** happens before Lifecycle can run the affected Services, so
+there may be no failed Service or Console to inspect.
+
+1. Read the **Config error** in the Environment metadata.
+2. Check **Current branch schema**:
+   - **Invalid:** Correct `lifecycle.yaml` using the
+     [schema reference](/docs/schema/overview).
+   - **Valid now:** The branch has been corrected, but the Environment still
+     records the earlier failed snapshot.
+3. After the branch is valid, select **Actions**, then **Redeploy**. A static
+   Environment requires an administrator to perform this action.
+
+## Find the first useful failure reason
+
+For an Environment-level **Error** or a Service failure:
+
+1. Open **Environments** in Lifecycle and select the affected Environment.
+2. If the Environment shows **Error**, hover over or focus that status to read
+   the Environment failure message.
+3. If a Service shows **Build failed**, **Deploy failed**, or **Error**, select
+   it from the Service list. Failed Services are shown before healthy Services.
+4. Read the Service **Failure reason** on the **Summary** tab before opening
+   longer logs.
+
+If no Service failed, use the Environment failure message as the primary
+evidence and [escalate it](#escalate-with-useful-evidence); Service Console logs
+may not exist.
+
+<Image
+  src="/docs/troubleshooting/deploy-issues/service-deploy-failure.png"
+  alt="Lifecycle Environment details with the web Service in Deploy failed state and a Failure reason that says Kubernetes apply job failed."
+  width={1440}
+  height={900}
+  ratio={1440 / 900}
+/>
+
+The summary tells you which Service failed and either identifies the immediate
+cause or narrows the failure to a phase. In this example, open the **Deploy**
+logs to learn why the Kubernetes apply job failed before retrying.
+
+## Open the relevant logs
+
+For a failed Service, select **Console**, then use the phase that matches its
+status:
+
+- **Build failed:** Select **Build** and open the failed build attempt.
+- **Deploy failed:** Select **Deploy** and open the failed deployment attempt.
+- **Error:** Start with the **Failure reason**, then inspect **Build** or
+  **Deploy** according to the last completed phase.
+- **Ready, but the application is unhealthy:** Select **Pods** to inspect the
+  running container logs.
+
+A red dot on **Build** or **Deploy** marks the failed phase. If Lifecycle uses an
+external pipeline for that phase, the Console can show a link to its logs
+instead of native job logs.
+
+Look for the earliest actionable error, not every later symptom. Do not include
+tokens, secret values, or complete environment-variable output when sharing
+logs.
+
+## Correct the cause
+
+Use the Environment message or Service failure reason and logs to check the
+failed phase:
+
+| Failure             | Check first                                                                                                                |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Configuration error | The **Current branch schema** result and the relevant [`lifecycle.yaml` reference](/docs/schema/overview)                  |
+| Build failed        | Repository and branch access, Dockerfile path, build context, base images, and registry access                             |
+| Deploy failed       | Container image and tag, deployment dependencies, environment-variable names, resource limits, and readiness configuration |
+| Ready but unhealthy | Application startup output, health endpoints, dependency URLs, and runtime configuration                                   |
+
+Commit and push configuration or application corrections before retrying when
+the failure comes from repository content.
+
+## Redeploy
+
+After correcting the cause:
+
+1. To retry one Service, select the circular-arrow **Redeploy** control on its
+   row.
+2. To retry the full Environment, select **Actions**, then **Redeploy**.
+3. Confirm that Lifecycle queues the redeploy.
+4. Wait for the Environment to show **Deployed** and each Service you need to
+   show **Ready**.
+
+Use a full Environment redeploy when you changed shared configuration or more
+than one Service. A redeploy reuses the current source and configuration, so it
+will not correct a deterministic error by itself.
+
+For a static Environment, full redeploy is disabled for non-administrators.
+Administrators must confirm the action by entering `redeploy`.
 
 <Callout type="info">
-  TODO: This document will cover common deploy issues that you may encounter
-  when working with Lifecycle environments.
+  Application developers should start with the Lifecycle UI and the logs linked
+  there. Cluster-level diagnostics are an operator workflow, not the normal
+  recovery path for a failed Service.
 </Callout>
+
+## Escalate with useful evidence
+
+If the corrected deployment still fails, give your platform team:
+
+- Environment UUID and, when applicable, Service name
+- Current status and the Environment failure message or Service **Failure
+  reason**
+- Whether **Build**, **Deploy**, or **Pods** contains the relevant error
+- Commit short SHA and approximate failure time
+- The smallest log excerpt that includes the actionable error
+
+Do not include credentials, tokens, secret values, or unrelated application
+data.

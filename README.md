@@ -23,7 +23,7 @@ Making a post can be done in a few steps.
      ```txt
        // example
        src/pages/docs/troubleshooting/<new-page>
-       public/docs/troubleshooting/new-page>
+       public/docs/troubleshooting/<new-page>/
      ```
 
 ---
@@ -41,23 +41,25 @@ View all the currently exported components [here](https://github.com/GoodRxOSS/l
 The `<Image>` component is a wrapper around next/image that provides a few extra features to make it easier to look nice in the docs.
 
 ```mdx
-import Image from '@lifecycle-docs/components';
+import { Image } from '@lifecycle-docs/components';
 
 <Image src="/path/to/image.png" alt="Alt text" width={16} height={9} ratio={16 / 9} />
 ```
 
-You can center the image by adding the `center` prop and some extra JSX.
+`alt` is required. Describe the information the image contributes to the
+surrounding instructions.
+
+You can constrain and center an image with normal layout classes:
 
 ```mdx
 <div className="grid pt-6">
-  <div className="place-self-center w-[500px]">
+  <div className="w-[500px] place-self-center">
     <Image
       src="/custom-multi-service-lifecycle-environments/additional-optional-services.png"
       alt="Additional Optional Services"
       height={906}
       width={538}
       ratio={538 / 906}
-      imagePosition="center"
     />
   </div>
 </div>
@@ -98,15 +100,23 @@ Run the development server
 bun run dev
 ```
 
+Open `http://localhost:3333`.
+
+Before opening a pull request, run:
+
+```bash
+bun run verify
+```
+
 ## Deployment
 
-This site is deployed to GitHub Pages using GitHub Actions. When changes are pushed to the `oss` branch, a GitHub Action workflow automatically builds the site and deploys it to the `gh-pages` branch.
+This site is deployed to GitHub Pages using GitHub Actions. When changes are pushed to the `main` branch, a GitHub Action workflow automatically builds the site and deploys it to the `gh-pages` branch.
 
 ### Automatic Deployment
 
 The deployment process is handled by a GitHub Actions workflow defined in `.github/workflows/deploy.yml`. This workflow:
 
-1. Runs when changes are pushed to the `oss` branch
+1. Runs when changes are pushed to the `main` branch
 2. Sets up Bun
 3. Installs dependencies
 4. Builds the static site
@@ -151,7 +161,7 @@ You can also build and deploy the site manually:
    git reset --hard
    git commit --allow-empty -m "Initial gh-pages commit"
    git push origin gh-pages
-   git checkout oss
+   git checkout main
 
    # For subsequent deployments
    bun run deploy
@@ -162,7 +172,7 @@ You can also build and deploy the site manually:
    git add .
    git commit -m "Deploy to GitHub Pages"
    git push origin gh-pages
-   git checkout oss
+   git checkout main
    ```
 
 However, it's recommended to let the GitHub Actions workflow handle the deployment automatically.

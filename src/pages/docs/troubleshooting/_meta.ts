@@ -19,7 +19,7 @@ export default {
     "title": "Build Issues"
   },
   "deploy-issues": {
-    "title": "Deploy Issues"
+    "title": "Troubleshoot a failed deployment"
   },
   "github-app-webhooks": {
     "title": "Missing PR comment"

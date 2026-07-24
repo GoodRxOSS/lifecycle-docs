@@ -1,5 +1,6 @@
 ---
 title: Explore environment
+description: Confirm that an Environment is ready, open a deployed Service, and use Lifecycle's pull request comments.
 tags:
   - lifecycle
   - tutorial
@@ -10,23 +11,49 @@ import { Callout } from "nextra/components";
 import { Info } from "lucide-react";
 import { Image } from "@lifecycle-docs/components";
 
-Now that we've deployed our first Lifecycle environment, let’s take a tour of the PR comments to understand how to interact with our ephemeral environment.
+After Lifecycle deploys your first Environment, confirm that its Services are
+ready before you start testing. You can inspect the Environment in the
+Lifecycle UI and use the comments on your pull request to change or monitor it.
 
-## Test Your Application
+## Confirm the Environment is ready
 
-Let's navigate to the deployed `frontend` app from the PR comment.
+1. Follow the **View details** link in the Lifecycle comment, or open
+   **Environments** in Lifecycle and select your Environment.
+2. Confirm that the Environment status is **Deployed**.
+3. Select each Service you plan to test. A successfully deployed Service shows
+   **Ready** and the message **Kubernetes pods are ready**.
+4. Select **Visit URL** to open a public Service.
 
-1. Click on the `frontend` link in the PR comment to navigate to your deployed application.
-2. Add a task and complete few tasks to update data in backend.
-3. Navigate to the `variables` page and checkout the variables in your application's container.
-4. Thats it! You have successfully deployed and tested the best todo app in the world! 🎉
+<Image
+  src="/docs/getting-started/explore-environment/environment-ready.png"
+  alt="Lifecycle Environment details with the overall status Deployed and the selected web Service showing Ready and Kubernetes pods are ready."
+  width={1440}
+  height={900}
+  ratio={1440 / 900}
+/>
+
+If a Service shows **Build failed**, **Deploy failed**, or **Error**, open its
+**Console** instead. See [Troubleshoot a failed
+deployment](/docs/troubleshooting/deploy-issues) for the recovery workflow.
+
+## Test the example application
+
+Open the deployed `frontend` Service from **Visit URL** or from the pull request
+comment, then:
+
+1. Add and complete a few tasks to confirm the frontend can update backend data.
+2. Open the `variables` page to inspect the non-secret configuration exposed by
+   the example application.
+3. Return to Lifecycle when you need to inspect another Service or its logs.
 
 ## Mission Control Comment
 
-The **Lifecycle PR comment** in your pull request serves as the **mission control** for your ephemeral environment.
+The **Lifecycle PR comment** in your pull request serves as mission control for
+your Environment.
 
 <Image
   src="/getting-started/pr-comment.png"
+  alt="Lifecycle Mission Control Comment showing enabled services, the Environment UUID, overrides, the redeploy action, and deployed service links."
   width={2106}
   height={2278}
   ratio={2106 / 2278}
@@ -34,9 +61,11 @@ The **Lifecycle PR comment** in your pull request serves as the **mission contro
 
 ### What You Can Do in the PR Comment
 
-- **Editable Checkboxes**: Select or deselect services to include in your environment.
-- **Redeploy Checkbox**: Triggers a redeploy (useful for transient issues).
-- **Deployment Section**: Provides URLs to your **deployed services**.
+- **Service checkboxes:** Select or deselect optional Services.
+- **Redeploy Environment:** Queue another deployment after you correct a
+  transient problem.
+- **Deployment links:** Open deployed Services and, when configured, related
+  dashboards.
 
 <Callout type="info" emoji={<Info />}>
   Read more about [Mission Control comment
@@ -45,12 +74,15 @@ The **Lifecycle PR comment** in your pull request serves as the **mission contro
 
 ## Status Comment
 
-When we add the `lifecycle-status-comments!` label to our pull request, Lifecycle will automatically add a **status comment** to the PR.
+When you add the `lifecycle-status-comments!` label to the pull request,
+Lifecycle adds a **status comment**.
 
-This comment provides real-time updates on the status, links to your deployments including the build progress and service statuses.
+Lifecycle updates this comment as the Environment progresses and includes the
+available deployment links.
 
 <Image
   src="/getting-started/status-comment.png"
+  alt="Lifecycle Status Comment showing a deployed Environment and links to the running frontend and backend Services."
   width={1902}
   height={894}
   ratio={1902 / 894}
@@ -58,22 +90,19 @@ This comment provides real-time updates on the status, links to your deployments
 
 Notice the following while the environment is being built:
 
-- The status comment is **updated in real-time**.
-- The **status** of each service is displayed.
-- The **build logs** are available for each service.
+- The comment updates as the Environment changes state.
+- Each Service reports its current status.
+- Build-log links appear when the deployment backend provides them.
 
 <Image
   src="/getting-started/status-comment-building.png"
+  alt="Lifecycle Status Comment while an Environment is building, with pending Service states and a link to build logs."
   width={1894}
   height={1222}
   ratio={1894 / 1222}
 />
 
-### Next Steps
+## Next steps
 
-In the next section, we will:
-
-⚙️ Customize our configuration<br />
-☑️ Enable and build an optional service(`cache`) support your application<br />
-
-**Ready to level up your ephemeral environment? Let\'s go!** 🏃‍➡️
+Next, [configure your Environment](/docs/getting-started/configure-environment)
+and enable the optional `cache` Service used by the example application.

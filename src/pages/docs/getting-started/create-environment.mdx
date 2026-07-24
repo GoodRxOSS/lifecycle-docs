@@ -97,15 +97,9 @@ Wait for the **builds & deploys** to complete. Once the status updates to **`dep
 When a new commit is pushed to your pull request Lifecycle automatically builds and deploys again so you always have the latest version of the application.
 
 <Callout type="info" icon={Info}>
-  If there are any errors during the build or deploy process, the environment
-  will not be created, and you will see an error message in the Lifecycle
-  comment.
-  <br />
-  <div>
-    You can check the logs from `lifecycle-worker` pods in your cluster to debug
-    the issue: <br /> `kubectl logs deploy/lifecycle-worker -n lifecycle-app -f
-    `
-  </div>
+  If a build or deployment fails, follow the Environment link and inspect the
+  failed Service in Lifecycle. [Troubleshoot the failure from the Service
+  summary and Console](/docs/troubleshooting/deploy-issues).
 </Callout>
 
 ## 9. Checkout the deployed application

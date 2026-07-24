@@ -1,0 +1,4 @@
+interface:
+  display_name: "Update Lifecycle Docs"
+  short_description: "Update Lifecycle docs and UI screenshots"
+  default_prompt: "Use $update-lifecycle-docs to update Lifecycle documentation and refresh any relevant UI screenshots."

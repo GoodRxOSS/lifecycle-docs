@@ -27,7 +27,12 @@ kubectl get pods -n lifecycle-app
 
 - Once the pods are running, you can access the application at your configured domain (e.g. `https://app.0env.com`)
 
-<Image src="/setup/app-installed.png" width={1890} height={1089} />
+<Image
+  src="/setup/app-installed.png"
+  alt="Lifecycle welcome page confirming that the application is running."
+  width={1890}
+  height={1089}
+/>
 
 Just like that, you have successfully installed Lifecycle and set up the necessary infrastructure to start creating ephemeral environments for your GitHub pull requests!
 
@@ -39,6 +44,7 @@ kubectl get certificate -n lifecycle-app
 
 <Image
   src="/setup/cert-ready.png"
+  alt="kubectl output showing the Lifecycle domain and wildcard TLS certificates in the Ready state."
   width={2572}
   height={844}
   ratio={2572 / 844}

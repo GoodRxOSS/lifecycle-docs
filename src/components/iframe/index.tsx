@@ -21,12 +21,16 @@ import { Loader } from "@/components";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Card, CardContent } from "@/components/ui/card";
 import { IframeProps } from "@/components/iframe/types";
-export const Iframe = ({ src }: IframeProps) => {
+export const Iframe = ({ src, title }: IframeProps) => {
   return (
     <Card className="relative w-full my-8 border rounded-md pt-6 my-4">
       <CardContent>
         <AspectRatio ratio={16 / 9}>
-          <iframe src={src} className="absolute inset-0 h-full w-full" />
+          <iframe
+            src={src}
+            title={title}
+            className="absolute inset-0 h-full w-full"
+          />
         </AspectRatio>
       </CardContent>
     </Card>

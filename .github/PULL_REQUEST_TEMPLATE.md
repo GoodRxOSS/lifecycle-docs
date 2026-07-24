@@ -1,11 +1,23 @@
-## Fixes
+## Reader and task
 
-- Fixes #
+- Audience:
+- Task/outcome:
 
-## Proposed Changes
+## Source of truth
 
-- Change
+- Owning repository/PR/commit:
+- Product or runtime verification:
 
----
+## Documentation changes
 
-> Read about referenced issues [here](https://help.github.com/articles/closing-issues-using-keywords/). Replace words with this Pull Request's context.
+- Changed pages:
+- Navigation or redirects:
+- Screenshots and fixture/cleanup:
+
+## Verification
+
+- [ ] Formatted changed files
+- [ ] `bun run verify`
+- [ ] Checked changed routes in desktop Chrome
+- [ ] Checked every theme enabled by the current theme config
+- [ ] Confirmed screenshots contain no secrets or personal/private data

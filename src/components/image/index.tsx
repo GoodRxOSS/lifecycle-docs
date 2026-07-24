@@ -24,7 +24,7 @@ import { ImageProps, DefinedImageProps } from "@/components/image/types";
 
 export const LifecycleDocsImg = ({
   src,
-  alt = "",
+  alt,
   border = true,
   ratio,
   width = 800,
@@ -48,7 +48,7 @@ export const LifecycleDocsImg = ({
 
 export const DefinedImage = ({
   src,
-  alt = "",
+  alt,
   width = 800,
   height = 500,
 }: DefinedImageProps) => {

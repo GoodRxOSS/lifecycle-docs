@@ -22,7 +22,8 @@
     "test": "bun test",
     "test:watch": "bun test --watch",
     "test:coverage": "bun test --coverage",
-    "update": "codependence --update"
+    "update": "codependence --update",
+    "verify": "bun run lint && bun run typecheck && bun run test && bun run build"
   },
   "dependencies": {
     "@code-hike/mdx": "^0.9.0",

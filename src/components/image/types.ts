@@ -15,7 +15,7 @@
  */
 
 export type ImageProps = {
-  alt?: string;
+  alt: string;
   src: string;
   border?: boolean;
   ratio?: number;
@@ -24,7 +24,7 @@ export type ImageProps = {
 };
 
 export type DefinedImageProps = {
-  alt?: string;
+  alt: string;
   src: string;
   width?: number;
   height?: number;

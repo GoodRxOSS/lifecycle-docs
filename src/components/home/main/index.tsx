@@ -46,7 +46,10 @@ export const Main = () => {
         </div>
       </header>
       <figure className="mt-6 flex md:mb-0 justify-center items-center md:w-[75%]">
-        <Iframe src="https://www.youtube.com/embed/ld9rWBPU3R8?si=1TTGy7cPhaqoF2Ev" />
+        <Iframe
+          src="https://www.youtube.com/embed/ld9rWBPU3R8?si=1TTGy7cPhaqoF2Ev"
+          title="Lifecycle product overview video"
+        />
       </figure>
     </>
   );
