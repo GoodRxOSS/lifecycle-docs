@@ -1,0 +1,552 @@
+{
+  "schemaVersion": 3,
+  "updatedOn": "2026-08-01",
+  "references": {
+    "canonical": "ASD-STE100 Issue 9",
+    "canonicalRules": [
+      "1.1",
+      "1.2",
+      "1.3",
+      "1.4",
+      "1.5",
+      "1.6",
+      "1.7",
+      "1.8",
+      "1.9",
+      "1.10",
+      "1.11",
+      "1.12",
+      "1.13",
+      "1.14",
+      "2.1",
+      "2.2",
+      "3.1",
+      "3.2",
+      "3.3",
+      "3.4",
+      "3.5",
+      "3.6",
+      "3.7",
+      "4.1",
+      "4.2",
+      "4.3",
+      "4.4",
+      "4.5",
+      "5.1",
+      "5.2",
+      "5.3",
+      "5.4",
+      "5.5",
+      "6.1",
+      "6.2",
+      "6.3",
+      "6.4",
+      "6.5",
+      "6.6",
+      "7.1",
+      "7.2",
+      "7.3",
+      "8.1",
+      "8.2",
+      "8.3",
+      "8.4",
+      "8.5",
+      "8.6",
+      "8.7",
+      "9.1",
+      "9.2",
+      "9.3",
+      "9.4"
+    ]
+  },
+  "pages": {
+    "/docs": {
+      "file": "src/pages/docs/index.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-08-01",
+      "sha256": "803e08b3b479ebad947b70ef369232203221cedd75cd185c4d4e0ca02f93ee50"
+    },
+    "/docs/api-authentication/api-keys": {
+      "file": "src/pages/docs/api-authentication/api-keys.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "abccff28a910388f751789b3cd1ba7aba1ef81fc98e31ba66379427332eb6257"
+    },
+    "/docs/api-authentication/overview": {
+      "file": "src/pages/docs/api-authentication/overview.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "b03afe35c3cc89a3539636567be27a94c831d7a205e0752ac6db4bf67546815a"
+    },
+    "/docs/api/overview": {
+      "file": "src/pages/docs/api/overview.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "7d157e87da781f5bd05a43ccfd2030763ab00050a958a9ca53c1c0008add6cd4"
+    },
+    "/docs/features/agent-administration": {
+      "file": "src/pages/docs/features/agent-administration.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "22fdd43dff37ccad2c1a3c3b2a3d7b1f737a24de960c00bea0da3d0a8971343d"
+    },
+    "/docs/features/agent-sessions": {
+      "file": "src/pages/docs/features/agent-sessions.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "c440c089b444d668b0026952590da606cdbbecd17790d8dfdb2346d7d2588035"
+    },
+    "/docs/features/ai-agent": {
+      "file": "src/pages/docs/features/ai-agent.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "29e68ca32de6e3de8f1eb8c3877afd82c88024d99432e62af60bdc696c4b5283"
+    },
+    "/docs/features/ai-agent-configuration": {
+      "file": "src/pages/docs/features/ai-agent-configuration.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "88ca72aa79051de8b75605615e2ed5496749b72eafbf0b91a25f9c5e621f5646"
+    },
+    "/docs/features/api-environments": {
+      "file": "src/pages/docs/features/api-environments.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "12ea39615d56eeab2a02438c2addbe6ed863b3d6e0c6baf4caff672a5c3fa39a"
+    },
+    "/docs/features/authentication": {
+      "file": "src/pages/docs/features/authentication.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "9b2447691c45022e4c7362631710ace90d38d06d4f9bcc6666b8971c6896a449"
+    },
+    "/docs/features/auto-deployment": {
+      "file": "src/pages/docs/features/auto-deployment.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "c2d16a04ef6fbb671ad70f475f2a8e16f67812d01b3fbea5425f2750328178df"
+    },
+    "/docs/features/build-metadata-links": {
+      "file": "src/pages/docs/features/build-metadata-links.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "97c55fb5f65e6c7c39011bd46d1814da17e208abf13a8aaca2646d59324a8d09"
+    },
+    "/docs/features/cli": {
+      "file": "src/pages/docs/features/cli.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-08-01",
+      "sha256": "88a35c2ebf6bb6ac52874de2df6edd96b99dab582e6e3de3414226d12cbe5c7c"
+    },
+    "/docs/features/cli-telemetry": {
+      "file": "src/pages/docs/features/cli-telemetry.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "c77fd2bd08a0f8cc751a87a80d8a5f8dc92918f1a43d08eef3043862e74eac37"
+    },
+    "/docs/features/configurable-labels": {
+      "file": "src/pages/docs/features/configurable-labels.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "a0728eac4304db001755e92933695858dfb7873b1870f586dae003874ceab01c"
+    },
+    "/docs/features/environment-ttl": {
+      "file": "src/pages/docs/features/environment-ttl.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "6979cbee45db7f8b518a0e05d0b461b9b67e0787b215a4519e400d18a3201ca4"
+    },
+    "/docs/features/ignore-file-patterns": {
+      "file": "src/pages/docs/features/ignore-file-patterns.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "61394d94394663b1ae2e2be2dd52c0ef9be3a03905255a917bb35d96cf4bc9e5"
+    },
+    "/docs/features/lifecycle-ui": {
+      "file": "src/pages/docs/features/lifecycle-ui.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "e9e8e26803ea904d4851dd46787a3ded142baeb721bff7a812654f7a9560ca30"
+    },
+    "/docs/features/mcp-integration": {
+      "file": "src/pages/docs/features/mcp-integration.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "d5139af83f22fbb59fa44543df90e2975f05bd1093d4a0997f3c48fa1eece2b5"
+    },
+    "/docs/features/mcp-server": {
+      "file": "src/pages/docs/features/mcp-server.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-08-01",
+      "sha256": "49addadbc408af37d03f1f2e4f8b12e4ca0dcf03c6e4b7b48bb6a3fee963f582"
+    },
+    "/docs/features/native-helm-deployment": {
+      "file": "src/pages/docs/features/native-helm-deployment.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "a58acbf6c95124f944ec8c910d4d4f25b79d14dd3923bc353182190d143e81fb"
+    },
+    "/docs/features/secrets": {
+      "file": "src/pages/docs/features/secrets.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "7cdaec4ca63d7e47fa7b734419ba30e323a25987fba155e81cd24834e5d6210b"
+    },
+    "/docs/features/service-dependencies": {
+      "file": "src/pages/docs/features/service-dependencies.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "9f531b80fb779a91458a096c27abf6fb6a8ed6e75a20fe8873537ad231b35b3e"
+    },
+    "/docs/features/sites": {
+      "file": "src/pages/docs/features/sites.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "598f40560777f7d3f2074137ba9b2a102ceb4f61946fc05bc74f3a85d64d6bca"
+    },
+    "/docs/features/template-variables": {
+      "file": "src/pages/docs/features/template-variables.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-24",
+      "sha256": "0a4e4dd70e223a78eb6c642dfee60e0c34d3dae8609078db60131f3c46dfc3aa"
+    },
+    "/docs/features/webhooks": {
+      "file": "src/pages/docs/features/webhooks.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "fb218fe2659838ddabb475f1645e28048522715296a8718f5d37df7f9dc0466e"
+    },
+    "/docs/features/workspace-backends": {
+      "file": "src/pages/docs/features/workspace-backends.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "860c0b9f77ec3fb83d6d403d6f3d4d05e94cc6114cb02cd4acf3f4d675dd1264"
+    },
+    "/docs/getting-started/configure-environment": {
+      "file": "src/pages/docs/getting-started/configure-environment.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "afd9bcd8201163e9b1a93290309691d4c46f5f09b1567d309cb7b73b2116eea0"
+    },
+    "/docs/getting-started/create-environment": {
+      "file": "src/pages/docs/getting-started/create-environment.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "993562c14fafa481eead12346d1337de93fafe819662e26f356eedc13a880e2b"
+    },
+    "/docs/getting-started/delete-environment": {
+      "file": "src/pages/docs/getting-started/delete-environment.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-24",
+      "sha256": "5637386b9ba1ad495e72df3ac476c7a62e5e95824a20fe6d983a5211da2f945d"
+    },
+    "/docs/getting-started/explore-environment": {
+      "file": "src/pages/docs/getting-started/explore-environment.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "3f67a2a743c38aaeb18cb2275c1076c9df51769898e465cced19dd369e99a6f1"
+    },
+    "/docs/getting-started/explore-static-environment": {
+      "file": "src/pages/docs/getting-started/explore-static-environment.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "4fe9e1b3aebcc5319cd28d1343217facd32715acfdfecc4819706419a8ce3522"
+    },
+    "/docs/getting-started/onboard-repository": {
+      "file": "src/pages/docs/getting-started/onboard-repository.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "b961c2f7e702280b4cdc4c859dca6399da9462b9c91b5ce7a1b1d6e2cea44c67"
+    },
+    "/docs/getting-started/terminology": {
+      "file": "src/pages/docs/getting-started/terminology.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "0abb535486483ce37b7532e4e8b814bc1bc411f33bb1719b0afbfe36e7c081b4"
+    },
+    "/docs/operations/architecture": {
+      "file": "src/pages/docs/operations/architecture.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "95378ac1babc753221f891b23ac1b7da589d9fab2f43f9fd8cc976b3df14dfff"
+    },
+    "/docs/operations/configuration": {
+      "file": "src/pages/docs/operations/configuration.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-08-01",
+      "sha256": "dcf78161c9d44e74638153de0f0b074361ba9ac6a8878a41338d35716860d755"
+    },
+    "/docs/operations/day-two": {
+      "file": "src/pages/docs/operations/day-two.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "6f82683c8823a309bf7ceabc9115c3f82da189341f66a774315d2c3d3c00fc1f"
+    },
+    "/docs/operations/monitoring": {
+      "file": "src/pages/docs/operations/monitoring.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "8f28ff718b35b9c600da263b60057ebd8975ade6f222c52c9a14f6aee1dc8ebc"
+    },
+    "/docs/operations/security": {
+      "file": "src/pages/docs/operations/security.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "892aafebdd33b0c39b51f5c8ae6817e067679e3797d02eaaceee949b6ce13365"
+    },
+    "/docs/reference/statuses": {
+      "file": "src/pages/docs/reference/statuses.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "9f1e546c90f54816d6911a71bb2abd5c72334fe153e4a52849d6a30814abb753"
+    },
+    "/docs/releases": {
+      "file": "src/pages/docs/releases/index.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-08-01",
+      "sha256": "db4c73e5c8a52b1785a19cb695fcacae932cdbe68a66814750b29af5b0368261"
+    },
+    "/docs/releases/compatibility": {
+      "file": "src/pages/docs/releases/compatibility.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "1901b9d61ca33af98a41c41382624e7c07607c6cbaffb112e71718c3e17bbb1f"
+    },
+    "/docs/schema/aurora-restore": {
+      "file": "src/pages/docs/schema/aurora-restore.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "6229361f88865ef443fe5535b240b81cd6d9a2b54793db1e23f822576f13cfa9"
+    },
+    "/docs/schema/codefresh": {
+      "file": "src/pages/docs/schema/codefresh.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "3fa10fd918e625b41feab7103a22d5cffba74ca71eb73b7fccf02a3a417d1f3b"
+    },
+    "/docs/schema/configuration": {
+      "file": "src/pages/docs/schema/configuration.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-08-01",
+      "sha256": "e5af418530f552fd083d0855844e7ed89f49a7c0335d4a4d0d9662d959eb30b8"
+    },
+    "/docs/schema/docker": {
+      "file": "src/pages/docs/schema/docker.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "0cebead1b57cb6f87eb53de1bf15507376e535678bfab1922813682737009638"
+    },
+    "/docs/schema/environment": {
+      "file": "src/pages/docs/schema/environment.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "2ae5e1523d0bb7b3892d572f5db34c609ac09cfd38610e425157cd1ec0681ace"
+    },
+    "/docs/schema/external-http": {
+      "file": "src/pages/docs/schema/external-http.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "166fecf7f0f1a0a0e451f4451e17306cef615a1c01a124e553ce39c851e86065"
+    },
+    "/docs/schema/github": {
+      "file": "src/pages/docs/schema/github.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "6d90c58a426518bc34d557468d91c80088ad64a6784c16eb692bd91c292fd6f3"
+    },
+    "/docs/schema/helm": {
+      "file": "src/pages/docs/schema/helm.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "8e15742511246d8df0a91df004ccbd5b376fa9add9ec5bf1f8123cf0832e9a1d"
+    },
+    "/docs/schema/overview": {
+      "file": "src/pages/docs/schema/overview.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "7e139fbe62aadacded3c7bed3374fe3d86c34c86770a53a824271c35d9dc5e3f"
+    },
+    "/docs/schema/webhooks": {
+      "file": "src/pages/docs/schema/webhooks.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "15b53414913120374ca076b4396cb1fd2987a781ede7921341839973e3681a3f"
+    },
+    "/docs/setup/configure-lifecycle": {
+      "file": "src/pages/docs/setup/configure-lifecycle.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "da07ffe41700f90967f179fb7b65ac7130d90d5650e777ffa3ff77809973285f"
+    },
+    "/docs/setup/create-github-app": {
+      "file": "src/pages/docs/setup/create-github-app.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "638f90b9cc97e49aa17b08d4b14b8940690fd15ba30f9d7eacda75bbaf31deb3"
+    },
+    "/docs/setup/install-lifecycle": {
+      "file": "src/pages/docs/setup/install-lifecycle.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "675a15ac05fef8f53b5cd2e177eb24b1fac1f745e5189ae6d8fc3133d9580a0c"
+    },
+    "/docs/setup/prerequisites": {
+      "file": "src/pages/docs/setup/prerequisites.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "4281e28f958ec899b17ef6727607609e5653863b1cd403cedbf26e2d506f5bd0"
+    },
+    "/docs/setup/setup-infra": {
+      "file": "src/pages/docs/setup/setup-infra.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "d8ffadca7fa1879acbb8767228028cf06f3c9626fa36ba21b6ac534e82f10682"
+    },
+    "/docs/tips/telemetry": {
+      "file": "src/pages/docs/tips/telemetry.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "3db850a9cd8838f2cb9fd3581d897aff17e9b7cc02b3971bb50d1c524f3267a5"
+    },
+    "/docs/tips/using-mission-control": {
+      "file": "src/pages/docs/tips/using-mission-control.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-24",
+      "sha256": "bd2d05f591c2321894649ee20489379594ee668e07e78ed9e85f664ce72594b1"
+    },
+    "/docs/troubleshooting": {
+      "file": "src/pages/docs/troubleshooting/index.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-24",
+      "sha256": "121575542a6f0eeb000c5b3dace388b9b02ec2a34e745de1b6a83be068f9b397"
+    },
+    "/docs/troubleshooting/access-and-api": {
+      "file": "src/pages/docs/troubleshooting/access-and-api.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-24",
+      "sha256": "90266f91972e88f323196a84db38ffa4ca0b6562b40dcb501ddc40ac9b5a443a"
+    },
+    "/docs/troubleshooting/build-issues": {
+      "file": "src/pages/docs/troubleshooting/build-issues.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-24",
+      "sha256": "e0e56dd4687dc250a63ad88c978b1a55e95d5756d7501fc5175358e4da798453"
+    },
+    "/docs/troubleshooting/deploy-issues": {
+      "file": "src/pages/docs/troubleshooting/deploy-issues.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-24",
+      "sha256": "d5d101e74cab84ef57079865d027370e604f9afdd3135b6a0a893094c6534e91"
+    },
+    "/docs/troubleshooting/github-app-webhooks": {
+      "file": "src/pages/docs/troubleshooting/github-app-webhooks.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-24",
+      "sha256": "369cf931c1dedf0b7a5ee1915256f573320144db64f5c8dc0ffaba6b0cf7a49a"
+    },
+    "/docs/troubleshooting/stuck-environment": {
+      "file": "src/pages/docs/troubleshooting/stuck-environment.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "a6fb2730cb2e2a790b3fa60b44262485a26288a56a5c487ed65db8d77e88bd55"
+    },
+    "/docs/what-is-lifecycle": {
+      "file": "src/pages/docs/what-is-lifecycle.mdx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-25",
+      "sha256": "862c7c055e26b81214de6bc67851bdfc1b4e94851fab1a53b6d51771f6003b6f"
+    }
+  },
+  "surfaces": {
+    "navigation:/": {
+      "file": "src/pages/_meta.ts",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-24",
+      "sha256": "938d828e4bfadebd36f42d46f1c7179e67e3c6392d5b547d35f61b75a8f32a47"
+    },
+    "navigation:/docs": {
+      "file": "src/pages/docs/_meta.ts",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-24",
+      "sha256": "91cb82f6d854583230b2bd31f748bbcbbf27f6c89b62dbffd0a54b05f30a34e0"
+    },
+    "navigation:/docs/api": {
+      "file": "src/pages/docs/api/_meta.ts",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-24",
+      "sha256": "5daaf80fab18bbc39c5e61cbb87c1e3982073f49762a013ab13dd1e920537096"
+    },
+    "navigation:/docs/api-authentication": {
+      "file": "src/pages/docs/api-authentication/_meta.ts",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-24",
+      "sha256": "0cc155f6a10b2eed69130667b87d8d5c727c9405725a6a9bf823082434717601"
+    },
+    "navigation:/docs/features": {
+      "file": "src/pages/docs/features/_meta.ts",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-08-01",
+      "sha256": "c9f3976a1784098cd78e6ff983b41716c1b092a3e499e1c99026bcabcadeb6b8"
+    },
+    "navigation:/docs/getting-started": {
+      "file": "src/pages/docs/getting-started/_meta.ts",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-24",
+      "sha256": "2c14dd06201f896050d9b9e31e6529cd3c0f015c1ea9755cb345e7e6b85367d7"
+    },
+    "navigation:/docs/operations": {
+      "file": "src/pages/docs/operations/_meta.ts",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-24",
+      "sha256": "2d6d4446e4934f8d04034a668ead60fc3acaa021ff7c97a7a7fd35b9a99a9f80"
+    },
+    "navigation:/docs/reference": {
+      "file": "src/pages/docs/reference/_meta.ts",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-24",
+      "sha256": "2f0e10969ad4580b91c720127824ee839722b6945b81387eb0d3567cecc28ea9"
+    },
+    "navigation:/docs/releases": {
+      "file": "src/pages/docs/releases/_meta.ts",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-24",
+      "sha256": "b48afe0e55e7cc786c8ceacc908cc32889479778af3621f6591874d5346a0dd5"
+    },
+    "navigation:/docs/schema": {
+      "file": "src/pages/docs/schema/_meta.ts",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-24",
+      "sha256": "bb9d40d6f76628dbf7b02b560f73b5b2a7796deed7db05e4976eba9303e3a11f"
+    },
+    "navigation:/docs/setup": {
+      "file": "src/pages/docs/setup/_meta.ts",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-24",
+      "sha256": "75696ccc95304e52455775f63e2674af41345dc4710ed7fc396e7dd3314c6bd4"
+    },
+    "navigation:/docs/tips": {
+      "file": "src/pages/docs/tips/_meta.ts",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-24",
+      "sha256": "be9cd78ce9140f3f813d18b60e7474801db6c7d6ee182569dea19a7c6755b209"
+    },
+    "navigation:/docs/troubleshooting": {
+      "file": "src/pages/docs/troubleshooting/_meta.ts",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-24",
+      "sha256": "2dd61f939bffd5c7e7a55e45b35afd24af071229e05e6fe06e3915ad0f6b9e97"
+    },
+    "site-chrome:footer": {
+      "file": "src/components/site-footer/index.tsx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-24",
+      "sha256": "6f7323a479f6c6b5e303f69d5e6d83caae0c7f4bd43232502ac0aba946f8e2c6"
+    },
+    "site-chrome:theme": {
+      "file": "src/theme.config.tsx",
+      "profile": "asd-ste100",
+      "reviewedOn": "2026-07-24",
+      "sha256": "a5d21a5e718c568406303219afde508fc5f0cb172fc42b623bf8b27e14f6c4f8"
+    }
+  }
+}

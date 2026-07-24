@@ -1,5 +1,11 @@
 ---
-title: Configure Application
+title: Create the GitHub App
+description: Create and connect a private GitHub App for Lifecycle.
+audience:
+  - platform-operator
+lastVerified: "2026-07-24"
+verificationBaseline: "2026-07-24-comprehensive-audit"
+contentProfile: asd-ste100
 tags:
   - github
   - app
@@ -7,137 +13,125 @@ tags:
   - setup
 ---
 
-import { Callout } from "nextra/components";
-import { Image } from "@lifecycle-docs/components";
+import { Callout, Steps } from "nextra/components";
 
-## Configure BuildKit Endpoint
+Lifecycle creates a private GitHub App from a generated manifest. Before
+approval, examine the manifest. Install the App only on intended repositories.
+Continue configuration in Lifecycle.
 
-Before creating the GitHub app, you need to configure the BuildKit endpoint in the database:
+## Before you start
+
+- Lifecycle's API, UI, identity, DNS, and TLS checks are healthy.
+- You can administer the GitHub account or organization that will own the App.
+- Your organization has approved the listed permissions and webhook events.
+- One or more repositories are ready to grant to the App.
+
+## What Lifecycle requests
+
+Lifecycle derives the webhook and setup URLs from its configured public
+application host:
+
+| Manifest field   | Generated destination                                           |
+| ---------------- | --------------------------------------------------------------- |
+| Webhook          | `https://app.lifecycle.example.org/api/webhooks/github`         |
+| Setup completion | `https://app.lifecycle.example.org/api/v1/setup/installed`      |
+| Setup redirect   | `https://app.lifecycle.example.org/api/v1/setup/callback`       |
+| Sign-in callback | The GitHub broker callback configured for the identity provider |
+
+`app.lifecycle.example.org` is a documentation-only hostname. The generated
+manifest uses your deployment's configured host and creates a **private**
+GitHub App.
+
+The generated manifest requests these repository and organization permissions:
+
+| Permission    | Level | Why Lifecycle requests it                                              |
+| ------------- | ----- | ---------------------------------------------------------------------- |
+| Contents      | Write | Read Lifecycle configuration and update approved repository files      |
+| Workflows     | Write | Update `.github/workflows/*` during an approved repository-file change |
+| Pull requests | Write | Read and update the pull-request workflow                              |
+| Issues        | Write | Create and update issue-style pull-request comments and labels         |
+| Deployments   | Write | Publish deployment-related state                                       |
+| Statuses      | Read  | Read repository commit-status context                                  |
+| Metadata      | Read  | Identify repositories and their metadata                               |
+| Members       | Read  | Resolve organization membership                                        |
+| Emails        | Read  | Resolve the GitHub user identity                                       |
+
+The App subscribes to:
+
+```text
+issues
+issue_comment
+label
+membership
+organization
+repository
+public
+pull_request
+push
+team
+```
 
 <Callout type="warning">
-  Set the `HELM_RELEASE` environment variable to your actual Helm release name
-  before running the commands below.
+  **Workflows: write** and the other write permissions are consequential. The
+  generated App requests them for installations that do not use all related
+  features. If your organization cannot approve that boundary, stop. Examine it
+  with the Lifecycle deployment owner. Removing a permission can make enabled
+  workflows not fully functional.
 </Callout>
 
-<Callout type="info">
-  The following commands will create the `buildkit` object and `endpoint`
-  configuration if they don't exist, or update them if they do.
-</Callout>
+## App creation and installation
 
-### Option 1: Using kubectl exec with psql
+<Steps>
 
-Execute the following commands to connect to the PostgreSQL pod and run the query:
+### Open Lifecycle setup
 
-```bash
-# Set your Helm release name (replace with your actual release name)
-export HELM_RELEASE=<YOUR-HELM-RELEASE>
+Open `https://app.lifecycle.example.org/setup`, replacing the documentation
+hostname with your Lifecycle API host.
 
-# Get the database password from the secret
-export PGPASSWORD=$(kubectl get secret ${HELM_RELEASE}-postgres -n lifecycle-app -o jsonpath='{.data.POSTGRES_USER_PASSWORD}' | base64 -d)
+Select **Personal** or **Organization** for the account that owns the App.
 
-# Run the query
-kubectl exec -it ${HELM_RELEASE}-postgres-0 -n lifecycle-app -- env PGPASSWORD=$PGPASSWORD psql -U lifecycle -d lifecycle -c "
-UPDATE global_config
-SET config = jsonb_set(
-    jsonb_set(
-        COALESCE(config::jsonb, '{}'::jsonb),
-        '{buildkit}',
-        COALESCE(config::jsonb->'buildkit', '{}'::jsonb),
-        true
-    ),
-    '{buildkit,endpoint}',
-    '\"tcp://${HELM_RELEASE}-buildkit.lifecycle-app.svc.cluster.local:1234\"'::jsonb,
-    true
-),
-\"updatedAt\" = NOW()
-WHERE key = 'buildDefaults';"
-```
+### Name the App
 
-### Option 2: Direct SQL query
+Enter a unique GitHub App name. GitHub App names can contain letters, numbers,
+and hyphens. Lifecycle accepts at most 34 characters. For an organization-owned
+App, enter the organization login.
 
-If you have direct database access, run the following SQL query (replace `<YOUR-HELM-RELEASE>` with your actual Helm release name):
+Select **Create App**. Lifecycle sends the generated manifest to GitHub.
 
-```sql
-UPDATE global_config
-SET config = jsonb_set(
-    jsonb_set(
-        COALESCE(config::jsonb, '{}'::jsonb),
-        '{buildkit}',
-        COALESCE(config::jsonb->'buildkit', '{}'::jsonb),
-        true
-    ),
-    '{buildkit,endpoint}',
-    '"tcp://<YOUR-HELM-RELEASE>-buildkit.lifecycle-app.svc.cluster.local:1234"'::jsonb,
-    true
-),
-"updatedAt" = NOW()
-WHERE key = 'buildDefaults';
-```
+### Examine the GitHub manifest
 
-### Configure Build Pod Annotations
+Make sure that the owner, callback URLs, permissions, and events agree with the
+approved values. Create the App.
 
-Build pods automatically include the `cluster-autoscaler.kubernetes.io/safe-to-evict: "false"` annotation to prevent eviction during cluster scale-down.
+### Select repository access
 
-You can add custom annotations in two ways:
+Install the App on the repositories that Lifecycle can use.
+Selecting only approved repositories is narrower than granting all current
+and future repositories in the account.
 
-- **Per-service:** Set `podAnnotations` in the `docker.builder` section of your `lifecycle.yaml`. See the [GitHub service schema](/docs/schema/github#dockerbuilder) for details.
-- **Globally:** Set `podAnnotations` in the `buildDefaults` row of the `global_config` table. These apply to all build jobs and can be overridden per-service.
+Before setup can continue, select one or more repositories.
 
-The hardcoded `safe-to-evict` annotation always takes final precedence and cannot be overridden.
+### Continue in Lifecycle
 
-### Refresh Configuration Cache
+After GitHub returns to Lifecycle, make sure that the installed state is
+correct. Select **Configure and Restart**. Before you continue, wait for healthy
+Lifecycle workloads and UI.
 
-After running either option above, refresh the configuration cache:
+</Steps>
 
-```bash
-curl -X 'PUT' \
-  'https://app.<your_domain>/api/v1/config/cache' \
-  -H 'accept: application/json'
-```
+## Test the connection
 
-Replace `<your_domain>` with your actual domain (e.g., `0env.com`).
+1. In GitHub, make sure that the App installation lists the intended
+   repositories.
+2. In Lifecycle, open `/onboard`.
+3. Make sure that an installed repository is available.
+4. [Onboard the repository](/docs/getting-started/onboard-repository).
+5. Open a pull request with a valid `lifecycle.yaml`.
+6. Make sure that Lifecycle receives the webhook.
+7. Make sure that Lifecycle creates the Mission Control comment.
 
-## Create GitHub App
+Installing the GitHub App and onboarding a repository are different actions. If
+GitHub shows the installed App but Lifecycle does not show a repository, examine
+the App's repository access before changing Lifecycle configuration.
 
-To create a Github app that will send events to the Lifecycle with necessary permissions, follow these steps:
-
-<Callout type="info">
-  Make sure you have admin access to the Github organization or account where
-  you want to create the app.
-</Callout>
-
-- Navigate to your installed Lifecycle app at `https://app.<your_domain>/setup` (replace `<your_domain>` with your actual domain. e.g. `https://app.0env.com/setup`).
-  <Image src="/setup/github-app-setup.png" width={1872} height={1068} />
-- Select `Personal` or `Organization` based on your needs.
-- Fill in the required fields:
-
-  - **Github App Name**: A name for your app. (should be unique, use a prefix with your name or organization. Refer Github app naming convention [here](https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/)
-  - **Organization Name**: Github organization name where the app will be created. Required if you selected `Organization`.
-
-- Click `Create App`
-- On the Github app creation page, confirm the app name and click `Create`
-- Once the app is created, you will be redirected to the app installation page where you can choose one or more repositories to install the the newly minted app.
-
-  <Callout type="info">
-    Make sure to select the repositories you want the app to have access to. You
-    can always change this later in the app settings but **adding atleast one
-    repository is required to proceed with the setup**.
-  </Callout>
-
-  <br />
-
-- Voila! 🎉 Your Github app is now created and installed.
-
-<Image src="/setup/github-app-installed.png" width={1902} height={1088} />
-
-- Click `Configure and Restart` to apply the changes and start using the app.
-
-<Callout type="info">
-  The step above, sets up the global config values that Lifecycle app will use
-  creating ephemeral environments and processing pull requests. And restarts the
-  `deployment` for the github app secrets to take effect.
-</Callout>
-
----
-
-Let's move on the final step where we will configure the Lifecycle app config for processing pull requests and creating ephemeral environments.
+Continue with [repository onboarding](/docs/getting-started/onboard-repository).

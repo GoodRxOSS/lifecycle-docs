@@ -1,5 +1,11 @@
 ---
 title: Terminology
+description: Canonical Lifecycle terms for Environments, Services, deployments, and automation.
+audience:
+  - application-developer
+lastVerified: "2026-07-24"
+verificationBaseline: "2026-07-24-comprehensive-audit"
+contentProfile: asd-ste100
 tags:
   - build
   - terminology
@@ -12,49 +18,69 @@ tags:
   - review
 ---
 
-This glossary provides an overview of key Lifecycle concepts and terminology. Let's see how they fit into the environment setup and deployment process.
+When you read the UI and documentation, use these terms. Some APIs and CLI
+commands use legacy names for compatibility. These sections identify the
+compatibility terms.
 
 ## Repository
 
-A **repository** refers to a GitHub repository. Each environment that is built **must** have a default repository and an associated pull request.
+A **repository** is a GitHub repository that contains application source or a
+`lifecycle.yaml` configuration. A pull request is one Environment source.
+Static and API-created Environments are not tied to a pull request.
 
 ## Service
 
-A **service** is a deployable artifact. It can be a Docker container, CI pipeline, RDS database, or Helm chart. A single repository can contain multiple services.
+A **Service** is a named unit in `lifecycle.yaml`. Service types include GitHub
+source builds, pre-built Docker images, Helm charts, Codefresh pipelines,
+external HTTP dependencies, Aurora restores, and configuration-only data. A
+single repository can define multiple Services.
 
 **Example:** <br/>
-`frontend-service` and `frontend-cache` are two services required for the frontend application to function correctly.
+The frontend application needs the `frontend-service` and `frontend-cache`
+Services.
 
 ## Environment
 
-An **environment** is a stack of services built and connected together.
+An **Environment** is an isolated set of selected Services and their resolved
+configuration.
 
-- **`defaultServices`** are built and deployed in an environment by default.
-- **`optionalServices`** can be built and deployed only when needed; otherwise, they fallback to the **default static environment**.
+- Lifecycle builds and deploys **`defaultServices`** in an Environment by
+  default.
+- Users can select **`optionalServices`**. If a user does not select an optional
+  Service, its template variables can use a configured `defaultUUID` fallback.
+
+## Environment ID
+
+Lifecycle assigns each Environment a human-readable identifier such as
+`payments-preview` or `dev-0`. APIs, template variables, and the CLI can use
+the name `uuid` or `buildUUID` for compatibility. It is an Environment
+identifier, not an RFC-formatted UUID.
 
 ## Static Environment
 
-A **static environment** is a long-lived environment based on a pull request. It tracks branches from configured services and updates automatically when new changes are merged.
+A **static Environment** is long-lived and can track configured Service
+branches. Cleanup for one pull request does not remove it. It can supply
+fallback endpoints for optional Services.
 
 ## Build
 
-A **build** is the actual instance of the process to build and deploy services within an environment.
-
-- Each build is uniquely identified by Lifecycle using a UUID (e.g., `arm-model-060825` or `dev-0`).
-- A build contains **one deploy per service** in the configuration.
+**Build** is the legacy API and CLI term for an Environment record and its
+current orchestration state. User-facing guidance uses **Environment** unless
+it names a literal command, field, or status.
 
 ## Deploy
 
-A **deploy** manages the build and deployment execution of a service within an environment.
-
-**Example:**<br/>
-In a frontend environment, `frontend-service` and `frontend-cache` are two deploys created for the environment, each mapped to a unique build UUID.
+A **Deploy** is the per-Service execution record in an Environment. It
+tracks the selected branch/image, status, endpoints, and build or deployment
+jobs for one Service.
 
 ## Webhook
 
-Lifecycle can invoke third-party services when a build state changes. Currently, only **Codefresh triggers** are supported.
+A **webhook** runs automation when an Environment reaches `deployed`, `error`,
+or `torn_down`. Lifecycle supports Codefresh pipelines, Docker-image Jobs, and
+command Jobs.
 
 ### Example
 
-- When the build status is `deployed`, trigger end-to-end tests.
-- When the build status is `error`, trigger infrastructure cleanup.
+- When the Environment status is `deployed`, start end-to-end tests.
+- When the Environment status is `error`, start infrastructure cleanup.

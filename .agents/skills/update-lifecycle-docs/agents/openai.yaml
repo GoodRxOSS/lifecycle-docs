@@ -1,0 +1,4 @@
+interface:
+  display_name: "Update Lifecycle Docs"
+  short_description: "Maintain source-verified Lifecycle docs"
+  default_prompt: "Use $update-lifecycle-docs to audit or update Lifecycle documentation with source verification, ASD-STE100 review, raw Markdown parity, and evidence-backed screenshots."

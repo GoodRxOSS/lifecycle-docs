@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "maintenance": {
+    "owner": "@GoodRxOSS/lifecycle-core",
+    "reviewTrigger": "owning-contract-change"
+  },
+  "audiences": [
+    "evaluator",
+    "application-developer",
+    "platform-operator",
+    "administrator",
+    "agent-user",
+    "api-user"
+  ],
+  "supportStatuses": [],
+  "verificationBaselines": {
+    "2026-07-24-comprehensive-audit": {
+      "verifiedOn": "2026-07-24",
+      "sources": {
+        "lifecycle": "9956d3e70a89c81a23c6502d03e237750c3886a4",
+        "lifecycle-ui": "b1df0cd64b4680fb241364be6cab985a2dce1f4f",
+        "lifecycle-cli": "3f8600dca8c97a715c7ae01c3a3087ba934fa4e1",
+        "helm-charts": "4c9504c8a264cfb39e09cb8cc4adbac50188dde7",
+        "lifecycle-opentofu": "b14865912608096379c28ef648f7ed99538b5600"
+      }
+    },
+    "2026-08-01-configuration-schema-fix": {
+      "verifiedOn": "2026-08-01",
+      "sources": {
+        "lifecycle": "9956d3e70a89c81a23c6502d03e237750c3886a4",
+        "lifecycle-ui": "b1df0cd64b4680fb241364be6cab985a2dce1f4f",
+        "lifecycle-cli": "483115e47542b5b210ff416d507ebceaf7dd4932",
+        "helm-charts": "4c9504c8a264cfb39e09cb8cc4adbac50188dde7",
+        "lifecycle-opentofu": "b14865912608096379c28ef648f7ed99538b5600"
+      }
+    },
+    "2026-08-01-lifecycle-mcp-preparation": {
+      "verifiedOn": "2026-08-01",
+      "sources": {
+        "lifecycle": "73b6a27f36c030ed5874a57d9ebf03848657201f",
+        "lifecycle-ui": "03d25cb7940ced77118611674582f88e15f0f7e1",
+        "lifecycle-cli": "483115e47542b5b210ff416d507ebceaf7dd4932",
+        "helm-charts": "c0257d1f88b5b30533f490d12f6293fa465b906c",
+        "lifecycle-opentofu": "b14865912608096379c28ef648f7ed99538b5600"
+      }
+    }
+  }
+}

@@ -1,91 +1,110 @@
 ---
-title: Mission Control comment
-description: >-
-  Use the Mission Control PR Comment to modify and customize your environment
-  directly from the pull request comment.
+title: Use the Mission Control comment
+description: Select Services, change sources, set Environment overrides, and request actions from Lifecycle's editable pull-request comment.
+audience:
+  - application-developer
+lastVerified: "2026-07-24"
+verificationBaseline: "2026-07-24-comprehensive-audit"
+contentProfile: asd-ste100
 tags:
   - pull request
   - comment
-  - mission control
   - environment
-  - pr
 ---
 
 import { Callout } from "nextra/components";
 
-Lifecycle uses **Mission Control PR Comments** to allow users to modify and customize their environments directly from the pull request comment. This enables easy **service selection**, **branch customization**, and **environment variable overrides** without modifying `lifecycle.yaml`.
+Lifecycle's Mission Control comment is a status surface and structured input.
+Edit only the values and checkboxes in this comment. Keep the generated
+headings and the syntax around them so Lifecycle can parse the result.
 
----
+## Select Services
 
-## Selecting and Deselecting Services
-
-Each pull request environment includes **default services** and optional additional services. You can enable or disable services using the checkboxes.
-
-- **Enabled Services** are marked with `[x]`.
-- **Disabled Services** are marked with `[ ]`.
-
-**Example:**
+The comment groups selected default Services and available optional Services.
+Lifecycle enables a checked item:
 
 ```md
-// Default Services
+### Default Services
 
-- [x] frontend: dev-default
-- [x] fastly: main
+- [x] web: main
 
-// Optional Additional Services
+### Optional Services
 
-- [ ] backend-service: main
-- [ ] backend-db: main
-- [ ] backend-cache: main
+- [ ] worker: main
+- [ ] cache: main
 ```
 
-To **enable** a service, change `[ ]` to `[x]`. To **disable** a service, change `[x]` to `[ ]`. As simple as that!
+When possible, check or clear multiple Services in one edit. Each saved
+checkbox change can queue work.
+
+## Change a branch or external URL
+
+For an editable Service, replace the value after its name:
+
+```md
+- [x] web: feature/navigation
+- [x] shared-api: https://api.preview.example
+```
+
+Lifecycle checks whether the Service type accepts a branch or external URL.
+If it restores the previous value, examine the generated comment message and the
+repository configuration.
+
+## Change the Environment ID
+
+The comment uses the historical label **UUID**, but the value is a
+human-readable Environment ID, not an RFC UUID:
+
+```md
+### UUID
+
+url: docs-preview
+```
+
+IDs use 3–50 lowercase letters, numbers, and hyphens. If you change the ID,
+Lifecycle also changes URLs and references that contain it.
+
+## Set temporary Environment variables
+
+Add one runtime override per line:
+
+```md
+### Environment variable overrides
+
+ENV:API_BASE_URL:https://api.preview.example
+ENV:FEATURE_MODE:review
+```
+
+These values apply to this Environment and do not update `lifecycle.yaml`.
+Move a durable non-secret value into repository configuration after the test.
 
 <Callout type="warning">
-  If you need to make multiple selections or deselections at once, use the
-  **Edit Comment** option instead of clicking checkboxes individually. This
-  prevents multiple back-to-back builds, as each selection triggers an event in
-  Lifecycle without deduplication.
+  Do not put secrets in a pull-request comment. Pull-request participants and
+  repository integrations can read comment history. Use a supported cloud-secret
+  reference in the execution paths that resolve it.
 </Callout>
 
-## Choosing a Branch
+## Request actions
 
-To deploy a specific branch for a service, modify the branch name after the service name.
+The generated **Actions** section exposes operations supported for the current
+Environment, such as redeploy. Keep the action text and change only the
+shown checkbox or value.
 
-**Example:**
+An **Options** section appears only for settings that apply to the current
+Environment. For example, a configured CDN Service can expose a purge option.
+Default-branch tracking controls are conditional. Their presence does not mean
+that all Environments can enable tracking from the comment.
 
-```md
-- [x] frontend: feature-branch
-- [x] fastly: main
-```
+## Edit check
 
-This will deploy `frontend` using the `feature-branch` instead of the default branch.
+After you save the comment, complete these steps:
 
-## Overriding Environment Variables
+1. Wait for Lifecycle to update the comment.
+2. Make sure that Lifecycle retained the value.
+3. Open the linked Environment.
+4. Check the queued status.
+5. Use the UI or `lfc builds status <environment-id> --watch` to follow the
+   result.
 
-To set additional environment variables, use the **Override Environment Variables** section in the PR comment.
-
-**Example:**
-
-```md
-// **Override Environment Variables:** _ENV:[KEY]:[VALUE]_
-ENV:API_URL:https://api.custom.dev.0env.com
-ENV:CHIEF_INTERN:ICEYCAKE
-```
-
-This sets `API_URL` and `CHIEF_INTERN` in the environment without modifying the service configuration.
-
-## Override UUID
-
-To set a custom UUID (subdomain) for the environment, use the **Override UUID** section in the PR comment.
-
-```md
-// UUID (Pick your own custom subdomain)
-url: wagon-builder-060825
-```
-
-Replace `wagon-builder-060825` with your desired subdomain. This allows you to customize the environment URL without changing the underlying service configuration.
-
----
-
-Using the **Mission Control PR Comment**, you can easily customize your environment **without modifying code**, making it a flexible way to test and deploy changes dynamically.
+If the comment does not update, see
+[Missing pull-request comment](/docs/troubleshooting/github-app-webhooks).

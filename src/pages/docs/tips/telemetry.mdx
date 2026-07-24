@@ -1,43 +1,92 @@
 ---
-title: Telemetry
+title: Datadog application telemetry
+description: Add standard Datadog labels so Datadog can correlate application telemetry by Environment and Service.
+audience:
+  - application-developer
+  - platform-operator
+lastVerified: "2026-07-24"
+verificationBaseline: "2026-07-24-comprehensive-audit"
+contentProfile: asd-ste100
 tags:
-  - logs
-  - metrics
   - telemetry
   - datadog
-  - observability
+  - kubernetes
 ---
 
-Lifecycle comes with built-in support for Datadog telemetry. To collect logs and metrics from your cluster and deployed applications, install the Datadog Agent and Cluster Agent in your cluster.
+import { Callout } from "nextra/components";
 
-The deployed applications are already configured with the necessary Datadog labels and environment variables for seamless integration:
+Lifecycle can add standard Datadog labels to deployed workloads. Datadog uses
+these labels to correlate application logs, metrics, and traces with a service
+and environment.
 
-**Pod labels:**
+This is application workload telemetry. It is different from pseudonymous
+[Lifecycle CLI usage telemetry](/docs/features/cli-telemetry).
+
+## Understand the label values
+
+For a Service that does not use native Helm, Lifecycle puts these labels on the
+Deployment and its pod template:
 
 ```yaml
-tags.datadoghq.com/env: lifecycle-binlab-zero-101010
-tags.datadoghq.com/service: frontend
-tags.datadoghq.com/version: binlab-zero-101010
+metadata:
+  labels:
+    tags.datadoghq.com/env: "lifecycle-<environment-id>"
+    tags.datadoghq.com/service: "<service-name>"
+    tags.datadoghq.com/version: "<environment-id>"
 ```
 
-**Environment variables:**
+It also sets `DD_ENV`, `DD_SERVICE`, and `DD_VERSION` from these pod labels when
+the application does not set those variables.
 
-```yaml
-- name: DD_ENV
-  valueFrom:
-    fieldRef:
-      apiVersion: v1
-      fieldPath: metadata.labels['tags.datadoghq.com/env']
-- name: DD_SERVICE
-  valueFrom:
-    fieldRef:
-      apiVersion: v1
-      fieldPath: metadata.labels['tags.datadoghq.com/service']
-- name: DD_VERSION
-  valueFrom:
-    fieldRef:
-      apiVersion: v1
-      fieldPath: metadata.labels['tags.datadoghq.com/version']
+## Add labels to a native Helm chart
+
+Lifecycle cannot add labels to an arbitrary native Helm chart. The chart must
+put them on the pod template. For example, a chart can define these values:
+
+```yaml filename="templates/deployment.yaml"
+spec:
+  template:
+    metadata:
+      labels:
+        tags.datadoghq.com/env: { { .Values.datadog.environment | quote } }
+        tags.datadoghq.com/service: { { .Values.datadog.service | quote } }
+        tags.datadoghq.com/version: { { .Values.datadog.version | quote } }
 ```
 
-This setup ensures that Datadog automatically detects the environment, service, and version for each application, enabling rich observability and correlation of logs and metrics in the Datadog platform.
+Then, pass the Lifecycle values through that chart's `values` contract:
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "web"
+    helm:
+      deploymentMethod: "native"
+      repository: "example-org/example-app"
+      branchName: "main"
+      chart:
+        name: "./charts/web"
+        values:
+          - "datadog.environment=lifecycle-{{{buildUUID}}}"
+          - "datadog.service=web"
+          - "datadog.version={{{buildUUID}}}"
+```
+
+Use the value names that your chart defines. Keep the labels on the pod
+template. Datadog agents observe pods, not only the parent Deployment object.
+
+## Rendered-value check
+
+1. Deploy the chart through Lifecycle.
+2. Examine the rendered workload and pod labels.
+3. Make sure that the Environment ID and Service name values exist.
+4. Make sure that the values do not contain credentials or other sensitive
+   data.
+5. Query the related tags in your organization's Datadog account.
+
+If a field is empty, examine the chart's value names and the generated Helm
+values for that Environment.
+
+<Callout type="info">
+  These labels help Datadog correlate telemetry. They do not install or
+  configure a Datadog agent. Your platform team must supply the collection
+  pipeline and retention policy.
+</Callout>

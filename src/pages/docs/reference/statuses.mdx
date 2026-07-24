@@ -1,0 +1,72 @@
+---
+title: Environment and Service statuses
+description: Interpret Lifecycle Environment, build, deployment, and Service states. Select the correct response.
+audience:
+  - application-developer
+  - api-user
+  - platform-operator
+lastVerified: "2026-07-24"
+verificationBaseline: "2026-07-24-comprehensive-audit"
+contentProfile: asd-ste100
+tags:
+  - reference
+  - status
+  - troubleshooting
+---
+
+Lifecycle reports an overall Environment status. It also reports a status for
+each Service. UI labels use title case. API, CLI, and webhook values use these
+lowercase forms.
+
+## Environment statuses
+
+| API value      | Meaning                                                | Typical response                                              |
+| -------------- | ------------------------------------------------------ | ------------------------------------------------------------- |
+| `pending`      | The Environment exists. Lifecycle has not queued work. | If it does not move, examine policy or worker health.         |
+| `queued`       | Lifecycle accepted the request and queued work.        | If it stays stale, contact an operator to examine queue work. |
+| `building`     | One or more Services make an image or artifact.        | If progress stops, open the Service's Build view.             |
+| `built`        | Necessary build work completed.                        | Deployment usually follows.                                   |
+| `deploying`    | Lifecycle is applying or waiting on workloads.         | Open Deploy, then Pods, for the affected Service.             |
+| `deployed`     | The Environment completed deployment.                  | Make sure necessary Services are **Ready**.                   |
+| `tearing_down` | Cleanup is in progress.                                | Before you use the Environment ID again, wait for cleanup.    |
+| `torn_down`    | Cleanup completed.                                     | No Environment operates.                                      |
+| `config_error` | Lifecycle could not validate or resolve configuration. | Correct `lifecycle.yaml` or repository access.                |
+| `error`        | The Environment ended in a terminal failure.           | Select the Service with the failure. Identify its phase.      |
+
+## Service statuses
+
+Services can report the applicable Environment states. They can also report
+`cloning`, `waiting`, `ready`, `build_failed`, and `deploy_failed`.
+
+| API value       | Meaning                                                                |
+| --------------- | ---------------------------------------------------------------------- |
+| `cloning`       | Lifecycle is fetching source.                                          |
+| `waiting`       | The Service is waiting for a dependency or different deployment level. |
+| `ready`         | The deployed workload passed its readiness condition.                  |
+| `build_failed`  | The build phase made no deployable artifact.                           |
+| `deploy_failed` | Deployment or readiness failed after the build phase.                  |
+
+An overall **Deployed** Environment can contain a Service that is not
+**Ready**. Make sure the Services for your test are ready. Do not use only the
+aggregate status.
+
+## Webhook states
+
+A webhook can start only for these `environment.webhooks[].state` values:
+
+- `deployed`
+- `error`
+- `torn_down`
+
+Use these lowercase values. A different value does not start a webhook.
+
+## Terminal and transitional states
+
+`deployed`, `torn_down`, `config_error`, and `error` are terminal for an
+Environment attempt. A subsequent push, redeploy, or teardown can start a new
+transition. `build_failed` and `deploy_failed` are terminal for the affected
+Service attempt.
+
+See [build troubleshooting](/docs/troubleshooting/build-issues) and
+[deployment troubleshooting](/docs/troubleshooting/deploy-issues) for the
+phase-specific recovery path.

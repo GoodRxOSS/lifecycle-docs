@@ -1,0 +1,98 @@
+---
+title: Use the Lifecycle UI
+description: Use the web UI to find Environments, examine Services and logs, run actions, and examine webhooks.
+audience:
+  - application-developer
+  - platform-operator
+lastVerified: "2026-07-24"
+verificationBaseline: "2026-07-24-comprehensive-audit"
+contentProfile: asd-ste100
+tags:
+  - ui
+  - environment
+  - logs
+---
+
+import { Callout } from "nextra/components";
+import { Image } from "@lifecycle-docs/components";
+
+Use the Lifecycle UI to find the Environment that has a problem. Identify the
+failed Service and phase. Then select the applicable action.
+
+## Find an Environment
+
+Open **Environments** in the sidebar.
+
+- **My envs** starts with Environments for your linked GitHub identity. Select
+  **All envs** for the wider list.
+- Search by Environment ID, repository, pull request, branch, or author.
+- Filter by status to isolate active or failed Environments.
+- Pin an Environment you use often.
+- **New environment** creates an API-style Environment without a pull request
+  when an administrator enables that feature.
+
+If **New environment** says **Turned off by your admin**, use a pull request. An
+administrator can give information about API Environment access.
+
+<Image
+  src="/docs/features/lifecycle-ui/environment-list.png"
+  alt="Environments list with one torn-down Environment, search, scope controls, status filters, and the pin control."
+  width={1184}
+  height={386}
+  ratio={1184 / 386}
+/>
+
+If **New environment** is disabled, pull-request Environments continue to work.
+
+## Read Environment and Service status
+
+Open an Environment row. The Environment status summarizes the full run.
+Select a Service to see its build and deployment state.
+
+| Question                             | Open                 |
+| ------------------------------------ | -------------------- |
+| What is running and where?           | **Summary**          |
+| Why did the image build fail?        | **Console → Build**  |
+| Why did the workload fail to deploy? | **Console → Deploy** |
+| What is the application emitting?    | **Console → Pods**   |
+| Did an Environment webhook run?      | **Webhooks**         |
+
+Read the earliest actionable failure in the matching phase before retrying.
+See [status vocabulary](/docs/reference/statuses) for terminal and transitional
+states.
+
+## Change runtime Environment variables
+
+Use the Environment variable override dialog for an Environment-specific value.
+Overrides do not update `lifecycle.yaml`. Record shared configuration in the
+repository.
+
+Do not paste secrets into a screenshot, issue, or support message. Use the
+deployment's [cloud-secret reference](/docs/features/secrets) where that
+execution path supports it.
+
+## Run an action
+
+The **Actions** menu can expose:
+
+- **Redeploy** queues the Environment again.
+- **Destroy** tears down a non-static Environment.
+- **Update UUID** changes the human-readable Environment ID.
+- **Run webhooks** invokes the Environment's configured webhook actions.
+
+Your permissions and Environment state control the available actions. For a
+static Environment redeploy, you must type the requested text. You must unpin a
+static Environment before you destroy it.
+
+<Callout type="warning">
+  Redeploy and Destroy change running infrastructure. Before you continue, make
+  sure of the Environment ID and current state.
+</Callout>
+
+## Next steps
+
+- [Create a pull-request Environment](/docs/getting-started/create-environment)
+- [Create a PR-less Environment](/docs/features/api-environments)
+- [Troubleshoot a build](/docs/troubleshooting/build-issues)
+- [Troubleshoot a deployment](/docs/troubleshooting/deploy-issues)
+- [Configure and examine webhooks](/docs/features/webhooks)

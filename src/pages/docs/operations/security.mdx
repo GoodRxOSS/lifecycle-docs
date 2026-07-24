@@ -1,0 +1,63 @@
+---
+title: Security boundaries
+description: Understand Lifecycle authentication, network, Kubernetes, secret, and Agent boundaries before other networks can reach a deployment.
+audience:
+  - platform-operator
+lastVerified: "2026-07-24"
+verificationBaseline: "2026-07-24-comprehensive-audit"
+contentProfile: asd-ste100
+tags:
+  - operator
+  - security
+  - authentication
+---
+
+import { Callout } from "nextra/components";
+
+The default chart configuration is not a production security profile. Complete
+the following inspection before users or shared networks can reach Lifecycle.
+
+## Authentication boundary
+
+<Callout type="error">
+  Use `ENABLE_AUTH=false` only for an isolated local evaluation. With this
+  value, requests get administrator permissions, and API-key bearer tokens do
+  not work. Do not make this configuration reachable from a shared network.
+</Callout>
+
+The stock installation is not a complete authentication-on profile for
+shared-network exposure. Before exposure, use a versioned authentication
+procedure for the installed release. The procedure must protect the API, UI,
+and identity provider together. If the release does not supply this procedure,
+keep the deployment isolated.
+
+After configuration, test browser sessions, API bearer tokens, API keys, roles,
+and user synchronization.
+
+## Predeployment inspection
+
+| Boundary        | Check                                                                                                              |
+| --------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Kubernetes RBAC | The chart's default ClusterRole uses wildcard permissions.                                                         |
+| Network         | Web and worker NetworkPolicies default off.                                                                        |
+| Pod security    | Default container settings are not a hardened restricted profile.                                                  |
+| Ingress and TLS | Core API, UI, auth, wildcard Environment, and optional Site hosts have different exposure needs.                   |
+| Secrets         | Helm values/history and broad diagnostic commands can leak credentials.                                            |
+| Encryption key  | A Secret contains the generated 64-hex-character key. Lifecycle needs the key to decrypt stored ciphertext.        |
+| GitHub App      | Requested write permissions and webhook events must agree with enabled capabilities.                               |
+| API             | Use authenticated v2. Reachable v1 endpoints are not a supported automation interface.                             |
+| Agents and MCP  | Tool permissions, approvals, external connections, workspace egress, and session review expand the trust boundary. |
+| Backups         | Recovery must include database, key material, and object storage together.                                         |
+
+## Vulnerability reporting
+
+No private vulnerability-reporting channel is published. Do not post suspected
+vulnerabilities, tokens, private logs, or exploit details in a public issue.
+Contact your deployment owner through an approved private channel.
+
+## Related guidance
+
+- [Authentication](/docs/features/authentication)
+- [API keys](/docs/api-authentication/api-keys)
+- [Lifecycle architecture](/docs/operations/architecture)
+- [Day-two operations](/docs/operations/day-two)

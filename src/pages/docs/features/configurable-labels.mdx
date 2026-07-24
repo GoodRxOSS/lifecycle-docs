@@ -1,5 +1,12 @@
 ---
 title: Configurable Labels
+description: Use deployment-specific GitHub labels to control Environments, cleanup, and status comments.
+audience:
+  - application-developer
+  - platform-operator
+lastVerified: "2026-07-24"
+verificationBaseline: "2026-07-24-comprehensive-audit"
+contentProfile: asd-ste100
 tags:
   - labels
   - configuration
@@ -7,78 +14,73 @@ tags:
   - disabled
   - keep
   - status-comments
-  - global-config
 ---
 
 import { Callout } from "nextra/components";
 
-Lifecycle allows you to customize the GitHub labels that control environment deployments, TTL behavior, and status comments through the `global_config.labels` configuration.
+Lifecycle uses GitHub labels to control pull-request Environments and comments.
+The label names can differ between deployments.
 
-## Configuration
-
-The labels configuration is stored in the `global_config` table with the key `labels`:
-
-```json
-{
-  "deploy": ["lifecycle-deploy!", "lfc-deploy"],
-  "disabled": ["lifecycle-disabled!", "lfc-skip"],
-  "keep": ["lifecycle-keep!", "lfc-keep"],
-  "statusComments": ["lifecycle-status-comments!"],
-  "defaultStatusComments": true,
-  "defaultControlComments": true
-}
-```
-
-### `deploy`
-
-Labels that trigger environment deployment. When any deploy label is added to a PR, Lifecycle creates an ephemeral environment. The first label in the array is used when adding labels programmatically. Supports multiple labels for different teams or naming conventions.
-
-**Default:** `["lifecycle-deploy!"]`
-
-### `disabled`
-
-Labels that prevent or teardown deployments. When any disabled label is added or deploy label is removed, the active environment will be torn down.
-
-**Default:** `["lifecycle-disabled!"]`
-
-### `keep`
-
-Labels that disable TTL cleanup for an environment. When present on a PR, prevents automatic teardown due to inactivity and sets `lfc/ttl-enable: false` on the Kubernetes namespace.
-
-**Default:** `["lifecycle-keep!"]`
-
-### `statusComments`
-
-Labels that control status comment visibility on a per-PR basis. Behavior depends on the `defaultStatusComments` setting.
-
-**Default:** `["lifecycle-status-comments!"]`
-
-### `defaultStatusComments`
-
-Controls whether status comments are enabled by default across all PRs. When `true`, status comments show for all PRs. When `false`, status comments only show when the status comment label is present.
-
-**Default:** `true`
-
-### `defaultControlComments`
-
-Enables or disables control-related comments system-wide.
-
-**Default:** `true`
-
-<Callout type="warning">
-  Changes to label configuration require refreshing the global config cache or
-  waiting for the automatic refresh cycle.
+<Callout type="info">
+  The names on this page are defaults. The deployment owner can provide the
+  names that apply to your deployment.
 </Callout>
 
----
+<Callout type="warning">
+  These settings have no supported UI, typed API, or Helm value. A deployment
+  owner must use a supported operator procedure for the installed release. See
+  [Runtime configuration surfaces](/docs/operations/configuration). If no such
+  procedure exists for the installed release, keep the default labels.
+</Callout>
 
-## Summary
+## Label effects
 
-| Property                 | Type     | Purpose                             |
-| ------------------------ | -------- | ----------------------------------- |
-| `deploy`                 | string[] | Trigger environment deployment      |
-| `disabled`               | string[] | Prevent or teardown deployments     |
-| `keep`                   | string[] | Disable TTL cleanup                 |
-| `statusComments`         | string[] | Control status comment visibility   |
-| `defaultStatusComments`  | boolean  | Enable status comments by default   |
-| `defaultControlComments` | boolean  | Enable control comments system-wide |
+| Default label                | Observable effect                                 |
+| ---------------------------- | ------------------------------------------------- |
+| `lifecycle-deploy!`          | Environment creation and later push redeploys     |
+| `lifecycle-disabled!`        | Prevent or tear down the Environment              |
+| `lifecycle-keep!`            | Prevent cleanup caused by inactivity              |
+| `lifecycle-status-comments!` | Show status comments when they are off by default |
+
+## Deploy or tear down an Environment
+
+If auto-deploy is off, add the deploy label to create an Environment.
+
+To tear down the Environment, do one of these actions:
+
+- Remove the deploy label.
+- Add the disabled label.
+
+Closing the pull request also tears down its Environment. Lifecycle removes the
+deploy label after the pull request closes.
+
+## Keep an inactive Environment
+
+Before the inactivity limit, add the keep label. The label prevents only
+inactivity-based cleanup.
+
+The keep label does not prevent these actions:
+
+- manual teardown
+- teardown after pull-request closure
+- cleanup of an API-created Environment after its lease expires
+
+## Show status comments
+
+Lifecycle can enable status comments by default for a repository. If comments
+are off by default, add the status-comments label to the pull request.
+
+The deployment owner also controls Lifecycle control comments. A pull-request
+label does not override that setting.
+
+## Check a label problem
+
+If a label has no effect:
+
+1. Make sure that you used the configured label name.
+2. Make sure that the label is on the correct pull request.
+3. Check whether the Environment is pull-request or API-created.
+4. Ask the deployment owner to verify the repository label settings.
+
+See [Auto-deploy and labels](/docs/features/auto-deployment) and [Environment
+expiration and cleanup](/docs/features/environment-ttl).

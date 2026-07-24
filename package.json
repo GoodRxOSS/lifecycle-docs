@@ -7,10 +7,17 @@
     "build": "bun run build:prep && bun run build:styles && next build",
     "build:styles": "tailwindcss -i ./src/styles/globals.css -o public/styles.css",
     "build:meta": "bun run ./scripts/generateMeta.ts",
-    "build:tags": "bun run ./scripts/generateTagPages.ts",
-    "build:prep": "bun run clean && bun run build:tags && bun run build:meta",
+    "build:llms": "bun run ./scripts/generateLlms.ts",
+    "build:raw": "bun run ./scripts/generateRawMarkdown.ts",
+    "build:prep": "bun run clean && bun run build:meta && bun run build:llms && bun run build:raw",
+    "check:contracts": "bun run ./scripts/validateContracts.ts",
+    "check:docs": "bun run ./scripts/validateDocs.ts",
+    "check:llms": "bun run ./scripts/generateLlms.ts --check",
+    "check:raw": "bun run ./scripts/generateRawMarkdown.ts --check",
+    "check:screenshots": "bun run ./scripts/validateDocs.ts --screenshots-only",
+    "check:styles": "bun run ./scripts/validateSte100.ts",
     "clean": "rimraf src/pages/tags src/lib/data",
-    "dev": "bun run build:prep && next dev -p 3333",
+    "dev": "bun run build:prep && next dev",
     "deploy": "bun run build && touch out/.nojekyll",
     "start": "next start",
     "lint": "eslint . && next lint",
@@ -22,7 +29,9 @@
     "test": "bun test",
     "test:watch": "bun test --watch",
     "test:coverage": "bun test --coverage",
-    "update": "codependence --update"
+    "update:style-baseline": "bun run ./scripts/validateSte100.ts --update-baseline",
+    "update": "codependence --update",
+    "verify": "bun run lint && bun run typecheck && bun run check:docs && bun run check:styles && bun run check:contracts && bun run check:llms && bun run check:raw && bun run check:screenshots && bun run test && bun run build"
   },
   "dependencies": {
     "@code-hike/mdx": "^0.9.0",
@@ -75,6 +84,7 @@
     "fast-glob": "^3.3.3",
     "globals": "^16.2.0",
     "gray-matter": "^4.0.3",
+    "github-slugger": "^2.0.0",
     "husky": "^9.1.7",
     "js-yaml": "^4.1.0",
     "lint-staged": "^16.1.0",
@@ -84,10 +94,15 @@
     "postcss-import": "^16.1.0",
     "prettier": "^3.5.3",
     "rimraf": "^6.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-mdx": "^3.1.0",
+    "remark-parse": "^11.0.0",
+    "remark-stringify": "^11.0.0",
     "tailwindcss": "^^3.4.15",
     "tailwindcss-animate": "^^1.0.7",
     "typescript": "^5.8.3",
-    "typescript-eslint": "^8.33.0"
+    "typescript-eslint": "^8.33.0",
+    "unified": "^11.0.5"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,md,mdx}": [

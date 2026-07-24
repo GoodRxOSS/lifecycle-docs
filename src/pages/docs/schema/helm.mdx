@@ -1,6 +1,11 @@
 ---
 title: Helm Service
-description: Deploy services using Helm charts - local, OCI, or public repositories
+description: Deploy Services with local, OCI, or public Helm charts.
+audience:
+  - application-developer
+lastVerified: "2026-07-24"
+verificationBaseline: "2026-07-24-comprehensive-audit"
+contentProfile: asd-ste100
 tags:
   - schema
   - helm
@@ -11,17 +16,21 @@ tags:
 import { Callout } from "nextra/components";
 import { Tabs } from "nextra/components";
 
-The `helm` service type deploys applications using Helm charts. It supports local charts, OCI registries, and public Helm repositories. You can optionally include a Docker build step for custom images.
+The `helm` Service type deploys applications with Helm charts. It supports
+local charts, OCI registries, and public Helm repositories. You can include an
+optional Docker build step for custom images.
 
 <Callout type="info">
-  For advanced Helm deployment features like native Helm and environment
-  variable mapping, see the [Native Helm
-  Deployment](/docs/features/native-helm-deployment) guide.
+  Native Helm includes environment variable mapping and advanced deployment
+  features.
 </Callout>
+
+See [Native Helm deployment](/docs/features/native-helm-deployment) for more
+information.
 
 ## Examples
 
-<Tabs items={["Local Chart", "OCI Registry", "Public Bitnami", "Complete"]}>
+<Tabs items={["Local chart", "OCI registry", "Public Bitnami", "All fields"]}>
 
 <Tabs.Tab>
 Local chart with Docker build:
@@ -64,7 +73,7 @@ services:
       docker:
         defaultTag: "main"
         builder:
-          engine: "buildkit" # Options: buildkit (default), codefresh, kaniko
+          engine: "buildkit" # Options: buildkit, kaniko, ci
         app:
           dockerfilePath: "Dockerfile"
           command: "node" # Optional - override entrypoint
@@ -76,8 +85,12 @@ services:
 ```
 
 <Callout type="info">
-  For Helm template variables that should be resolved at deployment time, use triple braces `{{{variable}}}` to prevent Helm from processing them prematurely.
+  Triple braces keep a Lifecycle variable unchanged until deployment.
 </Callout>
+
+For a Lifecycle variable that resolves during deployment, write
+`{{{variable}}}`.
+
 </Tabs.Tab>
 
 <Tabs.Tab>
@@ -110,6 +123,7 @@ chart:
     - "auth.username=myuser"
     - "auth.database=mydb"
 
+---
 # Redis
 chart:
   name: "redis"
@@ -122,7 +136,7 @@ chart:
 </Tabs.Tab>
 
 <Tabs.Tab>
-Complete configuration with all options:
+Expanded configuration with all options:
 
 ```yaml filename="lifecycle.yaml"
 services:
@@ -155,7 +169,7 @@ services:
       docker:
         defaultTag: "main"
         builder:
-          engine: "buildkit" # Options: buildkit (default), codefresh, kaniko
+          engine: "buildkit" # Options: buildkit, kaniko, ci
           resources: # Optional - custom CPU/memory for the build job
             requests:
               cpu: "1"
@@ -185,16 +199,12 @@ services:
 
 </Tabs>
 
-## Chart Configuration
+## Chart configuration
 
-The `chart` section is required and defines which Helm chart to deploy.
+The `chart` section is required and defines which Helm chart to deploy. Set the
+chart fields in the Service configuration.
 
-<Callout type="info">
-  Commonly used charts can be configured in the `global_config` table to reuse
-  chart configuration across multiple services.
-</Callout>
-
-### chart.name (Required)
+### chart.name (required)
 
 The chart name can be one of:
 
@@ -206,11 +216,11 @@ The chart name can be one of:
 
 ### chart.repoUrl
 
-URL of the Helm repository (required for public charts).
+URL of the Helm repository. This field is necessary for public charts.
 
 ### chart.version
 
-Specific chart version to deploy.
+Specified chart version to deploy.
 
 ### chart.values
 
@@ -220,9 +230,11 @@ Array of Helm values in `key=value` format.
 
 Array of value file paths relative to the repository root.
 
-## Docker Configuration
+## Docker configuration
 
-The optional `docker` section defines how to build a custom image. This uses the same configuration as the [GitHub service docker section](/docs/schema/github#docker-configuration).
+The optional `docker` section defines how to build a custom image. Its
+configuration matches the [GitHub Service Docker
+section](/docs/schema/github#docker-configuration).
 
 ### docker.defaultTag
 
@@ -230,50 +242,57 @@ The default Docker image tag, typically matching the branch name.
 
 ### docker.builder
 
-Configuration for the Docker build process. See the [GitHub service docker.builder](/docs/schema/github#dockerbuilder) section for the full reference, including `resources` configuration for build job CPU/memory and details on the `safe-to-evict` pod annotation.
+Configuration for the Docker build operation. See [GitHub Service
+docker.builder](/docs/schema/github#dockerbuilder) for the full field list. That
+section includes the `resources` field and the `safe-to-evict` pod annotation.
 
-| Field                | Type                    | Description                                                                        |
-| -------------------- | ----------------------- | ---------------------------------------------------------------------------------- |
-| `engine`             | string                  | Build engine: `buildkit` (default), `kaniko`, `codefresh`                          |
-| `resources.requests` | object                  | Minimum CPU/memory guaranteed for the build job                                    |
-| `resources.limits`   | object                  | Maximum CPU/memory allowed for the build job                                       |
-| `podAnnotations`     | `Record<string,string>` | Custom annotations applied to the build pod template (merged with global defaults) |
+| Field                | Type                    | Description                                          |
+| -------------------- | ----------------------- | ---------------------------------------------------- |
+| `engine`             | string                  | Build engine: `buildkit`, `kaniko`, or `ci`          |
+| `resources.requests` | object                  | Minimum CPU/memory guaranteed for the build job      |
+| `resources.limits`   | object                  | Maximum CPU/memory allowed for the build job         |
+| `podAnnotations`     | `Record<string,string>` | Custom annotations applied to the build pod template |
 
-### docker.app (Required when using docker)
+### docker.app (required with docker)
 
 Configuration for the main application container:
 
 - `dockerfilePath` - **Required.** Path to Dockerfile relative to repo root
 - `command` - Override container entrypoint
-- `arguments` - Arguments passed to the command. Use `%%SPLIT%%` as a delimiter for spaces (e.g., `-c%%SPLIT%%npm run start`)
+- `arguments` - Arguments passed to the command. Use `%%SPLIT%%` to delimit
+  spaces, for example, `-c%%SPLIT%%npm run start`.
 - `env` - Environment variables
 - `ports` - Exposed container ports
 
-### docker.init (Optional)
+### docker.init (optional)
 
-Configuration for an init container that runs before the main application. Uses the same fields as `docker.app`.
+Configuration for an init container that runs before the main application. The
+init container has the fields from `docker.app`.
 
-## Fields Reference
+## Field reference
 
-| Field              | Type    | Required   | Description                                                                              |
-| ------------------ | ------- | ---------- | ---------------------------------------------------------------------------------------- |
-| `chart.name`       | string  | **Yes**    | Chart name or path                                                                       |
-| `chart.repoUrl`    | string  | For public | Helm repository URL                                                                      |
-| `chart.version`    | string  | No         | Chart version                                                                            |
-| `chart.values`     | array   | No         | Inline Helm values                                                                       |
-| `chart.valueFiles` | array   | No         | Value file paths                                                                         |
-| `repository`       | string  | For builds | GitHub repository                                                                        |
-| `branchName`       | string  | For builds | Branch to build from                                                                     |
-| `docker`           | object  | No         | Docker build config                                                                      |
-| `args`             | string  | No         | Additional Helm arguments                                                                |
-| `version`          | string  | No         | Helm CLI version                                                                         |
-| `deploymentMethod` | string  | No         | `"native"` or `"ci"`                                                                     |
-| `envLens`          | boolean | No         | Enable environment lens ingress banner. Overrides the global `features.envLens` default. |
+| Field                        | Type    | Required   | Description                                                    |
+| ---------------------------- | ------- | ---------- | -------------------------------------------------------------- |
+| `chart.name`                 | string  | **Yes**    | Chart name or path                                             |
+| `chart.repoUrl`              | string  | For public | Helm repository URL                                            |
+| `chart.version`              | string  | No         | Chart version                                                  |
+| `chart.values`               | array   | No         | Inline Helm values                                             |
+| `chart.valueFiles`           | array   | No         | Value file paths                                               |
+| `repository`                 | string  | For builds | GitHub repository                                              |
+| `branchName`                 | string  | For builds | Branch to build from                                           |
+| `docker`                     | object  | No         | Docker build config                                            |
+| `args`                       | string  | No         | More Helm arguments                                            |
+| `version`                    | string  | No         | Helm CLI version                                               |
+| `deploymentMethod`           | string  | No         | `"native"` or `"ci"`                                           |
+| `envLens`                    | boolean | No         | Enable the Environment Lens ingress banner                     |
+| `grpc`                       | boolean | No         | Enable gRPC behavior for the Helm Service                      |
+| `disableIngressHost`         | boolean | No         | Disable Lifecycle's generated ingress host                     |
+| `overrideDefaultIpWhitelist` | boolean | No         | Let the Service configuration replace the default IP whitelist |
 
-## Native Helm Configuration
+## Native Helm configuration
 
-When `deploymentMethod: "native"` is enabled, you can further customize the
-native Helm job with the `nativeHelm` block.
+When `deploymentMethod: "native"` is enabled, configure more native Helm Job
+settings with the `nativeHelm` block.
 
 ```yaml filename="lifecycle.yaml"
 services:
@@ -290,23 +309,31 @@ services:
         name: "./charts/api"
 ```
 
-| Field                             | Type    | Required | Description                                                       |
-| --------------------------------- | ------- | -------- | ----------------------------------------------------------------- |
-| `nativeHelm.postRenderer.enabled` | boolean | No       | Enables or disables an inherited post-renderer                    |
-| `nativeHelm.postRenderer.command` | string  | No       | Executable passed to Helm with `--post-renderer`                  |
-| `nativeHelm.postRenderer.args`    | array   | No       | Arguments passed to Helm as repeated `--post-renderer-args` flags |
+| Field                             | Type    | Required | Description                                                     |
+| --------------------------------- | ------- | -------- | --------------------------------------------------------------- |
+| `nativeHelm.enabled`              | boolean | No       | When no `deploymentMethod` override exists, enable native Helm  |
+| `nativeHelm.defaultHelmVersion`   | string  | No       | Helm version used by the runner                                 |
+| `nativeHelm.jobTimeout`           | number  | No       | Native Helm Job timeout                                         |
+| `nativeHelm.serviceAccount`       | string  | No       | Kubernetes ServiceAccount for the Job                           |
+| `nativeHelm.defaultArgs`          | string  | No       | Default Helm arguments                                          |
+| `nativeHelm.image`                | string  | No       | Custom native Helm runner image                                 |
+| `nativeHelm.postRenderer.enabled` | boolean | No       | Enables or disables an inherited post-renderer                  |
+| `nativeHelm.postRenderer.command` | string  | No       | Executable passed to Helm with `--post-renderer`                |
+| `nativeHelm.postRenderer.args`    | array   | No       | Helm receives one `--post-renderer-args` flag for each argument |
 
-## Templated Variables
+## Templated variables
 
-Use templated variables in chart values to reference dynamic deployment values. See the [Template Variables](/docs/features/template-variables) guide for the complete list.
+Write Lifecycle template variables with triple braces. See the [Template
+variables](/docs/features/template-variables) for the full list.
 
 <Callout type="info">
-  Use triple braces `{{{variable}}}` for Lifecycle template variables. This prevents Helm from trying to process them as Helm template functions.
+  Triple braces `{{{variable}}}` distinguish a Lifecycle variable from a Helm
+  template function.
 </Callout>
 
-## Native Helm Deployment
+## Native Helm deployment
 
-For more control over Helm deployments, enable native Helm:
+To control Helm deployments, enable native Helm:
 
 ```yaml filename="lifecycle.yaml"
 services:
@@ -316,11 +343,8 @@ services:
       # ... rest of config
 ```
 
-Native Helm provides:
+Native Helm runs the deployment as a Kubernetes Job. It streams deployment logs
+and accepts Helm arguments.
 
-- Direct Kubernetes job execution
-- Real-time deployment logs
-- Better handling of concurrent deployments
-- Full Helm argument control
-
-See the [Native Helm Deployment](/docs/features/native-helm-deployment) guide for details.
+See [Native Helm deployment](/docs/features/native-helm-deployment) for more
+information.

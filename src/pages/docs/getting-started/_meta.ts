@@ -15,22 +15,25 @@
  */
 
 export default {
-  "create-environment": {
-    "title": "Create environment"
-  },
-  "explore-environment": {
-    "title": "Explore environment"
-  },
-  "configure-environment": {
-    "title": "Configure environment"
-  },
-  "delete-environment": {
-    "title": "Delete environment"
-  },
-  "explore-static-environment": {
-    "title": "Explore static environment"
-  },
   "terminology": {
     "title": "Terminology"
+  },
+  "onboard-repository": {
+    "title": "Onboard a repository"
+  },
+  "create-environment": {
+    "title": "Create your first Environment"
+  },
+  "explore-environment": {
+    "title": "Explore an Environment"
+  },
+  "configure-environment": {
+    "title": "Configure an Environment"
+  },
+  "delete-environment": {
+    "title": "Delete an Environment"
+  },
+  "explore-static-environment": {
+    "title": "Create a default static Environment"
   }
 };

@@ -1,0 +1,39 @@
+---
+title: Compatibility and deprecation policy
+description: Select compatible Lifecycle components and prepare a safe upgrade or rollback.
+audience:
+  - platform-operator
+  - application-developer
+lastVerified: "2026-07-24"
+verificationBaseline: "2026-07-24-comprehensive-audit"
+contentProfile: asd-ste100
+tags:
+  - release
+  - compatibility
+  - deprecation
+---
+
+Do not assume that all Lifecycle component versions are compatible. A complete
+version matrix, deprecation window, and rollback guarantee are not available.
+
+## Compatibility limits
+
+- Use the component versions that the same umbrella-chart release bundles or
+  explicitly tests.
+- Validate `lifecycle.yaml` with your deployed Lifecycle version. Use that
+  result for the deployment.
+- Do not use an older CLI schema as proof that a newer server accepts a
+  configuration.
+- Do not roll an application binary back across a database migration unless the
+  release explicitly supports it.
+
+## Before an upgrade
+
+1. Record the chart, application, UI, identity service, and CLI versions.
+2. Read the release notes for configuration, API, data, and security changes.
+3. Identify required data or Secret migrations.
+4. Back up the matched application data, configuration, and key material.
+5. Test the upgrade with representative data and enabled features.
+6. Test the documented rollback or restore checkpoint.
+
+Use [Day-two operations](/docs/operations/day-two) for the full procedure.

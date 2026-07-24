@@ -14,23 +14,20 @@
  * limitations under the License.
  */
 
-import { buttonVariants } from "@/components/ui/button";
-import Link from "next/link";
 import { TagsProps } from "@/components/tags/types";
 
 export const TagContent = ({ tags }: TagsProps) => {
   return (
-    <section>
+    <ul className="flex flex-wrap gap-2" aria-label="Page topics">
       {tags.map((tag) => (
-        <Link
+        <li
           key={tag}
-          className={`my-2 mr-4 rounded-md ${buttonVariants({ variant: "outline" })}`}
-          href={`/tags/${tag}`}
+          className="rounded-md border border-border px-2 py-1 text-xs text-muted-foreground"
         >
           {tag}
-        </Link>
+        </li>
       ))}
-    </section>
+    </ul>
   );
 };
 

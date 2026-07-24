@@ -18,4 +18,5 @@ export type IframeProps = {
   border?: boolean;
   panelSize?: number;
   src: string;
+  title: string;
 };

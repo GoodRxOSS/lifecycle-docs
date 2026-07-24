@@ -19,7 +19,7 @@ export default {
     "title": "Authentication"
   },
   "auto-deployment": {
-    "title": "Auto Deploy & Labels"
+    "title": "Auto-deploy and labels"
   },
   "ignore-file-patterns": {
     "title": "Ignore File Patterns"
@@ -31,7 +31,7 @@ export default {
     "title": "Template Variables"
   },
   "build-metadata-links": {
-    "title": "Metadata Links"
+    "title": "Build metadata links"
   },
   "webhooks": {
     "title": "Webhooks"
@@ -40,27 +40,48 @@ export default {
     "title": "Service Dependencies"
   },
   "native-helm-deployment": {
-    "title": "Native Helm Deployment"
+    "title": "Native Helm deployment"
   },
   "secrets": {
-    "title": "Cloud Secrets"
+    "title": "Cloud secrets"
   },
   "environment-ttl": {
-    "title": "Environment TTL"
+    "title": "Environment expiration and cleanup"
+  },
+  "api-environments": {
+    "title": "API-created Environments"
+  },
+  "sites": {
+    "title": "Sites"
   },
   "ai-agent": {
-    "title": "AI Agent"
+    "title": "Lifecycle Agent"
   },
   "ai-agent-configuration": {
-    "title": "AI Agent Configuration"
+    "title": "Configure Lifecycle Agent"
+  },
+  "agent-sessions": {
+    "title": "Agent Sessions"
+  },
+  "agent-administration": {
+    "title": "Agent administration"
+  },
+  "workspace-backends": {
+    "title": "Agent workspace backends"
   },
   "mcp-integration": {
-    "title": "MCP Integration"
+    "title": "Connect external MCP servers"
   },
   "mcp-server": {
-    "title": "MCP Server"
+    "title": "Lifecycle MCP"
   },
   "cli": {
     "title": "CLI (lfc)"
+  },
+  "cli-telemetry": {
+    "title": "Lifecycle CLI telemetry"
+  },
+  "lifecycle-ui": {
+    "title": "Use the Lifecycle UI"
   }
 };

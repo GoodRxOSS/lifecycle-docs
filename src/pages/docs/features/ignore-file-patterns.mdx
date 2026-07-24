@@ -1,6 +1,12 @@
 ---
 title: Ignore File Patterns
-description: Skip unnecessary push redeploys for documentation, metadata, and other non-runtime changes.
+description: Skip push redeploys for documentation, metadata, and other non-runtime changes.
+audience:
+  - application-developer
+  - platform-operator
+lastVerified: "2026-07-24"
+verificationBaseline: "2026-07-24-comprehensive-audit"
+contentProfile: asd-ste100
 tags:
   - ignoreFiles
   - push
@@ -10,16 +16,30 @@ tags:
 
 import { Callout } from "nextra/components";
 
-## Use Case
+## Purpose
 
-Use `ignoreFiles` when changes to certain files should not redeploy an active
-Lifecycle environment. Common examples are docs, generated metadata, examples,
-or workflow files that do not affect a running service.
+When some file changes do not change a running Service, use `ignoreFiles` to
+prevent a redeploy. Examples are documentation, generated
+metadata, examples, and workflow files.
 
 <Callout type="info">
-  Lifecycle skips a push redeploy only when every changed file is ignored by
-  every active affected service. If Lifecycle cannot prove the push is safe to
-  skip, it redeploys.
+  Lifecycle skips a push redeploy only when all active related Services ignore
+  all changed files. If Lifecycle cannot prove the push is safe to skip, it
+  redeploys.
+</Callout>
+
+## Confirm availability
+
+An administrator must enable ignore-file enforcement for the deployment.
+When enforcement is off, Lifecycle redeploys even when all patterns match.
+
+<Callout type="warning">
+  This deployment switch has no supported UI, typed API, or Helm value. An
+  administrator must use a supported operator procedure for the installed
+  release. See [Runtime configuration surfaces](/docs/operations/configuration).
+  If no such procedure exists for the installed release, do not rely on
+  `ignoreFiles`. A correct repository configuration alone does not enable
+  enforcement.
 </Callout>
 
 ## Config
@@ -42,7 +62,7 @@ services:
     ignoreFiles:
       - "openapi/**"
     github:
-      repository: "lifecycle/web-app"
+      repository: "acme/web-app"
       branchName: "main"
       docker:
         defaultTag: "main"
@@ -51,7 +71,7 @@ services:
 
   - name: "frontend"
     github:
-      repository: "lifecycle/web-app"
+      repository: "acme/web-app"
       branchName: "main"
       docker:
         defaultTag: "main"
@@ -61,24 +81,24 @@ services:
 
 This config means:
 
-- `docs/**` and `**/*.md` apply to both `api` and `frontend`.
+- `docs/**` and `**/*.md` apply to `api` and `frontend`.
 - `openapi/**` applies only to `api`.
-- A push that changes only `docs/readme.md` can skip both services.
-- A push that changes only `openapi/schema.yaml` can skip only when every active
-  affected service ignores that path.
+- A push that changes only `docs/readme.md` can skip the two Services.
+- A push that changes only `openapi/schema.yaml` can skip only when all active
+  affected Services ignore that path.
 
 <Callout type="info">
-  Environment patterns are inherited by each service. Service patterns only
-  apply to that service.
+  Each Service inherits the Environment patterns. Service patterns apply only to
+  that Service.
 </Callout>
 
 ## Rules
 
-Patterns are matched against GitHub file paths.
+Lifecycle matches patterns against GitHub file paths.
 
 | Rule             | Example                                      |
 | ---------------- | -------------------------------------------- |
-| Use `/` paths    | `docs/setup.md`, not `docs\\setup.md`        |
+| Use `/` paths    | `docs/setup.md`                              |
 | Repo-relative    | `docs/**`, not `/docs/**`                    |
 | Case-sensitive   | `docs/**` does not match `Docs/guide.md`     |
 | Dotfiles match   | `.github/**` matches `.github/workflows.yml` |
@@ -86,10 +106,15 @@ Patterns are matched against GitHub file paths.
 
 <Callout type="warning">
   Paths are repo-relative and case-sensitive. `docs/**` and `Docs/**` are
-  different paths, and patterns should not start with `/`.
+  different paths. Patterns must not start with `/`.
 </Callout>
 
-Common patterns:
+Each Environment or Service list accepts at most 50 patterns. Each pattern can
+be at most 200 characters, cannot be empty, cannot start with `/`, and cannot
+contain a `..` path segment. Lifecycle redeploys if the policy data is not
+correct.
+
+Example patterns:
 
 ```yaml filename="lifecycle.yaml"
 environment:
@@ -101,45 +126,49 @@ environment:
 ```
 
 <Callout type="warning">
-  Broad patterns like `**/*` are allowed, but use them only when the service
-  should ignore all push file changes from that repo.
+  Lifecycle accepts broad patterns such as `**/*`. Use them only when the
+  Service must ignore all push file changes from that repository.
 </Callout>
 
 ## Active Services
 
-Only active services affected by the pushed repository and branch need matching
+Only active Services that use the pushed repository and branch must match the
 ignore patterns.
 
 <Callout type="info">
-  Optional services only count when they are deployed in the current
-  environment. If `worker` is optional and not deployed, its `ignoreFiles`
-  config does not affect the skip decision.
+  Optional Services count only when they are deployed in the current
+  Environment. If `worker` is optional and not deployed, its `ignoreFiles`
+  config does not change the skip decision.
 </Callout>
 
-If one active affected service does not ignore a changed file, Lifecycle
-redeploys instead of skipping.
+If one active affected Service does not ignore a changed file, Lifecycle
+redeploys.
 
-## Always Redeploys
+## Changes that always cause a redeploy
 
 <Callout type="warning">
-  Lifecycle always redeploys when `lifecycle.yaml` or `lifecycle.yml` changes,
-  when the current deploy is already failing, and for static environments.
+  Lifecycle always redeploys when `lifecycle.yaml`, `lifecycle.yml`,
+  `.lifecycle.yaml`, or `.lifecycle.yml` changes, when the current deploy is in
+  a failure state, and for static Environments. Auto-tracked API Environments
+  also redeploy without this check.
 </Callout>
 
 Lifecycle also redeploys when:
 
-- a changed file does not match every active affected service's ignore patterns
+- a changed file does not match all related active Service ignore patterns
 - Lifecycle cannot safely read the changed file list
 
 ## Debug
 
 If a push redeployed when you expected it to skip, check:
 
-1. Did the push change `lifecycle.yaml` or `lifecycle.yml`?
-2. Did every changed file match the patterns exactly, including casing?
-3. Did every active affected service inherit or define a matching pattern?
-4. Is an optional service currently deployed in the environment?
-5. Is the current deploy already in an error state?
+1. If enforcement status is unknown, ask the deployment owner.
+2. Did the push change a supported Lifecycle configuration filename?
+3. Did all changed files match the patterns and letter case?
+4. Did all related active Services have a matching pattern?
+5. Is an optional Service active in the Environment?
+6. Is the current deploy in an error state?
+7. Is the Environment static or an auto-tracked API Environment?
 
-When in doubt, keep the pattern narrow. It is better to redeploy one extra time
-than to skip a change that affects a running service.
+If you are not sure that a pattern is safe, keep it narrow. One more
+redeploy is safer than a skipped runtime change.

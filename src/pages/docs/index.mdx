@@ -1,12 +1,112 @@
 ---
-title: What is Lifecycle?
-description: Lifecycle is your effortless way to test and create ephemeral environments
+title: Lifecycle documentation
+description: Select a task-oriented path through Lifecycle as an application developer, evaluator, platform operator, API user, or Agent administrator.
+audience:
+  - evaluator
+  - application-developer
+  - platform-operator
+  - agent-user
+  - api-user
+  - administrator
+lastVerified: "2026-08-01"
+verificationBaseline: "2026-08-01-lifecycle-mcp-preparation"
+contentProfile: asd-ste100
 tags:
   - core
   - lifecycle
-  - intro
+  - start
 ---
 
-import WhatIsLifecycle from "./what-is-lifecycle.mdx";
+import { Cards } from "nextra/components";
 
-<WhatIsLifecycle />
+## Create, use, and operate Lifecycle Environments
+
+Select the path that matches your task. An administrator can disable features
+or add role gates. Thus, each guide identifies its applicable prerequisites.
+
+## I develop applications
+
+<Cards>
+  <Cards.Card
+    title="Create my first Environment"
+    href="/docs/getting-started/create-environment"
+  >
+    Onboard a repository. Open a pull request. Make sure that the Services are
+    deployed.
+  </Cards.Card>
+  <Cards.Card title="Use the Lifecycle UI" href="/docs/features/lifecycle-ui">
+    Find Environments. Examine build and deployment logs. Start available
+    actions.
+  </Cards.Card>
+  <Cards.Card title="Configure lifecycle.yaml" href="/docs/schema/overview">
+    Select Services, branches, dependencies, builds, deployments, and webhooks.
+  </Cards.Card>
+</Cards>
+
+## I evaluate or operate the platform
+
+<Cards>
+  <Cards.Card
+    title="Understand the system"
+    href="/docs/operations/architecture"
+  >
+    See the components, request flow, storage, identity, and trust boundaries.
+  </Cards.Card>
+  <Cards.Card
+    title="Select an installation path"
+    href="/docs/setup/install-lifecycle"
+  >
+    Compare the starter OpenTofu and existing-cluster Helm evaluation paths.
+    Then, make sure that your selected path is safe.
+  </Cards.Card>
+  <Cards.Card title="Operate Lifecycle" href="/docs/operations/day-two">
+    Plan upgrades, backups, recovery, monitoring, and configuration changes.
+  </Cards.Card>
+</Cards>
+
+## I automate Lifecycle
+
+<Cards>
+  <Cards.Card title="Use the CLI" href="/docs/features/cli">
+    Authenticate. Examine Environments. Follow status. Read logs. Start actions.
+  </Cards.Card>
+  <Cards.Card title="Use API keys" href="/docs/api-authentication/api-keys">
+    Create a scoped credential. Use authenticated v2 endpoints. Revoke the
+    credential.
+  </Cards.Card>
+  <Cards.Card title="Use the HTTP API" href="/docs/api/overview">
+    Find the generated OpenAPI reference and understand authentication
+    boundaries.
+  </Cards.Card>
+</Cards>
+
+## I use or administer Agents
+
+Deployment packaging, configuration, and role policy control Agent and MCP
+availability. Check each page's availability boundary before you use its
+workflow.
+
+<Cards>
+  <Cards.Card
+    title="Check Agent Session availability"
+    href="/docs/features/agent-sessions"
+  >
+    When your deployment makes the feature available, see the current Labs
+    boundary. Then, launch a governed workspace.
+  </Cards.Card>
+  <Cards.Card
+    title="Learn Agent administration"
+    href="/docs/features/agent-administration"
+  >
+    See which models, instructions, permissions, tools, runtimes, and inspection
+    controls are available in a deployment.
+  </Cards.Card>
+  <Cards.Card title="Connect to Lifecycle MCP" href="/docs/features/mcp-server">
+    Lifecycle MCP uses one URL and OAuth sign-in for the tools that your account
+    permits.
+  </Cards.Card>
+</Cards>
+
+If you are not sure where to start, read [What is
+Lifecycle?](/docs/what-is-lifecycle) and the [terminology
+reference](/docs/getting-started/terminology).

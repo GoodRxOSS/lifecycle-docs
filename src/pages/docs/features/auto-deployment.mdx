@@ -1,6 +1,12 @@
 ---
-title: Auto Deploy & Labels
-description: How to setup auto deploy for pull requests and control envionment with labels
+title: Auto-deploy and labels
+description: Automatically deploy pull request Environments and control them with configurable GitHub labels.
+audience:
+  - application-developer
+  - platform-operator
+lastVerified: "2026-07-24"
+verificationBaseline: "2026-07-24-comprehensive-audit"
+contentProfile: asd-ste100
 tags:
   - deploy
   - auto
@@ -9,57 +15,57 @@ tags:
   - lifecycle-disabled
 ---
 
-## Auto-Deploy Configuration
+## Configure auto-deploy
 
-To enable **automatic deployment** when a PR is created, set the `autoDeploy` attribute in your repository's `lifecycle.yaml` file:
+To deploy automatically when a pull request opens, set `autoDeploy` in the
+repository's `lifecycle.yaml` file:
 
 ```yaml {2} filename="lifecycle.yaml"
 environment:
   autoDeploy: true
-  defaultServices:
 ```
 
-- Lifecycle will **automatically create** the environment as soon as a PR is opened.
-- A `lifecycle-deploy!` label will be added to the PR to indicate that the environment has been deployed.
+- Lifecycle creates the Environment when a pull request opens.
+- Lifecycle adds the configured deploy label. Its default name is
+  `lifecycle-deploy!`.
 
 ---
 
-## Managing Deployments with Labels
+## Manage deployments with labels
 
-If **auto-deploy is not enabled**, you can manually control the environment using PR labels.
+If **auto-deploy is not enabled**, you can manually control the Environment
+using pull request labels. The names below are defaults. Ask your deployment
+owner for the configured names.
 
 ### Deploy an Environment
 
-To create an ephemeral environment for a PR, **add** the `lifecycle-deploy!` label.
+To create an Environment for a pull request, add the `lifecycle-deploy!` label.
 
-### Tear Down an Environment
+### Tear down an Environment
 
-To **delete** an active environment, use either of these labels:
+To delete an active Environment, use one of these actions:
 
 - **Remove** `lifecycle-deploy!`
 - **Add** `lifecycle-disabled!`
 
----
+### Prevent TTL cleanup
 
-## Automatic Cleanup on PR Closure
-
-When a PR is **closed**, Lifecycle will:
-
-1. **Tear down** the active environment.
-2. **Remove** the `lifecycle-deploy!` label from the PR.
-
-This ensures that unused environments do not persist after the PR lifecycle is complete.
+Add `lifecycle-keep!`. This label prevents inactivity-based TTL cleanup. It does
+not prevent manual teardown. When the pull request closes, the label does not
+prevent cleanup. See
+[Environment TTL](/docs/features/environment-ttl).
 
 ---
 
-## Summary
+## Clean up a closed pull request
 
-| Feature                      | Behavior                                        |
-| ---------------------------- | ----------------------------------------------- |
-| `autoDeploy: true` in config | PR environments are **automatically** deployed. |
-| `lifecycle-deploy!`          | **Manually deploy** an environment.             |
-| Remove `lifecycle-deploy!`   | **Tear down** the environment.                  |
-| Add `lifecycle-disabled!`    | **Tear down** the environment manually.         |
-| PR closed                    | **Environment is deleted automatically**.       |
+When a pull request closes, Lifecycle:
 
-Using these configurations and labels, teams can efficiently manage **ephemeral environments** in their development workflow.
+1. Tears down the active Environment.
+2. Removes the configured deploy label from the pull request.
+
+These actions remove Environments that are not necessary after the pull request
+closes.
+
+See [Configurable labels](/docs/features/configurable-labels) for label effects
+and customized names.

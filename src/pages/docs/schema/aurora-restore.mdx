@@ -1,6 +1,11 @@
 ---
 title: Aurora Restore Service
-description: Restore AWS Aurora database snapshots for ephemeral environments
+description: Make an AWS Aurora point-in-time copy for an ephemeral Environment.
+audience:
+  - application-developer
+lastVerified: "2026-07-24"
+verificationBaseline: "2026-07-24-comprehensive-audit"
+contentProfile: asd-ste100
 tags:
   - schema
   - aurora
@@ -11,39 +16,38 @@ tags:
 
 import { Callout } from "nextra/components";
 
-The `auroraRestore` service type restores AWS Aurora database snapshots for use in ephemeral environments. This allows you to test against production-like data.
+The `auroraRestore` Service makes an AWS Aurora copy for an ephemeral
+Environment. It uses the latest restorable time of a tagged source cluster.
 
-<Callout type="warning">
-  This documentation is still in progress and will be updated shortly with the
-  latest information.
-</Callout>
+An operator must enable Aurora restore and configure its AWS credentials, region,
+network, engine, and instance values. You cannot supply these installation
+settings in `lifecycle.yaml`. If Aurora restore is not available, ask your
+operator to configure it.
 
-## Required Fields
+## Required fields
 
-| Field       | Type   | Description                                  |
-| ----------- | ------ | -------------------------------------------- |
-| `command`   | string | Command to execute for the restore operation |
-| `arguments` | string | Arguments passed to the command              |
+| Field       | Type   | Description                                       |
+| ----------- | ------ | ------------------------------------------------- |
+| `command`   | string | Path to the built-in Aurora helper.               |
+| `arguments` | string | Source-tag and cost-attribution helper arguments. |
 
 ```yaml filename="lifecycle.yaml"
 services:
-  - name: "database-restore"
+  - name: "database-copy"
     auroraRestore:
-      command: "/restore/run.sh" # Required
-      arguments: "--snapshot-id latest" # Required
+      command: "scripts/aurora-helper.ts"
+      arguments: "--sourceTagKey restore-for --sourceTagValue preview-source --appShort payments"
 ```
 
-## How It Works
+## How it works
 
-1. When the environment is deployed, Lifecycle executes the configured command with arguments
-2. The command typically triggers an Aurora snapshot restore process
-3. Once complete, the restored database is available for other services
+1. Lifecycle finds Aurora clusters that match the source tag.
+2. Lifecycle selects the matching cluster with the latest creation time.
+3. Lifecycle makes a copy at the latest restorable time.
+4. Lifecycle makes an Aurora instance for the new cluster.
+5. Lifecycle makes the cluster endpoint available to other Services.
 
-<Callout type="info">
-  The `auroraRestore` service type is a specialized service that runs a command
-  to initiate database restoration. The actual restore logic is implemented in
-  your command/script.
-</Callout>
+Put only source selection and `appShort` arguments in `arguments`.
 
 ## Example
 
@@ -69,30 +73,29 @@ services:
 
   - name: "aurora-db"
     auroraRestore:
-      command: "/scripts/restore-aurora.sh"
-      arguments: "--cluster my-cluster --snapshot production-backup"
+      command: "scripts/aurora-helper.ts"
+      arguments: "--sourceTagKey restore-for --sourceTagValue preview-source --appShort payments"
 ```
 
-## Use Cases
+## Typical tasks
 
-- **Production data testing** - Test features against realistic production data
-- **Database migrations** - Validate migrations against production schema
-- **Performance testing** - Benchmark against production-scale data
-- **Bug reproduction** - Reproduce issues with production data state
+- Test changes against representative data.
+- Test database migrations against a representative schema.
+- Reproduce a defect that depends on database state.
 
 <Callout type="warning">
-  When restoring from production snapshots, ensure sensitive data is properly
-  anonymized or that access is appropriately restricted.
+  Source data can contain sensitive information. Before you make a copy, apply
+  your necessary data controls and access limits.
 </Callout>
 
-## Implementation Notes
+## Teardown behavior
 
-The restore command is executed as part of the environment deployment process. Your script should:
+Lifecycle deletes the copied instance and cluster during Environment teardown.
 
-1. Handle authentication with AWS
-2. Initiate the snapshot restore
-3. Wait for the restore to complete
-4. Configure network access to the restored instance
-5. Return the connection information
+<Callout type="warning">
+  Teardown does not create a final snapshot. Do not put unique or durable data
+  in the copied cluster.
+</Callout>
 
-The restored database endpoint can then be referenced by other services using template variables.
+Other Services can read the Aurora Service template variables after the cluster
+is ready.

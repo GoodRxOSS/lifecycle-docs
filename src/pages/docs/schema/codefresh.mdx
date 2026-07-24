@@ -1,6 +1,11 @@
 ---
 title: Codefresh Service
-description: Trigger external Codefresh pipelines for deployment and destruction
+description: Trigger external Codefresh pipelines for deployment and teardown.
+audience:
+  - application-developer
+lastVerified: "2026-07-24"
+verificationBaseline: "2026-07-24-comprehensive-audit"
+contentProfile: asd-ste100
 tags:
   - schema
   - codefresh
@@ -10,7 +15,8 @@ tags:
 
 import { Callout } from "nextra/components";
 
-The `codefresh` service type delegates deployment to external Codefresh pipelines. This is useful when you have existing CI/CD pipelines that handle complex build and deployment logic.
+The `codefresh` Service uses external Codefresh pipelines for deployment. Use
+it when existing CI/CD pipelines contain complex build and deployment logic.
 
 ## Example
 
@@ -25,36 +31,48 @@ services:
         DATABASE_URL: "postgres://{{database_internalHostname}}:5432/app"
         CACHE_URL: "redis://{{cache_internalHostname}}:6379"
         LOG_LEVEL: "info"
-      deploy: # Required - deployment pipeline configuration
+      deploy: # Required for deployment
         pipelineId: "64598362453cc650c0c9cd4d" # Codefresh pipeline ID for deployment
-        trigger: "lifecycle-deploy" # Pipeline trigger name
-      destroy: # Required - destruction pipeline configuration
+        trigger: "lifecycle-deploy" # Optional pipeline trigger name
+      destroy: # Required for teardown
         pipelineId: "74283905723ff650c0d9ab7e" # Codefresh pipeline ID for destruction
-        trigger: "lifecycle-destroy" # Pipeline trigger name
+        trigger: "lifecycle-destroy" # Optional pipeline trigger name
 ```
 
-## Required Fields
+## Required fields
 
 | Field                | Type   | Description                              |
 | -------------------- | ------ | ---------------------------------------- |
 | `repository`         | string | GitHub repository in `owner/repo` format |
 | `branchName`         | string | Branch to build from                     |
 | `deploy.pipelineId`  | string | Codefresh pipeline ID for deployment     |
-| `deploy.trigger`     | string | Pipeline trigger name for deployment     |
 | `destroy.pipelineId` | string | Codefresh pipeline ID for destruction    |
-| `destroy.trigger`    | string | Pipeline trigger name for destruction    |
 
-## Optional Fields
+## Optional fields
 
-| Field | Type   | Description                               |
-| ----- | ------ | ----------------------------------------- |
-| `env` | object | Environment variables passed to pipelines |
+| Field             | Type   | Description                               |
+| ----------------- | ------ | ----------------------------------------- |
+| `env`             | object | Environment variables passed to pipelines |
+| `deploy.trigger`  | string | Pipeline trigger name for deployment      |
+| `destroy.trigger` | string | Pipeline trigger name for destruction     |
 
-## Pipeline Configuration
+<Callout type="warning">
+  Set `repository`, `branchName`, and both pipeline IDs. A missing pipeline ID
+  causes the related deployment or teardown operation to fail.
+</Callout>
+
+## Authentication
+
+Before you run Codefresh Services or the Docker `ci` builder, configure
+`CODEFRESH_API_KEY` in Lifecycle. Ask the operator to supply this credential
+through the approved Secret process. Use the same process to rotate it. Do not
+put it in `lifecycle.yaml`.
+
+## Pipeline configuration
 
 ### deploy
 
-Configure the pipeline triggered when deploying the service.
+Configure the pipeline that deploys the Service.
 
 ```yaml
 codefresh:
@@ -65,7 +83,7 @@ codefresh:
 
 ### destroy
 
-Configure the pipeline triggered when tearing down the environment.
+Configure the pipeline that tears down the Environment.
 
 ```yaml
 codefresh:
@@ -74,9 +92,9 @@ codefresh:
     trigger: "destroy"
 ```
 
-## Environment Variables
+## Environment variables
 
-Pass environment variables to both deploy and destroy pipelines:
+Pass environment variables to the deploy and destroy pipelines:
 
 ```yaml
 codefresh:
@@ -89,32 +107,37 @@ codefresh:
 ```
 
 <Callout type="info">
-  Environment variables defined in `env` are passed to both deploy and destroy
-  pipelines. Use template variables to reference other services.
+  Environment variables in `env` go to the deploy and destroy pipelines.
+  Template variables can refer to other Services. Full-value cloud secret
+  references resolve before invocation. More information is in [Cloud
+  Secrets](/docs/features/secrets#use-secrets-with-codefresh).
 </Callout>
 
-## How It Works
+## How it works
 
-1. When an environment is deployed, Lifecycle triggers the `deploy` pipeline with the configured environment variables.
-2. The pipeline receives context about the deployment including branch, namespace, and service information.
-3. When the environment is torn down, Lifecycle triggers the `destroy` pipeline to clean up resources.
+1. When Lifecycle deploys an Environment, it triggers the `deploy` pipeline
+   with the configured environment variables.
+2. The pipeline receives the branch, namespace, and Service information.
+3. When Lifecycle tears down the Environment, it triggers the `destroy`
+   pipeline to remove resources.
 
-## Use Cases
+## Typical tasks
 
-- **Complex build processes** - When builds require multi-stage pipelines or custom tooling
-- **External dependencies** - When deployment requires interaction with external systems
-- **Existing CI/CD** - When you have established Codefresh pipelines you want to reuse
-- **Custom deployment logic** - When standard Kubernetes deployment isn't sufficient
+- **Complex builds** — Multi-stage pipelines or custom tooling.
+- **External dependencies** — Deployments that interact with external systems.
+- **Existing CI/CD** — Established Codefresh pipelines.
+- **Custom deployment logic** — Deployments that standard Kubernetes
+  configuration cannot express.
 
 <Callout type="warning">
   Codefresh pipelines run asynchronously. Lifecycle tracks pipeline status but
-  the actual deployment logic is managed by Codefresh.
+  Codefresh manages the deployment logic.
 </Callout>
 
-## Finding Pipeline IDs
+## Find pipeline IDs
 
 To find your Codefresh pipeline ID:
 
-1. Open your pipeline in Codefresh
-2. The pipeline ID is in the URL: `https://g.codefresh.io/pipelines/edit/new/.../<pipeline-id>`
-3. Or use the Codefresh CLI: `codefresh get pipelines`
+1. Open your pipeline in Codefresh.
+2. Find the pipeline ID in the URL: `https://g.codefresh.io/pipelines/edit/new/.../<pipeline-id>`.
+3. Or, run `codefresh get pipelines`.
