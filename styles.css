@@ -1277,6 +1277,10 @@ code,
   top: 5rem;
 }
 
+.isolate {
+  isolation: isolate;
+}
+
 .-z-0 {
   z-index: 0;
 }
@@ -1329,11 +1333,6 @@ code,
 .my-1 {
   margin-top: 0.25rem;
   margin-bottom: 0.25rem;
-}
-
-.my-2 {
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
 }
 
 .my-4 {
@@ -1750,10 +1749,6 @@ code,
   align-items: baseline;
 }
 
-.items-stretch {
-  align-items: stretch;
-}
-
 .justify-start {
   justify-content: flex-start;
 }
@@ -1856,12 +1851,6 @@ code,
 
 .overflow-x-auto {
   overflow-x: auto;
-}
-
-.truncate {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .whitespace-nowrap {
@@ -2046,10 +2035,6 @@ code,
   background-color: hsl(var(--muted));
 }
 
-.bg-muted\/40 {
-  background-color: hsl(var(--muted) / 0.4);
-}
-
 .bg-neutral-800\/90 {
   background-color: rgb(38 38 38 / 0.9);
 }
@@ -2182,11 +2167,6 @@ code,
   padding-bottom: 0.5rem;
 }
 
-.py-2\.5 {
-  padding-top: 0.625rem;
-  padding-bottom: 0.625rem;
-}
-
 .py-20 {
   padding-top: 5rem;
   padding-bottom: 5rem;
@@ -2228,10 +2208,6 @@ code,
 
 .pr-1 {
   padding-right: 0.25rem;
-}
-
-.pr-2 {
-  padding-right: 0.5rem;
 }
 
 .pr-4 {
@@ -2356,6 +2332,10 @@ code,
   text-transform: uppercase;
 }
 
+.lowercase {
+  text-transform: lowercase;
+}
+
 .tabular-nums {
   --tw-numeric-spacing: tabular-nums;
   font-variant-numeric: var(--tw-ordinal) var(--tw-slashed-zero) var(--tw-numeric-figure) var(--tw-numeric-spacing) var(--tw-numeric-fraction);
@@ -2396,10 +2376,6 @@ code,
 
 .text-foreground\/60 {
   color: hsl(var(--foreground) / 0.6);
-}
-
-.text-foreground\/80 {
-  color: hsl(var(--foreground) / 0.8);
 }
 
 .text-foreground\/90 {
@@ -2464,10 +2440,6 @@ code,
 
 .opacity-0 {
   opacity: 0;
-}
-
-.opacity-100 {
-  opacity: 1;
 }
 
 .opacity-40 {

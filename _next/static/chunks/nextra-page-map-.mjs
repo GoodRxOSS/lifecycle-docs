@@ -1,12 +1,16 @@
 import meta from "../../../src/pages/_meta.ts";
 import docs_meta from "../../../src/pages/docs/_meta.ts";
+import docs_api_authentication_meta from "../../../src/pages/docs/api-authentication/_meta.ts";
+import docs_api_meta from "../../../src/pages/docs/api/_meta.ts";
 import docs_features_meta from "../../../src/pages/docs/features/_meta.ts";
 import docs_getting_started_meta from "../../../src/pages/docs/getting-started/_meta.ts";
+import docs_operations_meta from "../../../src/pages/docs/operations/_meta.ts";
+import docs_reference_meta from "../../../src/pages/docs/reference/_meta.ts";
+import docs_releases_meta from "../../../src/pages/docs/releases/_meta.ts";
 import docs_schema_meta from "../../../src/pages/docs/schema/_meta.ts";
 import docs_setup_meta from "../../../src/pages/docs/setup/_meta.ts";
 import docs_tips_meta from "../../../src/pages/docs/tips/_meta.ts";
 import docs_troubleshooting_meta from "../../../src/pages/docs/troubleshooting/_meta.ts";
-import tags_meta from "../../../src/pages/tags/_meta.ts";
 export const pageMap = [{
   data: meta
 }, {
@@ -15,51 +19,176 @@ export const pageMap = [{
   children: [{
     data: docs_meta
   }, {
+    name: "api",
+    route: "/docs/api",
+    children: [{
+      data: docs_api_meta
+    }, {
+      name: "overview",
+      route: "/docs/api/overview",
+      frontMatter: {
+        "title": "Lifecycle API overview",
+        "description": "Use the authenticated Lifecycle v2 API, read response envelopes, and make safe integrations.",
+        "audience": ["api-user"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["api", "integration", "authentication"]
+      }
+    }]
+  }, {
+    name: "api-authentication",
+    route: "/docs/api-authentication",
+    children: [{
+      data: docs_api_authentication_meta
+    }, {
+      name: "api-keys",
+      route: "/docs/api-authentication/api-keys",
+      frontMatter: {
+        "title": "API keys",
+        "description": "Create, scope, use, rotate, and revoke personal or service API keys for authenticated Lifecycle v2 requests.",
+        "audience": ["api-user", "administrator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["api", "authentication", "api-keys", "security"]
+      }
+    }, {
+      name: "overview",
+      route: "/docs/api-authentication/overview",
+      frontMatter: {
+        "title": "API authentication",
+        "description": "Select a supported authentication method for Lifecycle v2 API requests and understand typical authorization failures.",
+        "audience": ["api-user", "administrator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["api", "authentication", "security"]
+      }
+    }]
+  }, {
     name: "features",
     route: "/docs/features",
     children: [{
       data: docs_features_meta
     }, {
+      name: "agent-administration",
+      route: "/docs/features/agent-administration",
+      frontMatter: {
+        "title": "Agent administration",
+        "description": "Administer Lifecycle Agent availability, models, instructions, permissions, tools, workspaces, and session audit.",
+        "audience": ["administrator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["ai", "agent", "administration", "security"]
+      }
+    }, {
+      name: "agent-sessions",
+      route: "/docs/features/agent-sessions",
+      frontMatter: {
+        "title": "Agent Sessions",
+        "description": "Start, examine, and continue repository work with Lifecycle Agent in an isolated workspace.",
+        "audience": ["agent-user"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["ai", "agent", "sessions", "workspaces"]
+      }
+    }, {
       name: "ai-agent-configuration",
       route: "/docs/features/ai-agent-configuration",
       frontMatter: {
-        "title": "AI Agent Configuration",
-        "tags": ["ai", "agent", "configuration", "admin", "api"]
+        "title": "Configure Lifecycle Agent",
+        "description": "Configure models, instructions, tools, approvals, and repository overrides for Lifecycle Agent from Settings.",
+        "audience": ["administrator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["ai", "agent", "administration", "settings"]
       }
     }, {
       name: "ai-agent",
       route: "/docs/features/ai-agent",
       frontMatter: {
-        "title": "AI Agent",
-        "tags": ["ai", "agent", "debugging", "investigation", "llm"]
+        "title": "Lifecycle Agent",
+        "description": "Investigate a Lifecycle Environment, examine evidence, and do approved recovery tasks from the Environment details page.",
+        "audience": ["agent-user"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["ai", "agent", "debugging", "environments"]
+      }
+    }, {
+      name: "api-environments",
+      route: "/docs/features/api-environments",
+      frontMatter: {
+        "title": "API-created Environments",
+        "description": "Create branch-based Lifecycle Environments without a pull request. Then, track, extend, redeploy, or tear them down.",
+        "audience": ["api-user", "application-developer"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["environments", "api", "automation", "ttl"]
       }
     }, {
       name: "authentication",
       route: "/docs/features/authentication",
       frontMatter: {
         "title": "Authentication",
-        "tags": ["authentication", "security", "keycloak", "sso", "oidc"]
+        "description": "Sign in to Lifecycle, link GitHub, sign out, and verify access controls.",
+        "audience": ["application-developer", "platform-operator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["authentication", "keycloak", "github", "security"]
       }
     }, {
       name: "auto-deployment",
       route: "/docs/features/auto-deployment",
       frontMatter: {
-        "title": "Auto Deploy & Labels",
-        "description": "How to setup auto deploy for pull requests and control envionment with labels",
+        "title": "Auto-deploy and labels",
+        "description": "Automatically deploy pull request Environments and control them with configurable GitHub labels.",
+        "audience": ["application-developer", "platform-operator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
         "tags": ["deploy", "auto", "labels", "lifecycle-deploy", "lifecycle-disabled"]
       }
     }, {
       name: "build-metadata-links",
       route: "/docs/features/build-metadata-links",
       frontMatter: {
-        "title": "Metadata Links",
-        "tags": ["build", "metadata", "links", "observability", "template", "variables"]
+        "title": "Build metadata links",
+        "description": "Add administrator-managed links to Environment details using build environment variables as templates.",
+        "audience": ["application-developer", "platform-operator", "administrator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["environments", "metadata", "links", "administration"]
+      }
+    }, {
+      name: "cli-telemetry",
+      route: "/docs/features/cli-telemetry",
+      frontMatter: {
+        "title": "Lifecycle CLI telemetry",
+        "description": "Understand the pseudonymous command-usage event sent by lfc, its destination, and how to opt out.",
+        "audience": ["application-developer", "platform-operator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["cli", "telemetry", "privacy"]
       }
     }, {
       name: "cli",
       route: "/docs/features/cli",
       frontMatter: {
         "title": "CLI (lfc)",
+        "description": "Install and use the Lifecycle CLI to examine Environments, manage Services, stream logs, and validate configuration.",
+        "audience": ["application-developer", "platform-operator"],
+        "lastVerified": "2026-08-01",
+        "verificationBaseline": "2026-08-01-configuration-schema-fix",
+        "contentProfile": "asd-ste100",
         "tags": ["cli", "lfc", "operators", "tooling", "automation"]
       }
     }, {
@@ -67,65 +196,131 @@ export const pageMap = [{
       route: "/docs/features/configurable-labels",
       frontMatter: {
         "title": "Configurable Labels",
-        "tags": ["labels", "configuration", "deploy", "disabled", "keep", "status-comments", "global-config"]
+        "description": "Use deployment-specific GitHub labels to control Environments, cleanup, and status comments.",
+        "audience": ["application-developer", "platform-operator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["labels", "configuration", "deploy", "disabled", "keep", "status-comments"]
       }
     }, {
       name: "environment-ttl",
       route: "/docs/features/environment-ttl",
       frontMatter: {
-        "title": "Environment TTL",
-        "tags": ["ttl", "cleanup", "lifecycle-keep", "inactivity", "global-config"]
+        "title": "Environment expiration and cleanup",
+        "description": "Understand how Lifecycle cleans up pull-request environments and expires API-created environments.",
+        "audience": ["application-developer", "platform-operator", "administrator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["environments", "cleanup", "ttl", "api"]
       }
     }, {
       name: "ignore-file-patterns",
       route: "/docs/features/ignore-file-patterns",
       frontMatter: {
         "title": "Ignore File Patterns",
-        "description": "Skip unnecessary push redeploys for documentation, metadata, and other non-runtime changes.",
+        "description": "Skip push redeploys for documentation, metadata, and other non-runtime changes.",
+        "audience": ["application-developer", "platform-operator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
         "tags": ["ignoreFiles", "push", "redeploy", "configuration"]
+      }
+    }, {
+      name: "lifecycle-ui",
+      route: "/docs/features/lifecycle-ui",
+      frontMatter: {
+        "title": "Use the Lifecycle UI",
+        "description": "Use the web UI to find Environments, examine Services and logs, run actions, and examine webhooks.",
+        "audience": ["application-developer", "platform-operator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["ui", "environment", "logs"]
       }
     }, {
       name: "mcp-integration",
       route: "/docs/features/mcp-integration",
       frontMatter: {
-        "title": "MCP Integration",
-        "tags": ["ai", "agent", "mcp", "tools", "integration"]
+        "title": "Connect external MCP servers",
+        "description": "Add administrator-approved Model Context Protocol servers and complete authentication for each Lifecycle Agent user.",
+        "audience": ["agent-user", "administrator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["ai", "mcp", "integrations", "administration"]
       }
     }, {
       name: "mcp-server",
       route: "/docs/features/mcp-server",
       frontMatter: {
-        "title": "MCP Server",
-        "tags": ["ai", "mcp", "tools", "claude", "cursor", "vscode", "codex"]
+        "title": "Lifecycle MCP",
+        "description": "Enable Lifecycle MCP, connect an OAuth client, and use Lifecycle tools with existing user permissions.",
+        "audience": ["agent-user", "administrator", "platform-operator"],
+        "lastVerified": "2026-08-01",
+        "verificationBaseline": "2026-08-01-lifecycle-mcp-preparation",
+        "contentProfile": "asd-ste100",
+        "tags": ["mcp", "oauth", "agents", "administration"]
       }
     }, {
       name: "native-helm-deployment",
       route: "/docs/features/native-helm-deployment",
       frontMatter: {
-        "title": "Native Helm Deployment",
-        "description": "Deploy services using Helm directly in Kubernetes without external CI/CD dependencies",
+        "title": "Native Helm deployment",
+        "description": "Deploy Services with Helm directly in Kubernetes without an external CI/CD deployment pipeline.",
+        "audience": ["application-developer", "platform-operator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
         "tags": ["helm", "deployment", "kubernetes", "native"]
       }
     }, {
       name: "secrets",
       route: "/docs/features/secrets",
       frontMatter: {
-        "title": "Cloud Secrets",
-        "tags": ["secrets", "aws", "gcp", "environment variables", "security"]
+        "title": "Cloud secrets",
+        "description": "Reference External Secrets Operator values from Lifecycle Services and native Helm deployments.",
+        "audience": ["application-developer", "platform-operator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["secrets", "aws", "gcp", "barbican", "environment variables", "security"]
       }
     }, {
       name: "service-dependencies",
       route: "/docs/features/service-dependencies",
       frontMatter: {
         "title": "Service Dependencies",
-        "description": "Understand service dependencies, their impact, and configuration.",
+        "description": "Understand Service dependencies, their effects, and configuration.",
+        "audience": ["application-developer", "platform-operator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
         "tags": ["lifecycle", "service-dependencies", "configuration", "defaultServices", "optionalServices"]
+      }
+    }, {
+      name: "sites",
+      route: "/docs/features/sites",
+      frontMatter: {
+        "title": "Sites",
+        "description": "Upload and manage static HTML sites through Lifecycle's UI, CLI, or authenticated v2 API.",
+        "audience": ["application-developer", "platform-operator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["sites", "static-hosting", "cli", "api"]
       }
     }, {
       name: "template-variables",
       route: "/docs/features/template-variables",
       frontMatter: {
         "title": "Template Variables",
+        "description": "Use Environment, Service, and configuration values in Lifecycle Service settings.",
+        "audience": ["application-developer", "platform-operator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
         "tags": ["template", "variables", "buildUUID", "publicUrl", "sha", "branchName", "repoName", "UUID", "internalHostname", "review"]
       }
     }, {
@@ -133,7 +328,24 @@ export const pageMap = [{
       route: "/docs/features/webhooks",
       frontMatter: {
         "title": "Webhooks",
+        "description": "Run Codefresh pipelines or Kubernetes Jobs after an Environment deploys, fails, or is torn down.",
+        "audience": ["application-developer", "platform-operator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
         "tags": ["webhook", "automation", "codefresh", "deployment", "lifecycle", "docker", "command"]
+      }
+    }, {
+      name: "workspace-backends",
+      route: "/docs/features/workspace-backends",
+      frontMatter: {
+        "title": "Agent workspace backends",
+        "description": "Compare and safely activate the runtime backend used for new Lifecycle Agent workspaces.",
+        "audience": ["administrator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["ai", "agent", "workspaces", "administration"]
       }
     }]
   }, {
@@ -145,43 +357,84 @@ export const pageMap = [{
       name: "configure-environment",
       route: "/docs/getting-started/configure-environment",
       frontMatter: {
-        "title": "Configure environment",
+        "title": "Configure an Environment",
+        "description": "Set Service selection, dependencies, builds, and deployments in lifecycle.yaml.",
+        "audience": ["application-developer"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
         "tags": ["tutorial", "configure", "edit"]
       }
     }, {
       name: "create-environment",
       route: "/docs/getting-started/create-environment",
       frontMatter: {
-        "title": "Create environment",
-        "tags": ["lifecycle", "tutorial", "ephemeral-env", "start", "first environment"]
+        "title": "Create your first Environment",
+        "description": "Onboard a repository and create a pull-request Environment from a correct Lifecycle configuration.",
+        "audience": ["application-developer"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["lifecycle", "tutorial", "environment"]
       }
     }, {
       name: "delete-environment",
       route: "/docs/getting-started/delete-environment",
       frontMatter: {
-        "title": "Delete environment",
-        "tags": ["lifecycle", "tutorial", "delete", "tear down", "cleanup", "lifecycle-disabled", "close"]
+        "title": "Delete an Environment",
+        "description": "Tear down a pull-request or API-created Environment safely from GitHub, the UI, the CLI, or the API.",
+        "audience": ["application-developer"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["lifecycle", "environment", "cleanup"]
       }
     }, {
       name: "explore-environment",
       route: "/docs/getting-started/explore-environment",
       frontMatter: {
-        "title": "Explore environment",
+        "title": "Explore an Environment",
+        "description": "Make sure an Environment is ready, open a deployed Service, and use Lifecycle's pull request comments.",
+        "audience": ["application-developer"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
         "tags": ["lifecycle", "tutorial", "explore"]
       }
     }, {
       name: "explore-static-environment",
       route: "/docs/getting-started/explore-static-environment",
       frontMatter: {
-        "title": "Explore static environment",
-        "description": "Create the first and default static environment",
-        "tags": ["tutorial", "dev-0", "static", "onboard"]
+        "title": "Create a default static Environment",
+        "description": "Create and pin a long-lived dev-0 Environment with supported Lifecycle controls.",
+        "audience": ["application-developer"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["environment", "dev-0", "static"]
+      }
+    }, {
+      name: "onboard-repository",
+      route: "/docs/getting-started/onboard-repository",
+      frontMatter: {
+        "title": "Onboard a repository",
+        "description": "Add a GitHub App installation repository to Lifecycle so pull-request and push events can create Environments.",
+        "audience": ["application-developer"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["github", "repository", "onboarding"]
       }
     }, {
       name: "terminology",
       route: "/docs/getting-started/terminology",
       frontMatter: {
         "title": "Terminology",
+        "description": "Canonical Lifecycle terms for Environments, Services, deployments, and automation.",
+        "audience": ["application-developer"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
         "tags": ["build", "terminology", "glossary", "term", "environment", "webhook", "deploy", "service", "review"]
       }
     }]
@@ -189,10 +442,128 @@ export const pageMap = [{
     name: "index",
     route: "/docs",
     frontMatter: {
-      "title": "What is Lifecycle?",
-      "description": "Lifecycle is your effortless way to test and create ephemeral environments",
-      "tags": ["core", "lifecycle", "intro"]
+      "title": "Lifecycle documentation",
+      "description": "Select a task-oriented path through Lifecycle as an application developer, evaluator, platform operator, API user, or Agent administrator.",
+      "audience": ["evaluator", "application-developer", "platform-operator", "agent-user", "api-user", "administrator"],
+      "lastVerified": "2026-08-01",
+      "verificationBaseline": "2026-08-01-lifecycle-mcp-preparation",
+      "contentProfile": "asd-ste100",
+      "tags": ["core", "lifecycle", "start"]
     }
+  }, {
+    name: "operations",
+    route: "/docs/operations",
+    children: [{
+      data: docs_operations_meta
+    }, {
+      name: "architecture",
+      route: "/docs/operations/architecture",
+      frontMatter: {
+        "title": "Lifecycle architecture",
+        "description": "Understand how requests become Lifecycle Environments and plan dependencies, security controls, availability, and recovery.",
+        "audience": ["evaluator", "platform-operator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["operator", "architecture", "security"]
+      }
+    }, {
+      name: "configuration",
+      route: "/docs/operations/configuration",
+      frontMatter: {
+        "title": "Runtime configuration surfaces",
+        "description": "Select a supported UI, API, Helm, or repository configuration surface and verify each change.",
+        "audience": ["platform-operator", "administrator"],
+        "lastVerified": "2026-08-01",
+        "verificationBaseline": "2026-08-01-lifecycle-mcp-preparation",
+        "contentProfile": "asd-ste100",
+        "tags": ["operator", "configuration", "settings"]
+      }
+    }, {
+      name: "day-two",
+      route: "/docs/operations/day-two",
+      frontMatter: {
+        "title": "Day-two operations",
+        "description": "Plan Lifecycle upgrades, backups, rollback decisions, recovery validation, and uninstall.",
+        "audience": ["platform-operator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["operator", "upgrade", "backup"]
+      }
+    }, {
+      name: "monitoring",
+      route: "/docs/operations/monitoring",
+      frontMatter: {
+        "title": "Monitor Lifecycle",
+        "description": "Interpret health endpoints, verify end-to-end operation, and collect safe diagnostic data for stuck work.",
+        "audience": ["platform-operator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["operator", "monitoring", "troubleshooting"]
+      }
+    }, {
+      name: "security",
+      route: "/docs/operations/security",
+      frontMatter: {
+        "title": "Security boundaries",
+        "description": "Understand Lifecycle authentication, network, Kubernetes, secret, and Agent boundaries before other networks can reach a deployment.",
+        "audience": ["platform-operator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["operator", "security", "authentication"]
+      }
+    }]
+  }, {
+    name: "reference",
+    route: "/docs/reference",
+    children: [{
+      data: docs_reference_meta
+    }, {
+      name: "statuses",
+      route: "/docs/reference/statuses",
+      frontMatter: {
+        "title": "Environment and Service statuses",
+        "description": "Interpret Lifecycle Environment, build, deployment, and Service states. Select the correct response.",
+        "audience": ["application-developer", "api-user", "platform-operator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["reference", "status", "troubleshooting"]
+      }
+    }]
+  }, {
+    name: "releases",
+    route: "/docs/releases",
+    children: [{
+      data: docs_releases_meta
+    }, {
+      name: "compatibility",
+      route: "/docs/releases/compatibility",
+      frontMatter: {
+        "title": "Compatibility and deprecation policy",
+        "description": "Select compatible Lifecycle components and prepare a safe upgrade or rollback.",
+        "audience": ["platform-operator", "application-developer"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["release", "compatibility", "deprecation"]
+      }
+    }, {
+      name: "index",
+      route: "/docs/releases",
+      frontMatter: {
+        "title": "Releases",
+        "description": "Find your installed Lifecycle versions and the release information for an upgrade.",
+        "audience": ["platform-operator", "application-developer"],
+        "lastVerified": "2026-08-01",
+        "verificationBaseline": "2026-08-01-lifecycle-mcp-preparation",
+        "contentProfile": "asd-ste100",
+        "tags": ["release", "version", "changelog"]
+      }
+    }]
   }, {
     name: "schema",
     route: "/docs/schema",
@@ -203,7 +574,11 @@ export const pageMap = [{
       route: "/docs/schema/aurora-restore",
       frontMatter: {
         "title": "Aurora Restore Service",
-        "description": "Restore AWS Aurora database snapshots for ephemeral environments",
+        "description": "Make an AWS Aurora point-in-time copy for an ephemeral Environment.",
+        "audience": ["application-developer"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
         "tags": ["schema", "aurora", "database", "aws", "restore"]
       }
     }, {
@@ -211,7 +586,11 @@ export const pageMap = [{
       route: "/docs/schema/codefresh",
       frontMatter: {
         "title": "Codefresh Service",
-        "description": "Trigger external Codefresh pipelines for deployment and destruction",
+        "description": "Trigger external Codefresh pipelines for deployment and teardown.",
+        "audience": ["application-developer"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
         "tags": ["schema", "codefresh", "pipeline", "ci-cd"]
       }
     }, {
@@ -219,7 +598,11 @@ export const pageMap = [{
       route: "/docs/schema/configuration",
       frontMatter: {
         "title": "Configuration Service",
-        "description": "Deploy configuration-only services for feature flags and shared configuration",
+        "description": "Deploy configuration-only Services for feature flags and shared configuration.",
+        "audience": ["application-developer"],
+        "lastVerified": "2026-08-01",
+        "verificationBaseline": "2026-08-01-configuration-schema-fix",
+        "contentProfile": "asd-ste100",
         "tags": ["schema", "configuration", "feature-flags", "config"]
       }
     }, {
@@ -227,23 +610,47 @@ export const pageMap = [{
       route: "/docs/schema/docker",
       frontMatter: {
         "title": "Docker Service",
-        "description": "Deploy pre-built Docker images like databases, caches, and other infrastructure components",
+        "description": "Deploy pre-built Docker images for databases, caches, and other infrastructure components.",
+        "audience": ["application-developer"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
         "tags": ["schema", "docker", "database", "redis", "postgres"]
       }
     }, {
       name: "environment",
       route: "/docs/schema/environment",
       frontMatter: {
-        "title": "Environment Configuration",
-        "description": "Configure deployment behavior, service grouping, and automation for ephemeral environments",
+        "title": "Environment configuration",
+        "description": "Configure deployment behavior, Service groups, and automation for ephemeral Environments.",
+        "audience": ["application-developer"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
         "tags": ["schema", "environment", "configuration", "services"]
+      }
+    }, {
+      name: "external-http",
+      route: "/docs/schema/external-http",
+      frontMatter: {
+        "title": "External HTTP Service",
+        "description": "Use an existing hosted HTTP dependency. Lifecycle does not build or deploy it.",
+        "audience": ["application-developer"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["schema", "service", "external"]
       }
     }, {
       name: "github",
       route: "/docs/schema/github",
       frontMatter: {
         "title": "GitHub Service",
-        "description": "Build and deploy services from GitHub repositories with Docker",
+        "description": "Build and deploy Services from GitHub repositories with Docker.",
+        "audience": ["application-developer"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
         "tags": ["schema", "github", "docker", "deployment", "build"]
       }
     }, {
@@ -251,23 +658,35 @@ export const pageMap = [{
       route: "/docs/schema/helm",
       frontMatter: {
         "title": "Helm Service",
-        "description": "Deploy services using Helm charts - local, OCI, or public repositories",
+        "description": "Deploy Services with local, OCI, or public Helm charts.",
+        "audience": ["application-developer"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
         "tags": ["schema", "helm", "kubernetes", "charts"]
       }
     }, {
       name: "overview",
       route: "/docs/schema/overview",
       frontMatter: {
-        "title": "Schema Overview",
-        "description": "Introduction to the lifecycle.yaml configuration file and its structure",
+        "title": "Schema overview",
+        "description": "Understand the lifecycle.yaml configuration file and its structure.",
+        "audience": ["application-developer"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
         "tags": ["schema", "configuration", "lifecycle.yaml"]
       }
     }, {
       name: "webhooks",
       route: "/docs/schema/webhooks",
       frontMatter: {
-        "title": "Webhooks Configuration",
-        "description": "Schema reference for configuring webhooks to automate actions on deployment events",
+        "title": "Webhook configuration",
+        "description": "Configure webhooks that start automated actions after Environment events.",
+        "audience": ["application-developer"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
         "tags": ["schema", "webhooks", "automation", "codefresh", "docker"]
       }
     }]
@@ -280,14 +699,24 @@ export const pageMap = [{
       name: "configure-lifecycle",
       route: "/docs/setup/configure-lifecycle",
       frontMatter: {
-        "title": "Additional Configuration",
+        "title": "Optional configuration",
+        "description": "Apply optional installation-wide settings safely after Lifecycle is running.",
+        "audience": ["platform-operator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
         "tags": ["configure", "lifecycle", "install", "setup"]
       }
     }, {
       name: "create-github-app",
       route: "/docs/setup/create-github-app",
       frontMatter: {
-        "title": "Configure Application",
+        "title": "Create the GitHub App",
+        "description": "Create and connect a private GitHub App for Lifecycle.",
+        "audience": ["platform-operator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
         "tags": ["github", "app", "install", "setup"]
       }
     }, {
@@ -295,20 +724,35 @@ export const pageMap = [{
       route: "/docs/setup/install-lifecycle",
       frontMatter: {
         "title": "Install Lifecycle",
-        "tags": ["lifecycle", "install", "getting-started", "setup"]
+        "description": "Select the OpenTofu-managed or standalone Helm installation path. Make sure that the API, UI, identity, and cluster are healthy.",
+        "audience": ["evaluator", "platform-operator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["lifecycle", "install", "helm", "setup"]
       }
     }, {
       name: "prerequisites",
       route: "/docs/setup/prerequisites",
       frontMatter: {
-        "title": "Prerequisites",
+        "title": "Starter infrastructure prerequisites",
+        "description": "Prepare cloud, DNS, domain, and command-line access for the starter OpenTofu evaluation path.",
+        "audience": ["evaluator", "platform-operator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
         "tags": ["requirements", "prerequisites", "setup"]
       }
     }, {
       name: "setup-infra",
       route: "/docs/setup/setup-infra",
       frontMatter: {
-        "title": "Setup your cluster",
+        "title": "Set up an evaluation cluster",
+        "description": "Provision starter GKE or EKS infrastructure, DNS, dependencies, and Lifecycle for evaluation.",
+        "audience": ["evaluator", "platform-operator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
         "tags": ["cluster", "setup", "gke", "aws"]
       }
     }]
@@ -321,16 +765,25 @@ export const pageMap = [{
       name: "telemetry",
       route: "/docs/tips/telemetry",
       frontMatter: {
-        "title": "Telemetry",
-        "tags": ["logs", "metrics", "telemetry", "datadog", "observability"]
+        "title": "Datadog application telemetry",
+        "description": "Add standard Datadog labels so Datadog can correlate application telemetry by Environment and Service.",
+        "audience": ["application-developer", "platform-operator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["telemetry", "datadog", "kubernetes"]
       }
     }, {
       name: "using-mission-control",
       route: "/docs/tips/using-mission-control",
       frontMatter: {
-        "title": "Mission Control comment",
-        "description": "Use the Mission Control PR Comment to modify and customize your environment directly from the pull request comment.",
-        "tags": ["pull request", "comment", "mission control", "environment", "pr"]
+        "title": "Use the Mission Control comment",
+        "description": "Select Services, change sources, set Environment overrides, and request actions from Lifecycle's editable pull-request comment.",
+        "audience": ["application-developer"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["pull request", "comment", "environment"]
       }
     }]
   }, {
@@ -339,28 +792,76 @@ export const pageMap = [{
     children: [{
       data: docs_troubleshooting_meta
     }, {
+      name: "access-and-api",
+      route: "/docs/troubleshooting/access-and-api",
+      frontMatter: {
+        "title": "Troubleshoot access and API errors",
+        "description": "Diagnose Lifecycle sign-in, GitHub linking, API key, scope, repository, and feature-policy failures while credentials stay secret.",
+        "audience": ["api-user", "application-developer", "platform-operator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["troubleshooting", "authentication", "api"]
+      }
+    }, {
       name: "build-issues",
       route: "/docs/troubleshooting/build-issues",
       frontMatter: {
-        "title": "Troubleshooting Build Issues",
-        "description": "Understand how to handle common build issues with environments",
-        "tags": ["build", "issues", "error", "codefresh"],
-        "navtext": "Build Issues"
+        "title": "Troubleshoot a failed build",
+        "description": "Identify the failed Service build, examine the correct job logs, correct the source or build configuration, and check a redeploy.",
+        "audience": ["application-developer", "platform-operator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["troubleshooting", "build", "logs"]
       }
     }, {
       name: "deploy-issues",
       route: "/docs/troubleshooting/deploy-issues",
       frontMatter: {
-        "title": "Deploy Issues",
-        "description": "Understand how to handle common deploy issues with environments",
-        "tags": ["deploy", "issues", "error", "todo", "codefresh"]
+        "title": "Troubleshoot a failed deployment",
+        "description": "Find the failed Service, examine the related logs, correct the cause, and redeploy an Environment.",
+        "audience": ["application-developer", "platform-operator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["deploy", "troubleshooting", "errors", "logs"]
       }
     }, {
       name: "github-app-webhooks",
       route: "/docs/troubleshooting/github-app-webhooks",
       frontMatter: {
         "title": "Missing PR comment",
+        "description": "Diagnose failed GitHub App webhook deliveries without exposing credentials.",
+        "audience": ["application-developer", "platform-operator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
         "tags": ["mission control", "comment", "missing", "issue", "setup"]
+      }
+    }, {
+      name: "index",
+      route: "/docs/troubleshooting",
+      frontMatter: {
+        "title": "Troubleshooting",
+        "description": "Start from a Lifecycle symptom and open the guide for the failed phase with safe evidence and recovery steps.",
+        "audience": ["application-developer", "platform-operator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["troubleshooting", "support"]
+      }
+    }, {
+      name: "stuck-environment",
+      route: "/docs/troubleshooting/stuck-environment",
+      frontMatter: {
+        "title": "Troubleshoot a stuck Environment",
+        "description": "Find the last Lifecycle phase that changed and distinguish queue, build, deployment, readiness, and teardown delays.",
+        "audience": ["application-developer", "platform-operator"],
+        "lastVerified": "2026-07-24",
+        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "contentProfile": "asd-ste100",
+        "tags": ["troubleshooting", "environment", "queue"]
       }
     }]
   }, {
@@ -368,8 +869,12 @@ export const pageMap = [{
     route: "/docs/what-is-lifecycle",
     frontMatter: {
       "title": "What is Lifecycle?",
-      "description": "Lifecycle is your effortless way to test and create ephemeral environments",
-      "tags": ["core", "lifecycle", "intro"]
+      "description": "Understand how Lifecycle creates connected, isolated application Environments for pull requests and API-driven workflows.",
+      "audience": ["evaluator"],
+      "lastVerified": "2026-07-24",
+      "verificationBaseline": "2026-07-24-comprehensive-audit",
+      "contentProfile": "asd-ste100",
+      "tags": ["core", "lifecycle", "concepts"]
     }
   }]
 }, {
@@ -379,899 +884,4 @@ export const pageMap = [{
     "title": "Lifecycle · every pull request gets a real environment",
     "description": "Each pull request gets a connected multi-service preview. Builds itself, runs on its own URL, tears down on merge. Apache 2.0, maintained by GoodRx OSS."
   }
-}, {
-  name: "tags",
-  route: "/tags",
-  children: [{
-    data: tags_meta
-  }, {
-    name: "admin",
-    route: "/tags/admin",
-    frontMatter: {
-      "title": "admin",
-      "description": "Lifecycle \"admin\" docs"
-    }
-  }, {
-    name: "agent",
-    route: "/tags/agent",
-    frontMatter: {
-      "title": "agent",
-      "description": "Lifecycle \"agent\" docs"
-    }
-  }, {
-    name: "ai",
-    route: "/tags/ai",
-    frontMatter: {
-      "title": "ai",
-      "description": "Lifecycle \"ai\" docs"
-    }
-  }, {
-    name: "api",
-    route: "/tags/api",
-    frontMatter: {
-      "title": "api",
-      "description": "Lifecycle \"api\" docs"
-    }
-  }, {
-    name: "app",
-    route: "/tags/app",
-    frontMatter: {
-      "title": "app",
-      "description": "Lifecycle \"app\" docs"
-    }
-  }, {
-    name: "aurora",
-    route: "/tags/aurora",
-    frontMatter: {
-      "title": "aurora",
-      "description": "Lifecycle \"aurora\" docs"
-    }
-  }, {
-    name: "authentication",
-    route: "/tags/authentication",
-    frontMatter: {
-      "title": "authentication",
-      "description": "Lifecycle \"authentication\" docs"
-    }
-  }, {
-    name: "auto",
-    route: "/tags/auto",
-    frontMatter: {
-      "title": "auto",
-      "description": "Lifecycle \"auto\" docs"
-    }
-  }, {
-    name: "automation",
-    route: "/tags/automation",
-    frontMatter: {
-      "title": "automation",
-      "description": "Lifecycle \"automation\" docs"
-    }
-  }, {
-    name: "aws",
-    route: "/tags/aws",
-    frontMatter: {
-      "title": "aws",
-      "description": "Lifecycle \"aws\" docs"
-    }
-  }, {
-    name: "branchname",
-    route: "/tags/branchname",
-    frontMatter: {
-      "title": "branchname",
-      "description": "Lifecycle \"branchname\" docs"
-    }
-  }, {
-    name: "build",
-    route: "/tags/build",
-    frontMatter: {
-      "title": "build",
-      "description": "Lifecycle \"build\" docs"
-    }
-  }, {
-    name: "builduuid",
-    route: "/tags/builduuid",
-    frontMatter: {
-      "title": "builduuid",
-      "description": "Lifecycle \"builduuid\" docs"
-    }
-  }, {
-    name: "charts",
-    route: "/tags/charts",
-    frontMatter: {
-      "title": "charts",
-      "description": "Lifecycle \"charts\" docs"
-    }
-  }, {
-    name: "ci-cd",
-    route: "/tags/ci-cd",
-    frontMatter: {
-      "title": "ci-cd",
-      "description": "Lifecycle \"ci-cd\" docs"
-    }
-  }, {
-    name: "claude",
-    route: "/tags/claude",
-    frontMatter: {
-      "title": "claude",
-      "description": "Lifecycle \"claude\" docs"
-    }
-  }, {
-    name: "cleanup",
-    route: "/tags/cleanup",
-    frontMatter: {
-      "title": "cleanup",
-      "description": "Lifecycle \"cleanup\" docs"
-    }
-  }, {
-    name: "cli",
-    route: "/tags/cli",
-    frontMatter: {
-      "title": "cli",
-      "description": "Lifecycle \"cli\" docs"
-    }
-  }, {
-    name: "close",
-    route: "/tags/close",
-    frontMatter: {
-      "title": "close",
-      "description": "Lifecycle \"close\" docs"
-    }
-  }, {
-    name: "cluster",
-    route: "/tags/cluster",
-    frontMatter: {
-      "title": "cluster",
-      "description": "Lifecycle \"cluster\" docs"
-    }
-  }, {
-    name: "codefresh",
-    route: "/tags/codefresh",
-    frontMatter: {
-      "title": "codefresh",
-      "description": "Lifecycle \"codefresh\" docs"
-    }
-  }, {
-    name: "codex",
-    route: "/tags/codex",
-    frontMatter: {
-      "title": "codex",
-      "description": "Lifecycle \"codex\" docs"
-    }
-  }, {
-    name: "command",
-    route: "/tags/command",
-    frontMatter: {
-      "title": "command",
-      "description": "Lifecycle \"command\" docs"
-    }
-  }, {
-    name: "comment",
-    route: "/tags/comment",
-    frontMatter: {
-      "title": "comment",
-      "description": "Lifecycle \"comment\" docs"
-    }
-  }, {
-    name: "config",
-    route: "/tags/config",
-    frontMatter: {
-      "title": "config",
-      "description": "Lifecycle \"config\" docs"
-    }
-  }, {
-    name: "configuration",
-    route: "/tags/configuration",
-    frontMatter: {
-      "title": "configuration",
-      "description": "Lifecycle \"configuration\" docs"
-    }
-  }, {
-    name: "configure",
-    route: "/tags/configure",
-    frontMatter: {
-      "title": "configure",
-      "description": "Lifecycle \"configure\" docs"
-    }
-  }, {
-    name: "core",
-    route: "/tags/core",
-    frontMatter: {
-      "title": "core",
-      "description": "Lifecycle \"core\" docs"
-    }
-  }, {
-    name: "cursor",
-    route: "/tags/cursor",
-    frontMatter: {
-      "title": "cursor",
-      "description": "Lifecycle \"cursor\" docs"
-    }
-  }, {
-    name: "database",
-    route: "/tags/database",
-    frontMatter: {
-      "title": "database",
-      "description": "Lifecycle \"database\" docs"
-    }
-  }, {
-    name: "datadog",
-    route: "/tags/datadog",
-    frontMatter: {
-      "title": "datadog",
-      "description": "Lifecycle \"datadog\" docs"
-    }
-  }, {
-    name: "debugging",
-    route: "/tags/debugging",
-    frontMatter: {
-      "title": "debugging",
-      "description": "Lifecycle \"debugging\" docs"
-    }
-  }, {
-    name: "defaultservices",
-    route: "/tags/defaultservices",
-    frontMatter: {
-      "title": "defaultservices",
-      "description": "Lifecycle \"defaultservices\" docs"
-    }
-  }, {
-    name: "delete",
-    route: "/tags/delete",
-    frontMatter: {
-      "title": "delete",
-      "description": "Lifecycle \"delete\" docs"
-    }
-  }, {
-    name: "deploy",
-    route: "/tags/deploy",
-    frontMatter: {
-      "title": "deploy",
-      "description": "Lifecycle \"deploy\" docs"
-    }
-  }, {
-    name: "deployment",
-    route: "/tags/deployment",
-    frontMatter: {
-      "title": "deployment",
-      "description": "Lifecycle \"deployment\" docs"
-    }
-  }, {
-    name: "dev-0",
-    route: "/tags/dev-0",
-    frontMatter: {
-      "title": "dev-0",
-      "description": "Lifecycle \"dev-0\" docs"
-    }
-  }, {
-    name: "disabled",
-    route: "/tags/disabled",
-    frontMatter: {
-      "title": "disabled",
-      "description": "Lifecycle \"disabled\" docs"
-    }
-  }, {
-    name: "docker",
-    route: "/tags/docker",
-    frontMatter: {
-      "title": "docker",
-      "description": "Lifecycle \"docker\" docs"
-    }
-  }, {
-    name: "edit",
-    route: "/tags/edit",
-    frontMatter: {
-      "title": "edit",
-      "description": "Lifecycle \"edit\" docs"
-    }
-  }, {
-    name: "environment variables",
-    route: "/tags/environment variables",
-    frontMatter: {
-      "title": "environment variables",
-      "description": "Lifecycle \"environment variables\" docs"
-    }
-  }, {
-    name: "environment",
-    route: "/tags/environment",
-    frontMatter: {
-      "title": "environment",
-      "description": "Lifecycle \"environment\" docs"
-    }
-  }, {
-    name: "ephemeral-env",
-    route: "/tags/ephemeral-env",
-    frontMatter: {
-      "title": "ephemeral-env",
-      "description": "Lifecycle \"ephemeral-env\" docs"
-    }
-  }, {
-    name: "error",
-    route: "/tags/error",
-    frontMatter: {
-      "title": "error",
-      "description": "Lifecycle \"error\" docs"
-    }
-  }, {
-    name: "explore",
-    route: "/tags/explore",
-    frontMatter: {
-      "title": "explore",
-      "description": "Lifecycle \"explore\" docs"
-    }
-  }, {
-    name: "feature-flags",
-    route: "/tags/feature-flags",
-    frontMatter: {
-      "title": "feature-flags",
-      "description": "Lifecycle \"feature-flags\" docs"
-    }
-  }, {
-    name: "first environment",
-    route: "/tags/first environment",
-    frontMatter: {
-      "title": "first environment",
-      "description": "Lifecycle \"first environment\" docs"
-    }
-  }, {
-    name: "gcp",
-    route: "/tags/gcp",
-    frontMatter: {
-      "title": "gcp",
-      "description": "Lifecycle \"gcp\" docs"
-    }
-  }, {
-    name: "getting-started",
-    route: "/tags/getting-started",
-    frontMatter: {
-      "title": "getting-started",
-      "description": "Lifecycle \"getting-started\" docs"
-    }
-  }, {
-    name: "github",
-    route: "/tags/github",
-    frontMatter: {
-      "title": "github",
-      "description": "Lifecycle \"github\" docs"
-    }
-  }, {
-    name: "gke",
-    route: "/tags/gke",
-    frontMatter: {
-      "title": "gke",
-      "description": "Lifecycle \"gke\" docs"
-    }
-  }, {
-    name: "global-config",
-    route: "/tags/global-config",
-    frontMatter: {
-      "title": "global-config",
-      "description": "Lifecycle \"global-config\" docs"
-    }
-  }, {
-    name: "glossary",
-    route: "/tags/glossary",
-    frontMatter: {
-      "title": "glossary",
-      "description": "Lifecycle \"glossary\" docs"
-    }
-  }, {
-    name: "helm",
-    route: "/tags/helm",
-    frontMatter: {
-      "title": "helm",
-      "description": "Lifecycle \"helm\" docs"
-    }
-  }, {
-    name: "ignorefiles",
-    route: "/tags/ignorefiles",
-    frontMatter: {
-      "title": "ignorefiles",
-      "description": "Lifecycle \"ignorefiles\" docs"
-    }
-  }, {
-    name: "inactivity",
-    route: "/tags/inactivity",
-    frontMatter: {
-      "title": "inactivity",
-      "description": "Lifecycle \"inactivity\" docs"
-    }
-  }, {
-    name: "install",
-    route: "/tags/install",
-    frontMatter: {
-      "title": "install",
-      "description": "Lifecycle \"install\" docs"
-    }
-  }, {
-    name: "integration",
-    route: "/tags/integration",
-    frontMatter: {
-      "title": "integration",
-      "description": "Lifecycle \"integration\" docs"
-    }
-  }, {
-    name: "internalhostname",
-    route: "/tags/internalhostname",
-    frontMatter: {
-      "title": "internalhostname",
-      "description": "Lifecycle \"internalhostname\" docs"
-    }
-  }, {
-    name: "intro",
-    route: "/tags/intro",
-    frontMatter: {
-      "title": "intro",
-      "description": "Lifecycle \"intro\" docs"
-    }
-  }, {
-    name: "investigation",
-    route: "/tags/investigation",
-    frontMatter: {
-      "title": "investigation",
-      "description": "Lifecycle \"investigation\" docs"
-    }
-  }, {
-    name: "issue",
-    route: "/tags/issue",
-    frontMatter: {
-      "title": "issue",
-      "description": "Lifecycle \"issue\" docs"
-    }
-  }, {
-    name: "issues",
-    route: "/tags/issues",
-    frontMatter: {
-      "title": "issues",
-      "description": "Lifecycle \"issues\" docs"
-    }
-  }, {
-    name: "keep",
-    route: "/tags/keep",
-    frontMatter: {
-      "title": "keep",
-      "description": "Lifecycle \"keep\" docs"
-    }
-  }, {
-    name: "keycloak",
-    route: "/tags/keycloak",
-    frontMatter: {
-      "title": "keycloak",
-      "description": "Lifecycle \"keycloak\" docs"
-    }
-  }, {
-    name: "kubernetes",
-    route: "/tags/kubernetes",
-    frontMatter: {
-      "title": "kubernetes",
-      "description": "Lifecycle \"kubernetes\" docs"
-    }
-  }, {
-    name: "labels",
-    route: "/tags/labels",
-    frontMatter: {
-      "title": "labels",
-      "description": "Lifecycle \"labels\" docs"
-    }
-  }, {
-    name: "lfc",
-    route: "/tags/lfc",
-    frontMatter: {
-      "title": "lfc",
-      "description": "Lifecycle \"lfc\" docs"
-    }
-  }, {
-    name: "lifecycle-deploy",
-    route: "/tags/lifecycle-deploy",
-    frontMatter: {
-      "title": "lifecycle-deploy",
-      "description": "Lifecycle \"lifecycle-deploy\" docs"
-    }
-  }, {
-    name: "lifecycle-disabled",
-    route: "/tags/lifecycle-disabled",
-    frontMatter: {
-      "title": "lifecycle-disabled",
-      "description": "Lifecycle \"lifecycle-disabled\" docs"
-    }
-  }, {
-    name: "lifecycle-keep",
-    route: "/tags/lifecycle-keep",
-    frontMatter: {
-      "title": "lifecycle-keep",
-      "description": "Lifecycle \"lifecycle-keep\" docs"
-    }
-  }, {
-    name: "lifecycle",
-    route: "/tags/lifecycle",
-    frontMatter: {
-      "title": "lifecycle",
-      "description": "Lifecycle \"lifecycle\" docs"
-    }
-  }, {
-    name: "lifecycle.yaml",
-    route: "/tags/lifecycle.yaml",
-    frontMatter: {
-      "title": "lifecycle.yaml",
-      "description": "Lifecycle \"lifecycle.yaml\" docs"
-    }
-  }, {
-    name: "links",
-    route: "/tags/links",
-    frontMatter: {
-      "title": "links",
-      "description": "Lifecycle \"links\" docs"
-    }
-  }, {
-    name: "llm",
-    route: "/tags/llm",
-    frontMatter: {
-      "title": "llm",
-      "description": "Lifecycle \"llm\" docs"
-    }
-  }, {
-    name: "logs",
-    route: "/tags/logs",
-    frontMatter: {
-      "title": "logs",
-      "description": "Lifecycle \"logs\" docs"
-    }
-  }, {
-    name: "mcp",
-    route: "/tags/mcp",
-    frontMatter: {
-      "title": "mcp",
-      "description": "Lifecycle \"mcp\" docs"
-    }
-  }, {
-    name: "metadata",
-    route: "/tags/metadata",
-    frontMatter: {
-      "title": "metadata",
-      "description": "Lifecycle \"metadata\" docs"
-    }
-  }, {
-    name: "metrics",
-    route: "/tags/metrics",
-    frontMatter: {
-      "title": "metrics",
-      "description": "Lifecycle \"metrics\" docs"
-    }
-  }, {
-    name: "missing",
-    route: "/tags/missing",
-    frontMatter: {
-      "title": "missing",
-      "description": "Lifecycle \"missing\" docs"
-    }
-  }, {
-    name: "mission control",
-    route: "/tags/mission control",
-    frontMatter: {
-      "title": "mission control",
-      "description": "Lifecycle \"mission control\" docs"
-    }
-  }, {
-    name: "native",
-    route: "/tags/native",
-    frontMatter: {
-      "title": "native",
-      "description": "Lifecycle \"native\" docs"
-    }
-  }, {
-    name: "observability",
-    route: "/tags/observability",
-    frontMatter: {
-      "title": "observability",
-      "description": "Lifecycle \"observability\" docs"
-    }
-  }, {
-    name: "oidc",
-    route: "/tags/oidc",
-    frontMatter: {
-      "title": "oidc",
-      "description": "Lifecycle \"oidc\" docs"
-    }
-  }, {
-    name: "onboard",
-    route: "/tags/onboard",
-    frontMatter: {
-      "title": "onboard",
-      "description": "Lifecycle \"onboard\" docs"
-    }
-  }, {
-    name: "operators",
-    route: "/tags/operators",
-    frontMatter: {
-      "title": "operators",
-      "description": "Lifecycle \"operators\" docs"
-    }
-  }, {
-    name: "optionalservices",
-    route: "/tags/optionalservices",
-    frontMatter: {
-      "title": "optionalservices",
-      "description": "Lifecycle \"optionalservices\" docs"
-    }
-  }, {
-    name: "pipeline",
-    route: "/tags/pipeline",
-    frontMatter: {
-      "title": "pipeline",
-      "description": "Lifecycle \"pipeline\" docs"
-    }
-  }, {
-    name: "postgres",
-    route: "/tags/postgres",
-    frontMatter: {
-      "title": "postgres",
-      "description": "Lifecycle \"postgres\" docs"
-    }
-  }, {
-    name: "pr",
-    route: "/tags/pr",
-    frontMatter: {
-      "title": "pr",
-      "description": "Lifecycle \"pr\" docs"
-    }
-  }, {
-    name: "prerequisites",
-    route: "/tags/prerequisites",
-    frontMatter: {
-      "title": "prerequisites",
-      "description": "Lifecycle \"prerequisites\" docs"
-    }
-  }, {
-    name: "publicurl",
-    route: "/tags/publicurl",
-    frontMatter: {
-      "title": "publicurl",
-      "description": "Lifecycle \"publicurl\" docs"
-    }
-  }, {
-    name: "pull request",
-    route: "/tags/pull request",
-    frontMatter: {
-      "title": "pull request",
-      "description": "Lifecycle \"pull request\" docs"
-    }
-  }, {
-    name: "push",
-    route: "/tags/push",
-    frontMatter: {
-      "title": "push",
-      "description": "Lifecycle \"push\" docs"
-    }
-  }, {
-    name: "redeploy",
-    route: "/tags/redeploy",
-    frontMatter: {
-      "title": "redeploy",
-      "description": "Lifecycle \"redeploy\" docs"
-    }
-  }, {
-    name: "redis",
-    route: "/tags/redis",
-    frontMatter: {
-      "title": "redis",
-      "description": "Lifecycle \"redis\" docs"
-    }
-  }, {
-    name: "reponame",
-    route: "/tags/reponame",
-    frontMatter: {
-      "title": "reponame",
-      "description": "Lifecycle \"reponame\" docs"
-    }
-  }, {
-    name: "requirements",
-    route: "/tags/requirements",
-    frontMatter: {
-      "title": "requirements",
-      "description": "Lifecycle \"requirements\" docs"
-    }
-  }, {
-    name: "restore",
-    route: "/tags/restore",
-    frontMatter: {
-      "title": "restore",
-      "description": "Lifecycle \"restore\" docs"
-    }
-  }, {
-    name: "review",
-    route: "/tags/review",
-    frontMatter: {
-      "title": "review",
-      "description": "Lifecycle \"review\" docs"
-    }
-  }, {
-    name: "schema",
-    route: "/tags/schema",
-    frontMatter: {
-      "title": "schema",
-      "description": "Lifecycle \"schema\" docs"
-    }
-  }, {
-    name: "secrets",
-    route: "/tags/secrets",
-    frontMatter: {
-      "title": "secrets",
-      "description": "Lifecycle \"secrets\" docs"
-    }
-  }, {
-    name: "security",
-    route: "/tags/security",
-    frontMatter: {
-      "title": "security",
-      "description": "Lifecycle \"security\" docs"
-    }
-  }, {
-    name: "service-dependencies",
-    route: "/tags/service-dependencies",
-    frontMatter: {
-      "title": "service-dependencies",
-      "description": "Lifecycle \"service-dependencies\" docs"
-    }
-  }, {
-    name: "service",
-    route: "/tags/service",
-    frontMatter: {
-      "title": "service",
-      "description": "Lifecycle \"service\" docs"
-    }
-  }, {
-    name: "services",
-    route: "/tags/services",
-    frontMatter: {
-      "title": "services",
-      "description": "Lifecycle \"services\" docs"
-    }
-  }, {
-    name: "setup",
-    route: "/tags/setup",
-    frontMatter: {
-      "title": "setup",
-      "description": "Lifecycle \"setup\" docs"
-    }
-  }, {
-    name: "sha",
-    route: "/tags/sha",
-    frontMatter: {
-      "title": "sha",
-      "description": "Lifecycle \"sha\" docs"
-    }
-  }, {
-    name: "sso",
-    route: "/tags/sso",
-    frontMatter: {
-      "title": "sso",
-      "description": "Lifecycle \"sso\" docs"
-    }
-  }, {
-    name: "start",
-    route: "/tags/start",
-    frontMatter: {
-      "title": "start",
-      "description": "Lifecycle \"start\" docs"
-    }
-  }, {
-    name: "static",
-    route: "/tags/static",
-    frontMatter: {
-      "title": "static",
-      "description": "Lifecycle \"static\" docs"
-    }
-  }, {
-    name: "status-comments",
-    route: "/tags/status-comments",
-    frontMatter: {
-      "title": "status-comments",
-      "description": "Lifecycle \"status-comments\" docs"
-    }
-  }, {
-    name: "tear down",
-    route: "/tags/tear down",
-    frontMatter: {
-      "title": "tear down",
-      "description": "Lifecycle \"tear down\" docs"
-    }
-  }, {
-    name: "telemetry",
-    route: "/tags/telemetry",
-    frontMatter: {
-      "title": "telemetry",
-      "description": "Lifecycle \"telemetry\" docs"
-    }
-  }, {
-    name: "template",
-    route: "/tags/template",
-    frontMatter: {
-      "title": "template",
-      "description": "Lifecycle \"template\" docs"
-    }
-  }, {
-    name: "term",
-    route: "/tags/term",
-    frontMatter: {
-      "title": "term",
-      "description": "Lifecycle \"term\" docs"
-    }
-  }, {
-    name: "terminology",
-    route: "/tags/terminology",
-    frontMatter: {
-      "title": "terminology",
-      "description": "Lifecycle \"terminology\" docs"
-    }
-  }, {
-    name: "todo",
-    route: "/tags/todo",
-    frontMatter: {
-      "title": "todo",
-      "description": "Lifecycle \"todo\" docs"
-    }
-  }, {
-    name: "tooling",
-    route: "/tags/tooling",
-    frontMatter: {
-      "title": "tooling",
-      "description": "Lifecycle \"tooling\" docs"
-    }
-  }, {
-    name: "tools",
-    route: "/tags/tools",
-    frontMatter: {
-      "title": "tools",
-      "description": "Lifecycle \"tools\" docs"
-    }
-  }, {
-    name: "ttl",
-    route: "/tags/ttl",
-    frontMatter: {
-      "title": "ttl",
-      "description": "Lifecycle \"ttl\" docs"
-    }
-  }, {
-    name: "tutorial",
-    route: "/tags/tutorial",
-    frontMatter: {
-      "title": "tutorial",
-      "description": "Lifecycle \"tutorial\" docs"
-    }
-  }, {
-    name: "uuid",
-    route: "/tags/uuid",
-    frontMatter: {
-      "title": "uuid",
-      "description": "Lifecycle \"uuid\" docs"
-    }
-  }, {
-    name: "variables",
-    route: "/tags/variables",
-    frontMatter: {
-      "title": "variables",
-      "description": "Lifecycle \"variables\" docs"
-    }
-  }, {
-    name: "vscode",
-    route: "/tags/vscode",
-    frontMatter: {
-      "title": "vscode",
-      "description": "Lifecycle \"vscode\" docs"
-    }
-  }, {
-    name: "webhook",
-    route: "/tags/webhook",
-    frontMatter: {
-      "title": "webhook",
-      "description": "Lifecycle \"webhook\" docs"
-    }
-  }, {
-    name: "webhooks",
-    route: "/tags/webhooks",
-    frontMatter: {
-      "title": "webhooks",
-      "description": "Lifecycle \"webhooks\" docs"
-    }
-  }]
 }];
