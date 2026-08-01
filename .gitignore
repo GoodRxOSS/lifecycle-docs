@@ -154,3 +154,4 @@ deployment-issues/
 
 # Local Claude Code state (permission allowlist, session lockfiles)
 .claude/
+.planning/

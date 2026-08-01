@@ -18,6 +18,7 @@ import { HighlightedCode, AnnotationHandler } from "codehike/code";
 
 export type CodeHikeProps = {
   codeblock: HighlightedCode;
+  children?: React.ReactNode;
   handlers?: AnnotationHandler[];
   theme?: string;
   classes?: string;

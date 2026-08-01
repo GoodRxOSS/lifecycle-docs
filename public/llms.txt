@@ -88,7 +88,7 @@ This index is generated from the human documentation. Follow the linked page for
 
 ## Releases and compatibility
 
-- [Releases](https://uselifecycle.com/docs/releases.md): Find your installed Lifecycle versions and the release information for an upgrade. _(audience: platform-operator, application-developer; last verified: 2026-08-01; baseline: 2026-08-01-lifecycle-mcp-preparation)_
+- [Releases](https://uselifecycle.com/docs/releases.md): Find your installed Lifecycle versions and the release information for an upgrade. _(audience: platform-operator, application-developer; last verified: 2026-08-01; baseline: 2026-08-01-adopt-lifecycle-mcp-browser-validation)_
 - [Compatibility and deprecation policy](https://uselifecycle.com/docs/releases/compatibility.md): Select compatible Lifecycle components and prepare a safe upgrade or rollback. _(audience: platform-operator, application-developer; last verified: 2026-07-24; baseline: 2026-07-24-comprehensive-audit)_
 
 ## Troubleshooting

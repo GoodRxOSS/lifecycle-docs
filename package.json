@@ -4,7 +4,7 @@
   "description": "Lifecycle docs",
   "main": "index.js",
   "scripts": {
-    "build": "bun run build:prep && bun run build:styles && next build",
+    "build": "bun run build:prep && bun run build:styles && next build && bun run check:search",
     "build:styles": "tailwindcss -i ./src/styles/globals.css -o public/styles.css",
     "build:meta": "bun run ./scripts/generateMeta.ts",
     "build:llms": "bun run ./scripts/generateLlms.ts",
@@ -14,6 +14,7 @@
     "check:docs": "bun run ./scripts/validateDocs.ts",
     "check:llms": "bun run ./scripts/generateLlms.ts --check",
     "check:raw": "bun run ./scripts/generateRawMarkdown.ts --check",
+    "check:search": "bun run ./scripts/validateSearchIndex.ts",
     "check:screenshots": "bun run ./scripts/validateDocs.ts --screenshots-only",
     "check:styles": "bun run ./scripts/validateSte100.ts",
     "clean": "rimraf src/pages/tags src/lib/data",
