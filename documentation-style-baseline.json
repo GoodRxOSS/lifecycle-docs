@@ -178,7 +178,7 @@
       "file": "src/pages/docs/features/mcp-server.mdx",
       "profile": "asd-ste100",
       "reviewedOn": "2026-08-01",
-      "sha256": "49addadbc408af37d03f1f2e4f8b12e4ca0dcf03c6e4b7b48bb6a3fee963f582"
+      "sha256": "69ab72bfb6486d0189fc903d4a3d8e170c578be252d39335b7bea8e7c8b0da36"
     },
     "/docs/features/native-helm-deployment": {
       "file": "src/pages/docs/features/native-helm-deployment.mdx",
@@ -304,7 +304,7 @@
       "file": "src/pages/docs/releases/index.mdx",
       "profile": "asd-ste100",
       "reviewedOn": "2026-08-01",
-      "sha256": "db4c73e5c8a52b1785a19cb695fcacae932cdbe68a66814750b29af5b0368261"
+      "sha256": "b8ee17e3117ba7fc2d5badf0b12ecbd2cd8248750ca9e9e9c6f8d36224808722"
     },
     "/docs/releases/compatibility": {
       "file": "src/pages/docs/releases/compatibility.mdx",

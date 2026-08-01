@@ -16,6 +16,7 @@
 
 import nextra from "nextra";
 import { remarkCodeHike, recmaCodeHike } from "codehike/mdx";
+import { remarkCodeHikeSearch } from "./src/lib/remark-codehike-search.mjs";
 
 /** @type {import('codehike/mdx').CodeHikeConfig} */
 export const chConfig = {
@@ -26,7 +27,13 @@ export const chConfig = {
 }
 
 export const mdxOptions = {
-  remarkPlugins: [[remarkCodeHike, chConfig]],
+  remarkPlugins: [
+    [remarkCodeHike, chConfig],
+    [
+      remarkCodeHikeSearch,
+      { componentName: chConfig.components.code },
+    ],
+  ],
   recmaPlugins: [[recmaCodeHike, chConfig]],
   // jsx: true,
 }

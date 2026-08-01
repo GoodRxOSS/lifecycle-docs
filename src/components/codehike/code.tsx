@@ -39,6 +39,7 @@ import Loader from "@/components/loader";
 
 export const CodeHikeSSR = ({
   codeblock,
+  children: searchIndexText,
   handlers = [
     callout,
     className,
@@ -58,6 +59,8 @@ export const CodeHikeSSR = ({
   classes = "",
   ...props
 }: CodeHikeProps & Omit<CustomPreProps, "code" | "handlers">) => {
+  // Nextra indexes this MDX child. The rendered code comes from `codeblock`.
+  void searchIndexText;
   const [isClient, setIsClient] = useState(false);
   const [theme, setTheme] = useState(initialTheme);
 

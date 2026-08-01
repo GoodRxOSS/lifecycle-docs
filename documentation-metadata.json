@@ -43,6 +43,16 @@
         "helm-charts": "c0257d1f88b5b30533f490d12f6293fa465b906c",
         "lifecycle-opentofu": "b14865912608096379c28ef648f7ed99538b5600"
       }
+    },
+    "2026-08-01-adopt-lifecycle-mcp-browser-validation": {
+      "verifiedOn": "2026-08-01",
+      "sources": {
+        "lifecycle": "46af94b799ef43c9e88d48212ec6333a52d56e9f",
+        "lifecycle-ui": "69331dc3876e4aec646a893114739a14755eebd7",
+        "lifecycle-cli": "3f8600dca8c97a715c7ae01c3a3087ba934fa4e1",
+        "helm-charts": "78b680595d4beda3184124312d61d86ce0cc51e7",
+        "lifecycle-opentofu": "b14865912608096379c28ef648f7ed99538b5600"
+      }
     }
   }
 }
