@@ -1,92 +1,85 @@
 ---
-title: Environment TTL
+title: Environment expiration and cleanup
+description: Understand how Lifecycle cleans up pull-request environments and expires API-created environments.
+audience:
+  - application-developer
+  - platform-operator
+  - administrator
+lastVerified: "2026-07-24"
+verificationBaseline: "2026-07-24-comprehensive-audit"
+contentProfile: asd-ste100
 tags:
-  - ttl
+  - environments
   - cleanup
-  - lifecycle-keep
-  - inactivity
-  - global-config
+  - ttl
+  - api
 ---
 
 import { Callout } from "nextra/components";
 
-Lifecycle automatically cleans up inactive ephemeral environments based on configurable TTL (Time To Live) settings. This helps reduce resource usage while allowing teams to keep environments alive when needed.
+Lifecycle has two different cleanup models:
 
-## Configuration
+| Environment type         | Cleanup model                                |
+| ------------------------ | -------------------------------------------- |
+| Pull-request environment | Deployment inactivity and pull-request state |
+| API-created environment  | An explicit `expiresAt` lease                |
 
-The TTL cleanup configuration is stored in the `global_config` table with the key `ttl_cleanup`:
+First, identify the model that created an Environment. Keep labels and
+inactivity settings do not extend an API Environment lease.
 
-```json
-{
-  "enabled": true,
-  "dryRun": false,
-  "inactivityDays": 14,
-  "checkIntervalMinutes": 240,
-  "commentTemplate": "This environment has been inactive for {inactivityDays} days and will be automatically cleaned up.",
-  "excludedRepositories": []
-}
-```
+## Pull-request environments
 
-### `enabled`
+Lifecycle records activity when it deploys or redeploys the Environment.
+Viewing the Environment in the UI does not refresh that activity
+timestamp.
 
-Enables or disables automatic cleanup of inactive environments.
-
-**Default:** `false`
-
-### `dryRun`
-
-Runs cleanup process without actually tearing down environments. Useful for testing.
-
-**Default:** `true`
-
-### `inactivityDays`
-
-Number of days of inactivity before an environment is eligible for cleanup.
-
-**Default:** `14`
-
-### `checkIntervalMinutes`
-
-How frequently the cleanup job runs to check for stale environments.
-
-**Default:** `240` (4 hours)
-
-### `commentTemplate`
-
-Custom message posted to the PR when cleaning up. Supports `{inactivityDays}` placeholder and dynamic label replacements.
-
-**Default:** `"Tearing down lifecycle env since no activity in the past {inactivityDays} days."`
-
-### `excludedRepositories`
-
-Repository names (format: `owner/repo`) to exclude from automatic cleanup.
-
-**Default:** `[]`
+For an open pull request, Lifecycle can clean up the Environment after the
+configured inactivity period.
 
 <Callout type="warning">
-  Changes to TTL configuration require refreshing the global config cache or
-  waiting for the automatic refresh cycle.
+  Pull-request cleanup settings have no supported UI, typed API, or Helm value.
+  A deployment owner must use a supported operator procedure for the installed
+  release. The procedure can change the inactivity period or exclude
+  repositories. See [Runtime configuration
+  surfaces](/docs/operations/configuration). If no such procedure exists for the
+  installed release, do not change these settings.
 </Callout>
 
----
+Closing a pull request can tear down the Environment without waiting for the
+inactivity period.
 
-## How It Works
+<Callout type="info">
+  Activity means deployment activity, not page views or ordinary application
+  traffic. To refresh the inactivity timestamp intentionally, redeploy the
+  Environment.
+</Callout>
 
-Lifecycle tracks environment expiration using `lfc/ttl-expireAtUnix` labels on Kubernetes namespaces. The cleanup service runs periodically to scan for expired environments, validates eligibility (PR is open, not static, not excluded), and tears down environments by removing the deploy label and adding the disabled label.
+## API-created environments
 
-### Preventing Cleanup
+An API Environment has an `expiresAt` timestamp. Its lease starts from the
+requested lifespan. The administrator's policy controls lease extensions.
 
-Add the `keep` label to a PR to prevent automatic cleanup. This disables TTL on the namespace and keeps the environment alive indefinitely. See [Configurable Labels](/docs/features/configurable-labels) to customize the keep label.
+The create form applies the current default and maximum lifespan. API clients
+can use `GET /api/v2/environments/policy` to get these values.
 
----
+See [API-created environments](/docs/features/api-environments) for creation,
+extension, and teardown.
 
-## Summary
+## Keep an environment
 
-| Property               | Type     | Purpose                            |
-| ---------------------- | -------- | ---------------------------------- |
-| `enabled`              | boolean  | Enable/disable automatic cleanup   |
-| `dryRun`               | boolean  | Test mode without actual cleanup   |
-| `inactivityDays`       | number   | Days of inactivity before cleanup  |
-| `checkIntervalMinutes` | number   | Cleanup job frequency in minutes   |
-| `commentTemplate`      | string   | Custom cleanup message for PRs     |
-| `excludedRepositories` | string[] | Repositories excluded from cleanup |
+For a pull-request Environment, use the keep label defined by your
+administrator and repository workflow. For an API-created Environment, use the
+supported lease-extension action before `expiresAt`.
+
+A pull-request label does not change an API lease.
+
+## Troubleshooting
+
+- **An environment expired while I was viewing it:** page views do not refresh
+  pull-request activity or an API lease.
+- **A keep label had no effect:** Check the Environment type and configured
+  label. Then, check when the label was applied.
+- **An API extension was rejected:** The requested result can exceed the
+  maximum lifespan. The administrator can also disable API Environments.
+- **Cleanup started early:** Check whether the pull request closed or a user
+  requested teardown.

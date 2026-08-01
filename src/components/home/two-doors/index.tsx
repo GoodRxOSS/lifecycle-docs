@@ -17,7 +17,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, BookOpen, Github } from "lucide-react";
+import { ArrowRight, CircleDot, Github } from "lucide-react";
 import { FaDiscord } from "react-icons/fa";
 import { motion, type Variants } from "framer-motion";
 import { buttonVariants } from "@/components/ui/button";
@@ -58,7 +58,7 @@ export function TwoDoors() {
             id="two-doors-heading"
             className="mt-3 text-headline text-foreground"
           >
-            Run it, or build it with us.
+            Evaluate it, or build it with us.
           </h2>
         </motion.header>
 
@@ -67,24 +67,24 @@ export function TwoDoors() {
             variants={blockVariants}
             className="flex flex-col bg-background p-7 sm:p-9"
           >
-            <p className="kicker text-muted-foreground">01 · run it</p>
+            <p className="kicker text-muted-foreground">01 · evaluate it</p>
             <h3 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
-              Get it running on a sample repo.
+              Evaluate Lifecycle safely.
             </h3>
             <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
-              Clone, follow the guide, watch your first pull request spin up its
-              own env in under ten minutes.
+              Compare the starter OpenTofu and existing-cluster Helm paths, then
+              review the security work required beyond evaluation.
             </p>
 
             <div className="mt-auto pt-7">
               <Link
-                href="/docs/getting-started/create-environment"
+                href="/docs/setup/install-lifecycle"
                 className={cn(
                   buttonVariants({ size: "lg" }),
                   "group h-11 px-6 text-base sm:w-auto",
                 )}
               >
-                Read the getting-started guide
+                Choose an installation path
                 <ArrowRight
                   className="ml-2 h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
                   aria-hidden="true"
@@ -118,9 +118,9 @@ export function TwoDoors() {
                   label: "Join the Discord",
                 },
                 {
-                  href: "https://github.com/GoodRxOSS/lifecycle/blob/main/CONTRIBUTING.md",
-                  icon: BookOpen,
-                  label: "Contributing guide",
+                  href: "https://github.com/GoodRxOSS/lifecycle/issues",
+                  icon: CircleDot,
+                  label: "Browse issues",
                 },
               ].map(({ href, icon: Icon, label }) => (
                 <li key={href}>

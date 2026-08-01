@@ -68,11 +68,24 @@ const updateProjectLink = (frontMatter: {
 };
 
 export const HeadMeta = () => {
+  const { frontMatter, title: pageTitle } = useConfig();
+  const title =
+    typeof pageTitle === "string" && pageTitle.trim()
+      ? `${pageTitle} – Lifecycle`
+      : "Lifecycle documentation";
+  const description =
+    typeof frontMatter?.description === "string" &&
+    frontMatter.description.trim()
+      ? frontMatter.description
+      : "Documentation for Lifecycle";
+
   return (
     <>
+      <title>{title}</title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <meta property="og:title" content="Lifecycle" />
-      <meta property="og:description" content="Documentation for Lifecycle" />
+      <meta name="description" content={description} />
+      <meta property="og:title" content={title} />
+      <meta property="og:description" content={description} />
       <link rel="icon" type="image/png" href="/logo.png" />
     </>
   );
@@ -82,6 +95,7 @@ export const MainTemplate = ({ children }: MainProps) => {
   const config = useConfig();
   const frontMatter = config.frontMatter;
   const layout = config.normalizePagesResult?.activeThemeContext?.layout;
+
   if (layout !== "full") {
     return (
       <>
@@ -124,7 +138,7 @@ export const TocExtraContent = () => {
     frontMatter?.tags?.length > 0 && (
       <section>
         <Separator className="_my-8" />
-        <p className="_mb-4 _font-semibold _tracking-tight">Related Content</p>
+        <p className="_mb-4 _font-semibold _tracking-tight">Topics</p>
         <TagContent tags={frontMatter.tags} />
         <Separator className="_my-8" />
       </section>
@@ -141,7 +155,7 @@ export default {
   editLink: {
     text: "Edit this page",
   },
-  head: <HeadMeta />,
+  head: HeadMeta,
   logo,
   main: MainTemplate,
   navbar: {

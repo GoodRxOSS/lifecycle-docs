@@ -1,5 +1,11 @@
 ---
-title: Additional Configuration
+title: Optional configuration
+description: Apply optional installation-wide settings safely after Lifecycle is running.
+audience:
+  - platform-operator
+lastVerified: "2026-07-24"
+verificationBaseline: "2026-07-24-comprehensive-audit"
+contentProfile: asd-ste100
 tags:
   - configure
   - lifecycle
@@ -9,81 +15,86 @@ tags:
 
 import { Callout } from "nextra/components";
 
-We are in the final step of the setup process.
+After the GitHub App setup, use these optional settings to improve security and
+usability.
 
-**This step is Optional but highly recommended to ensure the default IP Whitelist is set for the environments created by the Lifecycle app.** This will help in securing the environments and restricting access to only the specified IPs or CIDR blocks.
+## Configure BuildKit
 
-## Set Default IP Whitelist
+The standard Helm installation supplies a BuildKit endpoint. Select the build
+engine for each Service in `lifecycle.yaml`. See the [GitHub Service builder
+schema](/docs/schema/github#dockerbuilder).
 
-- Connect to the `postgres` database using the `psql` command line tool or any other database client.
+Lifecycle build pods include
+`cluster-autoscaler.kubernetes.io/safe-to-evict: "false"`. Add other
+annotations for each Service with `github.docker.builder.podAnnotations`. The
+Service configuration cannot override the `safe-to-evict` value.
 
-  <Callout type="info">
-
-  Database password was auto generated during the infra setup and can be found
-  retrieved from the `app-postgres` secret in the `lifecycle-app`
-  namespace.
-
-  </Callout>
-
-- Retrieve the database password:
-
-```sh
-   kubectl get secret app-postgres --namespace lifecycle-app \
-      -o jsonpath='{.data}' | jq 'with_entries(.value |= @base64d)'
-```
-
-- Run the following SQL commands to update the configuration:
-
-```sql
--- provide a default IP whitelist for the environments, default is open to all IPs
-UPDATE public.global_config
-SET
-    config = (
-        config::jsonb ||
-        '{
-            "defaultIPWhiteList": "{ 0.0.0.0/0 }"
-         }'::jsonb
-    )::json,
-    "updatedAt" = NOW()
-WHERE "key" = 'serviceDefaults';
-```
-
-<Callout type="error" emoji="⚠️">
-  Note that the infra setup with the OpenTofu modules below will **open your
-  cluster to the world.** <br />
-  🛡️ Make sure to **<a href="https://translate.google.com/details?sl=auto&tl=hy&text=shield&op=translate">shield</a>** your cluster by implementing appropriate network policies
-  and access controls after the initial setup.
-
-Replace the `defaultIPWhiteList` under `global_config.serviceDefaults` with your actual IP whitelist or CIDR block to restrict access to the deployed environments.
-
+<Callout type="warning">
+  The installation-wide IP allowlist starts open to `0.0.0.0/0`. Before an
+  Environment is reachable, limit each public Service to approved networks.
+  Apply your organization's network, identity, and security controls.
 </Callout>
 
----
+## Limit public Service access
 
-## Enable Environment Lens Globally
+Use the supported service-level `deployment.network.ipWhitelist` field. Replace
+the documentation CIDR shown with the networks that must reach the Service:
 
-The environment lens banner can be enabled globally for all services via the `features` row in `global_config`. Individual services can still override this by setting `envLens` explicitly in their `lifecycle.yaml`.
+```yaml filename="lifecycle.yaml"
+version: "1.0.0"
 
-```sql
--- Enable envLens globally for all services
-INSERT INTO public.global_config ("key", config, "createdAt", "updatedAt")
-VALUES ('features', '{"envLens": true}'::json, NOW(), NOW())
-ON CONFLICT ("key")
-DO UPDATE SET
-    config = (public.global_config.config::jsonb || '{"envLens": true}'::jsonb)::json,
-    "updatedAt" = NOW();
+services:
+  - name: "api"
+    github:
+      repository: "myorg/api"
+      branchName: "main"
+      docker:
+        defaultTag: "main"
+        app:
+          dockerfilePath: "Dockerfile"
+          ports:
+            - 8080
+      deployment:
+        public: true
+        network:
+          ipWhitelist:
+            - "203.0.113.0/24"
 ```
 
-After running this, [refresh the config cache](#refresh-config-cache) to apply the change.
+<Callout type="warning">
+  This documentation uses `203.0.113.0/24` only as an example. It does not grant
+  your users access. Supply your office, VPN, or gateway CIDRs.
+</Callout>
 
----
+Set `deployment.public: false` for a Service that must have no public
+ingress. See the [GitHub service network
+schema](/docs/schema/github#network) for hostname and port-mapping options.
 
-## Refresh config cache
+## Enable Environment Lens for a Service
 
-```sh
-curl -X PUT https://app.<your_domain>/api/v1/config/cache
+When you want an Environment banner on a Service ingress, set `envLens` on that
+Service:
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "web"
+    github:
+      repository: "myorg/web"
+      branchName: "main"
+      docker:
+        defaultTag: "main"
+        app:
+          dockerfilePath: "Dockerfile"
+          ports:
+            - 3000
+      envLens: true
 ```
 
-This will refresh the configuration cache and apply the changes you made to the database for the Lifecycle app.
+Commit the change. Then, create or redeploy an Environment and make sure that the
+banner appears.
 
-We are all set! 🎉 And ready to create our first PR based ephemeral environment.
+## Change other settings
+
+Use the [runtime configuration map](/docs/operations/configuration) to select a
+documented configuration surface. After each change, test one affected
+workflow.

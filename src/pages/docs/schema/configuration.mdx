@@ -1,6 +1,11 @@
 ---
 title: Configuration Service
-description: Deploy configuration-only services for feature flags and shared configuration
+description: Deploy configuration-only Services for feature flags and shared configuration.
+audience:
+  - application-developer
+lastVerified: "2026-08-01"
+verificationBaseline: "2026-08-01-configuration-schema-fix"
+contentProfile: asd-ste100
 tags:
   - schema
   - configuration
@@ -10,40 +15,54 @@ tags:
 
 import { Callout } from "nextra/components";
 
-The `configuration` service type creates a configuration-only service that doesn't deploy any containers. It's useful for managing feature flags, shared configuration, or service metadata that other services can reference.
+Use a `configuration` Service to make shared string values available to other
+Services without deploying a container or pod.
+
+## Fields
+
+| Field        | Type              | Required | Description                              |
+| ------------ | ----------------- | -------- | ---------------------------------------- |
+| `data`       | object of strings | Yes      | Values added to the template environment |
+| `branchName` | string            | No       | Optional branch metadata                 |
 
 <Callout type="warning">
-  This documentation is still in progress and will be updated shortly with the
-  latest information.
+  Set `data`. You can set `branchName`. Do not set `defaultTag` because
+  Lifecycle rejects it. Before you push the file, run `lfc schema validate
+  lifecycle.yaml`.
 </Callout>
 
-## Required Fields
-
-| Field        | Type   | Description                          |
-| ------------ | ------ | ------------------------------------ |
-| `defaultTag` | string | Configuration version tag            |
-| `branchName` | string | Branch name for configuration source |
-
 ```yaml filename="lifecycle.yaml"
+version: "1.0.0"
+
+environment:
+  defaultServices:
+    - name: "api"
+    - name: "shared-config"
+
 services:
-  - name: "config"
+  - name: "shared-config"
     configuration:
-      defaultTag: "v1.0.0" # Required
-      branchName: "main" # Required
+      data:
+        FEATURE_MODE: "preview"
+        LOG_LEVEL: "debug"
+      branchName: "main"
 ```
 
-## How It Works
+## How it works
 
-A configuration service:
+A configuration Service:
 
-1. Does not deploy any containers or pods
-2. Registers a service entry in Lifecycle for reference by other services
-3. Provides a way to version and track configuration changes
-4. Can be referenced by other services using template variables
+1. Lifecycle does not deploy containers or pods for the Service.
+2. Lifecycle adds each `data` key to the template variables for other Services.
+
+Lifecycle does not prefix configuration keys with the Service name. For
+example, `FEATURE_MODE` becomes `{{FEATURE_MODE}}`.
 
 ## Example
 
 ```yaml filename="lifecycle.yaml"
+version: "1.0.0"
+
 environment:
   defaultServices:
     - name: "api"
@@ -59,40 +78,43 @@ services:
         app:
           dockerfilePath: "Dockerfile"
           env:
-            CONFIG_VERSION: "{{feature-flags_branchName}}"
+            FEATURE_MODE: "{{FEATURE_MODE}}"
+            CONFIG_LOG_LEVEL: "{{CONFIG_LOG_LEVEL}}"
           ports:
             - 3000
 
   - name: "feature-flags"
     configuration:
-      defaultTag: "v2.1.0"
-      branchName: "main"
+      data:
+        FEATURE_MODE: "preview"
+        CONFIG_LOG_LEVEL: "info"
 ```
 
-## Use Cases
+## Typical tasks
 
-### Feature Flags
+### Feature flags
 
-Track feature flag configuration versions:
+Share feature switches with deployed Services:
 
 ```yaml
 services:
   - name: "feature-flags"
     configuration:
-      defaultTag: "2024.01.15"
-      branchName: "main"
+      data:
+        ENABLE_NEW_CHECKOUT: "true"
+        CHECKOUT_VARIANT: "preview"
 ```
 
-### Shared Configuration
+### Shared configuration
 
-Reference shared configuration across services:
+Make the same values available to multiple Services:
 
 ```yaml
 services:
   - name: "shared-config"
     configuration:
-      defaultTag: "v1.0.0"
-      branchName: "production"
+      data:
+        CONFIG_BRANCH: "production"
 
   - name: "api"
     github:
@@ -103,7 +125,7 @@ services:
         app:
           dockerfilePath: "Dockerfile"
           env:
-            CONFIG_BRANCH: "{{shared-config_branchName}}"
+            CONFIG_BRANCH: "{{CONFIG_BRANCH}}"
 
   - name: "worker"
     github:
@@ -114,23 +136,36 @@ services:
         app:
           dockerfilePath: "Dockerfile"
           env:
-            CONFIG_BRANCH: "{{shared-config_branchName}}"
+            CONFIG_BRANCH: "{{CONFIG_BRANCH}}"
 ```
 
-### Environment Metadata
+### Environment metadata
 
-Track environment-specific metadata:
+Use shared data with built-in template variables:
 
 ```yaml
 services:
   - name: "env-metadata"
     configuration:
-      defaultTag: "ephemeral"
-      branchName: "{{PR_BRANCH}}"
+      data:
+        DEPLOYMENT_TIER: "ephemeral"
+
+  - name: "api"
+    github:
+      repository: "myorg/api"
+      branchName: "main"
+      docker:
+        defaultTag: "main"
+        app:
+          dockerfilePath: "Dockerfile"
+          env:
+            DEPLOYMENT_TIER: "{{DEPLOYMENT_TIER}}"
+            SOURCE_BRANCH: "{{branchName}}"
 ```
 
 <Callout type="info">
-  Configuration services are lightweight entries in Lifecycle's service
-  registry. They don't consume cluster resources but allow other services to
-  reference configuration state.
+  Configuration Services do not consume workload resources.
 </Callout>
+
+Include the configuration Service in the Environment. Its data is then
+available during template rendering.

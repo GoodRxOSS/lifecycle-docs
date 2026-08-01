@@ -1,6 +1,11 @@
 ---
 title: Docker Service
-description: Deploy pre-built Docker images like databases, caches, and other infrastructure components
+description: Deploy pre-built Docker images for databases, caches, and other infrastructure components.
+audience:
+  - application-developer
+lastVerified: "2026-07-24"
+verificationBaseline: "2026-07-24-comprehensive-audit"
+contentProfile: asd-ste100
 tags:
   - schema
   - docker
@@ -12,11 +17,16 @@ tags:
 import { Callout } from "nextra/components";
 import { Tabs } from "nextra/components";
 
-The `docker` service type deploys pre-built Docker images without building from source. This is ideal for databases, caches, message queues, and other infrastructure components.
+The `docker` Service deploys a pre-built Docker image. Lifecycle does not build
+source for this Service type.
+
+The examples use AWS-style [cloud-secret
+references](/docs/features/secrets). Replace them with a provider and path from
+your Lifecycle operator. Do not commit passwords to `lifecycle.yaml`.
 
 ## Examples
 
-<Tabs items={["PostgreSQL", "Redis", "MySQL with Persistence", "Complete"]}>
+<Tabs items={["PostgreSQL", "Redis", "MySQL with Persistence", "All fields"]}>
 
 <Tabs.Tab>
 PostgreSQL database (internal only):
@@ -31,17 +41,17 @@ services:
         - 5432
       env:
         POSTGRES_USER: "app"
-        POSTGRES_PASSWORD: "secret"
+        POSTGRES_PASSWORD: "{{aws:preview/postgres:password}}"
         POSTGRES_DB: "myapp"
       deployment:
         public: false # No ingress - internal only
 ```
 
-Reference from other services:
+For other Services:
 
 ```yaml
 env:
-  DATABASE_URL: "postgres://app:secret@{{database_internalHostname}}:5432/myapp"
+  DATABASE_HOST: "{{database_internalHostname}}"
 ```
 
 </Tabs.Tab>
@@ -67,7 +77,7 @@ services:
             limit: "256Mi"
 ```
 
-Reference from other services:
+For other Services:
 
 ```yaml
 env:
@@ -88,10 +98,10 @@ services:
       ports:
         - 3306
       env:
-        MYSQL_ROOT_PASSWORD: "rootpassword"
+        MYSQL_ROOT_PASSWORD: "{{aws:preview/mysql:root-password}}"
         MYSQL_DATABASE: "myapp"
         MYSQL_USER: "app"
-        MYSQL_PASSWORD: "apppassword"
+        MYSQL_PASSWORD: "{{aws:preview/mysql:app-password}}"
       deployment:
         public: false
         resource:
@@ -113,7 +123,7 @@ services:
 </Tabs.Tab>
 
 <Tabs.Tab>
-Complete configuration with all options:
+Expanded configuration with all options:
 
 ```yaml filename="lifecycle.yaml"
 services:
@@ -127,12 +137,12 @@ services:
         - 5432
       env:
         POSTGRES_USER: "app"
-        POSTGRES_PASSWORD: "secret"
+        POSTGRES_PASSWORD: "{{aws:preview/postgres:password}}"
         POSTGRES_DB: "myapp"
         PGDATA: "/var/lib/postgresql/data/pgdata"
       deployment:
         public: false # false = internal only, no ingress
-        capacityType: "on-demand" # Options: spot, on-demand
+        capacityType: "ON_DEMAND" # Options: SPOT, ON_DEMAND
         resource: # Custom CPU/memory requests and limits
           cpu:
             request: "250m"
@@ -156,48 +166,55 @@ services:
 
 </Tabs>
 
-## Fields Reference
+## Field reference
 
-### Required Fields
+### Required fields
 
-| Field         | Type   | Description                                   |
-| ------------- | ------ | --------------------------------------------- |
-| `dockerImage` | string | Docker image name (e.g., `postgres`, `redis`) |
-| `defaultTag`  | string | Image tag (e.g., `15-alpine`, `7-alpine`)     |
+| Field         | Type   | Description                                           |
+| ------------- | ------ | ----------------------------------------------------- |
+| `dockerImage` | string | Docker image name, for example, `postgres` or `redis` |
+| `defaultTag`  | string | Image tag, for example, `15-alpine` or `7-alpine`     |
 
-### Optional Fields
+### Optional fields
 
-| Field        | Type    | Description                                                                              |
-| ------------ | ------- | ---------------------------------------------------------------------------------------- |
-| `command`    | string  | Override container entrypoint                                                            |
-| `arguments`  | string  | Arguments passed to the command. Use `%%SPLIT%%` for spaces                              |
-| `env`        | object  | Environment variables                                                                    |
-| `ports`      | array   | Exposed container ports                                                                  |
-| `deployment` | object  | Deployment configuration (see below)                                                     |
-| `envLens`    | boolean | Enable environment lens ingress banner. Overrides the global `features.envLens` default. |
+| Field        | Type    | Description                                                   |
+| ------------ | ------- | ------------------------------------------------------------- |
+| `command`    | string  | Override container entrypoint                                 |
+| `arguments`  | string  | Arguments passed to the command. Use `%%SPLIT%%` for spaces   |
+| `env`        | object  | Environment variables                                         |
+| `ports`      | array   | Exposed container ports                                       |
+| `deployment` | object  | Deployment configuration. See the Deployment options section. |
+| `envLens`    | boolean | Enable the Environment Lens ingress banner                    |
 
-## Deployment Options
+## Deployment options
 
-The `deployment` section configures how the service is deployed to Kubernetes. All fields are optional.
+The `deployment` section configures how Lifecycle deploys the Service to
+Kubernetes. All fields are optional.
 
-See [GitHub Service - Deployment Options](/docs/schema/github#deployment-options) for detailed documentation of each field.
+See [GitHub Service deployment options](/docs/schema/github#deployment-options)
+for information about each field.
 
-| Field          | Description                                                               |
-| -------------- | ------------------------------------------------------------------------- |
-| `public`       | `true` = creates ingress, `false` = internal only                         |
-| `capacityType` | Node type: `spot` or `on-demand`                                          |
-| `resource`     | CPU and memory requests/limits                                            |
-| `readiness`    | Health check using `httpGet` or `tcpSocketPort`                           |
-| `hostnames`    | Custom hostname config (auto-constructed from `global_config` if omitted) |
-| `network`      | IP whitelist, port mapping, gRPC support                                  |
-| `serviceDisks` | Persistent volume mounts                                                  |
+| Field          | Description                                                             |
+| -------------- | ----------------------------------------------------------------------- |
+| `public`       | `true` = creates ingress, `false` = internal only                       |
+| `capacityType` | Node type: `SPOT` (default) or `ON_DEMAND`                              |
+| `resource`     | CPU and memory requests/limits                                          |
+| `readiness`    | Health check using `httpGet` or `tcpSocketPort`                         |
+| `hostnames`    | Custom hostname configuration. Lifecycle generates hostnames if omitted |
+| `network`      | IP whitelist, port mapping, gRPC support                                |
+| `serviceDisks` | Persistent volume mounts                                                |
 
 <Callout type="info">
-  For databases and caches, you typically want `public: false` to keep them
-  internal to the cluster.
+  `public: false` keeps a database or cache internal to the cluster.
 </Callout>
 
-## Common Images
+For a database or cache that needs only cluster access, set `public: false`.
+
+<Callout type="warning">
+  Use `SPOT` or `ON_DEMAND`. Other spellings can prevent workload scheduling.
+</Callout>
+
+## Typical images
 
 ### Databases
 
@@ -210,9 +227,10 @@ docker:
     - 5432
   env:
     POSTGRES_USER: "user"
-    POSTGRES_PASSWORD: "pass"
+    POSTGRES_PASSWORD: "{{aws:preview/postgres:password}}"
     POSTGRES_DB: "db"
 
+---
 # MySQL
 docker:
   dockerImage: "mysql"
@@ -220,9 +238,10 @@ docker:
   ports:
     - 3306
   env:
-    MYSQL_ROOT_PASSWORD: "root"
+    MYSQL_ROOT_PASSWORD: "{{aws:preview/mysql:root-password}}"
     MYSQL_DATABASE: "db"
 
+---
 # MongoDB
 docker:
   dockerImage: "mongo"
@@ -231,10 +250,10 @@ docker:
     - 27017
   env:
     MONGO_INITDB_ROOT_USERNAME: "admin"
-    MONGO_INITDB_ROOT_PASSWORD: "pass"
+    MONGO_INITDB_ROOT_PASSWORD: "{{aws:preview/mongodb:password}}"
 ```
 
-### Caches & Queues
+### Caches and queues
 
 ```yaml
 # Redis
@@ -244,6 +263,7 @@ docker:
   ports:
     - 6379
 
+---
 # Memcached
 docker:
   dockerImage: "memcached"
@@ -251,6 +271,7 @@ docker:
   ports:
     - 11211
 
+---
 # RabbitMQ
 docker:
   dockerImage: "rabbitmq"
@@ -260,5 +281,5 @@ docker:
     - 15672
   env:
     RABBITMQ_DEFAULT_USER: "guest"
-    RABBITMQ_DEFAULT_PASS: "guest"
+    RABBITMQ_DEFAULT_PASS: "{{aws:preview/rabbitmq:password}}"
 ```

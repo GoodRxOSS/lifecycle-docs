@@ -1,37 +1,100 @@
 ---
-title: Delete environment
+title: Delete an Environment
+description: Tear down a pull-request or API-created Environment safely from GitHub, the UI, the CLI, or the API.
+audience:
+  - application-developer
+lastVerified: "2026-07-24"
+verificationBaseline: "2026-07-24-comprehensive-audit"
+contentProfile: asd-ste100
 tags:
   - lifecycle
-  - tutorial
-  - delete
-  - tear down
+  - environment
   - cleanup
-  - lifecycle-disabled
-  - close
 ---
 
 import { Callout } from "nextra/components";
 
-To **tear down** an environment, you can do one of the following:
+Deleting an Environment queues teardown of its workloads and releases its
+human-readable Environment ID. Select the control surface that created or owns
+the Environment.
 
-1. **Merge or close the pull request**: This will automatically clean up the environment.
-2. **Apply the `lifecycle-disabled!` label**: This will immediately trigger the environment deletion process.
+## Pull-request Environments
 
----
+Merge or close the pull request to tear down its Environment automatically.
+When the pull request remains open, apply your installation's configured disable
+label to tear down the Environment. The default label is
+`lifecycle-disabled!`.
 
-The **`lifecycle-disabled!`** label is useful in scenarios where:
+Label names are configurable. See
+[Auto deploy and labels](/docs/features/auto-deployment).
 
-- The environment infrastructure is **experiencing issues**.
-- The data within the environment is **corrupt**.
-- You need to **restart or rebuild** the environment from scratch without waiting for a PR to be merged or closed.
+## Lifecycle UI
 
-Simply apply the label to the **PR associated with the environment**, and Lifecycle will automatically tear it down.
+1. Open **Environments**.
+2. Select the Environment.
+3. Open **Actions**.
+4. Select **Destroy**.
+5. Check the selected Environment ID.
+6. If the Environment ID is correct, start the destructive action.
 
-<Callout type="info">
-  Read more about how pull request labels control auto deploy in repositories
-  [here](/docs/features/auto-deployment)
+The UI disables **Destroy** for a pinned static Environment. Unpin it only when
+you intend to remove its persistence guarantee.
+
+## CLI
+
+The CLI shows a confirmation prompt:
+
+```sh
+lfc builds destroy <environment-id>
+```
+
+For non-interactive automation, use `--yes` only after the script checks the
+Environment ID:
+
+```sh
+lfc builds destroy <environment-id> --yes
+```
+
+## API-created Environments
+
+Send an authenticated request with `env:write` access:
+
+```sh
+curl --request DELETE \
+  --header "Authorization: Bearer $LIFECYCLE_API_KEY" \
+  "$LIFECYCLE_API_URL/api/v2/environments/<environment-id>"
+```
+
+The API rejects deletion of a static Environment. Use a supported UI or CLI
+control to remove the static pin first:
+
+```sh
+lfc builds set <environment-id> --no-static
+```
+
+<Callout type="warning">
+  Teardown is asynchronous. Do not reuse the Environment ID until Lifecycle no
+  longer returns the active Environment detail.
 </Callout>
 
----
+## Check teardown
 
-Using these methods, you can efficiently manage and clean up environments to ensure smooth development and testing workflows. 🧹
+Follow the status until it reaches **Torn down**:
+
+```sh
+lfc builds status <environment-id> --watch
+```
+
+Before you reuse an API-created Environment ID, wait until its detail route
+returns `404`:
+
+```sh
+curl --silent --output /dev/null --write-out "%{http_code}\n" \
+  --header "Authorization: Bearer $LIFECYCLE_API_KEY" \
+  "$LIFECYCLE_API_URL/api/v2/environments/<environment-id>"
+```
+
+`lfc builds list --all` intentionally includes torn-down history. A historical
+row does not mean the ID is active. Application URLs also stop serving. If
+teardown does not complete, give the operator the Environment ID, its latest
+status message, and the affected Service names. Do not include secret values.

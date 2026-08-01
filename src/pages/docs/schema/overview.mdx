@@ -1,6 +1,11 @@
 ---
-title: Schema Overview
-description: Introduction to the lifecycle.yaml configuration file and its structure
+title: Schema overview
+description: Understand the lifecycle.yaml configuration file and its structure.
+audience:
+  - application-developer
+lastVerified: "2026-07-24"
+verificationBaseline: "2026-07-24-comprehensive-audit"
+contentProfile: asd-ste100
 tags:
   - schema
   - configuration
@@ -9,11 +14,20 @@ tags:
 
 import { Callout } from "nextra/components";
 
-The `lifecycle.yaml` file is the core configuration file that defines how Lifecycle manages your ephemeral environments. Place this file at the root of your repository.
+Lifecycle reads its configuration from the repository root. The supported
+filenames are:
 
-## File Structure
+- `lifecycle.yaml` (recommended)
+- `lifecycle.yml`
+- `.lifecycle.yaml`
+- `.lifecycle.yml`
 
-A `lifecycle.yaml` file has three main sections:
+Keep only one supported file in each repository. If the repository has multiple
+files, Lifecycle does not guarantee which file it selects.
+
+## File structure
+
+A `lifecycle.yaml` file has three primary sections:
 
 ```yaml filename="lifecycle.yaml"
 version: "1.0.0" # Schema version
@@ -22,34 +36,41 @@ environment: # Environment-level configuration
   autoDeploy: true
   defaultServices:
     - name: "my-service"
-  # optionalServices, webhooks, etc.
+  # Add optionalServices or webhooks if necessary.
 
 services: # Service definitions
   - name: "my-service"
     github: # Service type configuration
-      # ...
+      repository: "myorg/my-service"
+      branchName: "main"
+      docker:
+        defaultTag: "main"
+        app:
+          dockerfilePath: "Dockerfile"
 ```
 
 | Section       | Description                                                  |
 | ------------- | ------------------------------------------------------------ |
-| `version`     | Schema version (currently `"1.0.0"`)                         |
+| `version`     | Schema version. Use `"1.0.0"`                                |
 | `environment` | Controls deployment behavior, service grouping, and webhooks |
 | `services`    | Array of service definitions with their configurations       |
 
-## Service Types
+## Service types
 
-Each service in the `services` array must have exactly one service type configured. Choose based on your deployment needs:
+Each entry in `services` must have one Service type only. Select the type for
+your deployment.
 
-| Service Type                                     | Use Case                                                          |
-| ------------------------------------------------ | ----------------------------------------------------------------- |
-| [**github**](/docs/schema/github)                | Build and deploy from a GitHub repository with Dockerfile         |
-| [**docker**](/docs/schema/docker)                | Deploy pre-built Docker images (databases, caches, etc.)          |
-| [**helm**](/docs/schema/helm)                    | Deploy using Helm charts (local or remote)                        |
-| [**codefresh**](/docs/schema/codefresh)          | Trigger external Codefresh pipelines for deployment               |
-| [**auroraRestore**](/docs/schema/aurora-restore) | Restore AWS Aurora database snapshots                             |
-| [**configuration**](/docs/schema/configuration)  | Deploy configuration-only services (feature flags, shared config) |
+| Service type                                     | Purpose                                                      |
+| ------------------------------------------------ | ------------------------------------------------------------ |
+| [**github**](/docs/schema/github)                | Source build and deployment from a GitHub repository         |
+| [**docker**](/docs/schema/docker)                | Deploy pre-built Docker images, such as databases and caches |
+| [**helm**](/docs/schema/helm)                    | Deploy using Helm charts (local or remote)                   |
+| [**codefresh**](/docs/schema/codefresh)          | Trigger external Codefresh pipelines for deployment          |
+| [**externalHttp**](/docs/schema/external-http)   | Use an existing internal and public HTTP endpoint            |
+| [**auroraRestore**](/docs/schema/aurora-restore) | Restore AWS Aurora database snapshots                        |
+| [**configuration**](/docs/schema/configuration)  | Provide shared values without a workload                     |
 
-## Choosing a Service Type
+## Select a Service type
 
 ```
 Do you need to build from source?
@@ -62,12 +83,52 @@ Do you need to build from source?
                   ├─ Yes → helm (without docker section)
                   └─ No  → Is it a CI/CD pipeline?
                            ├─ Yes → codefresh
-                           └─ No  → configuration or auroraRestore
+                           └─ No  → Is the dependency already hosted?
+                                    ├─ Yes → externalHttp
+                                    └─ No  → configuration or auroraRestore
 ```
 
-## Minimal Example
+## Shared Service fields
 
-Here's the simplest valid `lifecycle.yaml` for a single service:
+These fields sit directly on each `services[]` entry with its Service type:
+
+| Field                 | Type     | Required | Description                                           |
+| --------------------- | -------- | -------- | ----------------------------------------------------- |
+| `name`                | string   | Yes      | Service name used by references and template keys     |
+| `appShort`            | string   | No       | Short application identifier                          |
+| `defaultUUID`         | string   | No       | Static Environment fallback for an unselected service |
+| `ignoreFiles`         | string[] | No       | Service-specific push-redeploy ignore patterns        |
+| `requires`            | object[] | No       | Services to include with this service                 |
+| `deploymentDependsOn` | string[] | No       | Selected services that must deploy first              |
+
+`requires` controls inclusion. `deploymentDependsOn` controls order. See
+[Service Dependencies](/docs/features/service-dependencies).
+
+## External HTTP Service
+
+Use `externalHttp` for an endpoint that Lifecycle does not build or deploy:
+
+```yaml filename="lifecycle.yaml"
+version: "1.0.0"
+
+environment:
+  defaultServices:
+    - name: "shared-api"
+
+services:
+  - name: "shared-api"
+    externalHttp:
+      defaultInternalHostname: "shared-api.platform.svc.cluster.local"
+      defaultPublicUrl: "shared-api.example.com"
+```
+
+The two endpoint fields are necessary. Lifecycle marks this Service ready
+without a source build. It makes the resolved URLs available to template
+variables.
+
+## Minimal example
+
+Use this minimal `lifecycle.yaml` for one Service:
 
 ```yaml filename="lifecycle.yaml"
 version: "1.0.0"
@@ -89,9 +150,9 @@ services:
             - 3000
 ```
 
-## Complete Example
+## Expanded example
 
-A more complete example with multiple service types:
+An expanded example with multiple Service types:
 
 ```yaml filename="lifecycle.yaml"
 version: "1.0.0"
@@ -138,7 +199,7 @@ services:
         - 5432
       env:
         POSTGRES_USER: "app"
-        POSTGRES_PASSWORD: "secret"
+        POSTGRES_PASSWORD: "{{aws:preview/postgres:password}}"
         POSTGRES_DB: "myapp"
       deployment:
         public: false
@@ -152,16 +213,18 @@ services:
         - 6379
 ```
 
-## Template Variables
+## Template variables
 
-Throughout your configuration, you can use template variables like `{{api_publicUrl}}` or `{{database_internalHostname}}` to reference dynamic values from other services.
+Use template variables in your configuration. For example, `{{api_publicUrl}}`
+and `{{database_internalHostname}}` supply dynamic values from other Services.
 
-See the [Template Variables](/docs/features/template-variables) guide for the complete list of available variables and usage examples.
+See [Template variables](/docs/features/template-variables) for the full list
+and examples.
 
-## Next Steps
+## Related pages
 
 - [Environment Configuration](/docs/schema/environment) - Configure deployment behavior and service grouping
 - [Webhooks](/docs/schema/webhooks) - Automate actions on deployment events
-- [GitHub Service](/docs/schema/github) - Build and deploy from source
+- [GitHub Service](/docs/schema/github) - Source build and deployment
 - [Docker Service](/docs/schema/docker) - Deploy pre-built images
 - [Helm Service](/docs/schema/helm) - Deploy with Helm charts

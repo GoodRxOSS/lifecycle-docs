@@ -1,0 +1,54 @@
+---
+title: Monitor Lifecycle
+description: Interpret health endpoints, verify end-to-end operation, and collect safe diagnostic data for stuck work.
+audience:
+  - platform-operator
+lastVerified: "2026-07-24"
+verificationBaseline: "2026-07-24-comprehensive-audit"
+contentProfile: asd-ste100
+tags:
+  - operator
+  - monitoring
+  - troubleshooting
+---
+
+Lifecycle probes show component and dependency reachability. They do not prove
+that queued work progresses or that an Environment operates correctly.
+
+## Health endpoints
+
+| Endpoint      | What it proves                              | What it does not prove                                                                                    |
+| ------------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `/api/health` | Required data services are reachable.       | GitHub delivery, queue progress, Kubernetes access, build capacity, object storage, or workload readiness |
+| `/api/jobs`   | The worker endpoint responds with HTTP 200. | Queue lag, active consumption, failed jobs, retries, or stalled work                                      |
+
+The chart uses `/api/health` for component liveness and `/api/jobs` for worker
+readiness.
+
+## Stuck Environment investigation
+
+1. Record the Environment ID, current status, status message, and most recent
+   update time.
+2. Identify the most recent completed phase: webhook receipt, configuration,
+   queue, build, deploy, or readiness.
+3. Check `/api/health` on the affected component.
+4. Correlate web and worker logs by Environment ID and request ID.
+5. If other Environments are in the same phase, check their progress.
+6. Before retrying, examine the specified build or deploy job.
+
+Use [Troubleshoot a stuck Environment](/docs/troubleshooting/stuck-environment)
+for the full triage sequence. When you know the most recent phase, continue with
+[build recovery](/docs/troubleshooting/build-issues) or [deployment
+recovery](/docs/troubleshooting/deploy-issues).
+
+Do not decode Secrets. Do not dump Environment variables. Do not attach
+unredacted logs. A safe escalation bundle contains component and version,
+Environment ID, Service, phase, job name, timestamps, request ID, and the
+smallest related error excerpt.
+
+## Verify end-to-end operation
+
+Create an end-to-end canary Environment on a schedule. Verify that Lifecycle
+receives the request, builds the selected Services, deploys the workloads, and
+reports readiness. Use this result with the health endpoints. The endpoints
+alone do not show overall readiness.

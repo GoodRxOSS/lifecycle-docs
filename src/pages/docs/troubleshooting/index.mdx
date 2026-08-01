@@ -1,0 +1,43 @@
+---
+title: Troubleshooting
+description: Start from a Lifecycle symptom and open the guide for the failed phase with safe evidence and recovery steps.
+audience:
+  - application-developer
+  - platform-operator
+lastVerified: "2026-07-24"
+verificationBaseline: "2026-07-24-comprehensive-audit"
+contentProfile: asd-ste100
+tags:
+  - troubleshooting
+  - support
+---
+
+Start with the user-visible symptom. Before you know which phase failed, do not
+make broad cluster changes. Do not start another redeploy, edit the database, or
+dump secrets.
+
+| Symptom                                                      | First check                                   | Guide                                                                                 |
+| ------------------------------------------------------------ | --------------------------------------------- | ------------------------------------------------------------------------------------- |
+| No Lifecycle comment on a pull request                       | GitHub App access and repository onboarding   | [Missing pull-request comment](/docs/troubleshooting/github-app-webhooks)             |
+| Environment shows **Config error**                           | Repository configuration validation           | [Failed deployment](/docs/troubleshooting/deploy-issues#resolve-a-config-error-first) |
+| Service shows **Build failed**                               | **Console → Build**                           | [Failed build](/docs/troubleshooting/build-issues)                                    |
+| Service shows **Deploy failed** or does not become **Ready** | **Console → Deploy**, then **Pods**           | [Failed deployment](/docs/troubleshooting/deploy-issues)                              |
+| Environment remains queued or stale                          | Last update time and if other work progresses | [Stuck Environment](/docs/troubleshooting/stuck-environment)                          |
+| Cannot sign in, link GitHub, or call an API                  | Identity, key prefix, scopes, and request ID  | [Access and API errors](/docs/troubleshooting/access-and-api)                         |
+| MCP, Agent workspace, or Site feature is missing             | Feature availability and administrator policy | The feature's availability section                                                    |
+
+## Safe escalation bundle
+
+Collect:
+
+- Lifecycle component and version
+- Environment ID and Service name
+- current status and status message
+- source repository, branch, and short SHA when they are not private
+- job name, phase, and timestamps
+- request or correlation ID
+- the smallest related, redacted log excerpt
+
+Do not include access tokens, one-time API keys, OAuth callback query strings,
+Secret values, full Environment-variable dumps, private repository contents, or
+unredacted Agent conversations.

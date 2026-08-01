@@ -141,6 +141,8 @@ bun.lockb
 
 # Generated content
 public/styles.css
+public/docs.md
+public/docs/**/*.md
 
 # Local build files
 .vercel

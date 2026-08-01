@@ -16,13 +16,13 @@
 
 export default {
   "overview": {
-    "title": "Schema Overview"
+    "title": "Schema overview"
   },
   "environment": {
-    "title": "Environment Configuration"
+    "title": "Environment configuration"
   },
   "webhooks": {
-    "title": "Webhooks Configuration"
+    "title": "Webhook configuration"
   },
   "---": {
     "type": "separator"
@@ -44,5 +44,8 @@ export default {
   },
   "configuration": {
     "title": "Configuration Service"
+  },
+  "external-http": {
+    "title": "External HTTP Service"
   }
 };

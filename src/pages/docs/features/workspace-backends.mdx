@@ -1,0 +1,91 @@
+---
+title: Agent workspace backends
+description: Compare and safely activate the runtime backend used for new Lifecycle Agent workspaces.
+audience:
+  - administrator
+lastVerified: "2026-07-24"
+verificationBaseline: "2026-07-24-comprehensive-audit"
+contentProfile: asd-ste100
+tags:
+  - ai
+  - agent
+  - workspaces
+  - administration
+---
+
+import { Callout } from "nextra/components";
+
+A workspace backend is the runtime where Lifecycle Agent checks out code, runs
+commands, and serves previews. Administrators select one active backend for new
+workspaces.
+
+<Callout type="info">
+  Your Lifecycle release and administrator policy control backend
+  administration. **Runtime backends** can be unavailable to some users.
+</Callout>
+
+## Compare backends
+
+| Backend         | Necessary connection                                          | Capabilities                                                                                    |
+| --------------- | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| **Kubernetes**  | Lifecycle's cluster integration                               | Supports chat, Develop, environment and sandbox sessions, editor, previews, resume, and prewarm |
+| **OpenSandbox** | Workspace image. API key when the service makes it necessary. | Chat and sandbox sessions, previews, and resume. Editor when the image includes code-server.    |
+| **E2B**         | API key and template                                          | Chat and sandbox sessions, previews, and resume. Editor when the template includes code-server. |
+| **Modal**       | Token ID, token secret, and image                             | Chat and sandbox sessions, previews, and checkpoint-based resume. No editor.                    |
+| **Daytona**     | API key and snapshot                                          | Chat and sandbox sessions, previews, and resume. Editor when the snapshot includes code-server. |
+| **Substrate**   | Not configurable                                              | Coming soon                                                                                     |
+
+The remote backends do not support Develop workspaces, Environment sessions, or
+workspace prewarm. Capabilities can change. The running Settings page shows the
+current capability data.
+
+## Backend configuration and tests
+
+1. Open the backend in **Runtime backends**.
+2. Enter its necessary image, template, snapshot, endpoint, and credential
+   fields.
+3. Save the connection.
+4. Select **Test connection** to validate credentials and basic configuration.
+5. Select **Launch test sandbox** for an end-to-end check.
+6. Examine each check stage and gateway authentication.
+7. When the backend supports an editor, examine editor access.
+8. After the test sandbox succeeds, select **Use for new workspaces**.
+
+The test sandbox creates and deletes a provider resource. The provider can
+briefly bill for this resource.
+
+<Callout type="warning">
+  Activating a third-party backend sends repository content, Agent instructions,
+  commands, and runtime data to that provider. Examine its data handling,
+  residency, access controls, network boundary, billing, and deletion guarantees
+  before activation.
+</Callout>
+
+## Handle credentials
+
+Credential fields do not show stored values. To rotate a credential, replace
+it. Then, run the connection test and sandbox test again.
+
+Provider environment variables can supply some credentials, but the Settings
+page does not show their values. Follow your deployment's secret-management
+procedure rather than placing credentials in a repository.
+
+## Understand activation
+
+After activation, **Use for new workspaces** affects only new workspaces.
+Existing workspaces keep their original backend and provider billing.
+
+Before switching:
+
+- read the capability-loss warning in Settings
+- complete important work or keep it on the current backend
+- use a representative repository on the candidate backend
+- make sure that its editor and preview behavior is correct
+- record the rollback selection
+
+After switching, start a new test session. Make sure that checkout, command
+execution, preview access, suspend/resume, and cleanup operate correctly.
+
+See [Agent Sessions](/docs/features/agent-sessions) for the user workflow and
+[Agent administration](/docs/features/agent-administration) for the related
+policy.

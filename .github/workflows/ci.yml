@@ -34,7 +34,6 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
-      - run: bun install
-      - run: bun run lint
-      - run: bun run test
+          bun-version: 1.2.8
+      - run: bun install --frozen-lockfile
+      - run: bun run verify

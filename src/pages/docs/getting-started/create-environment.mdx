@@ -1,126 +1,120 @@
 ---
-title: Create environment
+title: Create your first Environment
+description: Onboard a repository and create a pull-request Environment from a correct Lifecycle configuration.
+audience:
+  - application-developer
+lastVerified: "2026-07-24"
+verificationBaseline: "2026-07-24-comprehensive-audit"
+contentProfile: asd-ste100
 tags:
   - lifecycle
   - tutorial
-  - ephemeral-env
-  - start
-  - first environment
+  - environment
 ---
 
-import { Callout } from "nextra/components";
-import { Info, Settings } from "lucide-react";
+import { Callout, Steps } from "nextra/components";
 
-In this walk through, we will make a simple change to an example frontend repository and create our first ephemeral environment using Lifecycle.
+Use this procedure to create a deployed pull-request Environment from an
+onboarded repository.
 
-## 1. Fork the Repository
+## Prerequisites
 
-Fork the [`lifecycle-examples`](https://github.com/GoodRxOSS/lifecycle-examples) repository to your org or personal account and install your newly minted GitHub App to the forked repository.
+Before you start, make sure that you have:
 
-- Navigate to `https://github.com/settings/apps` (for personal accounts) or `https://github.com/organizations/<org>/settings/apps` (for org accounts).
-- Find the **Lifecycle GitHub App** and click on **Edit**.
-- Choose `Install App` from sidebar and click the Settings <Settings className="inline" /> icon.
-- Select the forked repository from the list and select **Save**.
+- Access to a Lifecycle installation
+- A repository where the Lifecycle GitHub App is installed
+- Permission to create a branch and pull request
+- A correct `lifecycle.yaml` in the repository root
 
-## 2. Create a New Branch
-
-Clone the repo and create a branch named `lfc-config`:
-
-```sh
-git checkout -b lfc-config
-```
-
-or if you are using GitHub Desktop, you can create a new branch from the UI.
-
-## 3. Update Lifecycle Configuration
-
-Open the `lifecycle.yaml` file in the root of the repository and update the `frontend` service's repository to your github username or org.
-
-**Before:**
-
-```yaml filename="lifecycle.yaml"
-github:
-  repository: "GoodRxOSS/lifecycle-examples"
-```
-
-**After:**
-
-```yaml filename="lifecycle.yaml"
-github:
-  repository: "<your-github-username>/lifecycle-examples"
-```
-
-## 4. Commit & Push Your Changes
-
-```sh
-git add .
-git commit -m "update config"
-git push origin lfc-config
-```
-
-## 5. Create a Pull Request
-
-1. Open a **Pull Request (PR)** from `lfc-config` to `main` in the forked repository.
-2. Submit the PR.
-
-## 6. Lifecycle PR Comment
-
-After submitting the PR, you’ll see a **GitHub comment from Lifecycle** on your pull request.
-
-🔹 This PR comment is the **mission control** for your ephemeral environment. It provides:
-
-- A **status update** of the build and deploy process.
-- A **list of services** configured for the environment.
-- A **link to the Lifecycle UI** where you can view logs, deployments, and environment details.
-
-<Callout type="error">
-  If there is no comment from Lifecycle, it means the app is not configured
-  correctly or the GitHub App is not installed in the repository. Please refer
-  to the [Missing Comment](/docs/troubleshooting/github-app-webhooks) page for
-  more information.
+<Callout type="important">
+  Installing the GitHub App and onboarding a repository are different steps.
+  Lifecycle ignores repository webhooks until the repository is onboarded.
+  Complete [Onboard a repository](/docs/getting-started/onboard-repository)
+  before opening the pull request.
 </Callout>
 
-## 7. Add `lifecycle-status-comments!` label
+For a disposable example, fork
+[`GoodRxOSS/lifecycle-examples`](https://github.com/GoodRxOSS/lifecycle-examples).
+Then, replace each repository value in `lifecycle.yaml` with a repository that
+you can access.
 
-The additional label `lifecycle-status-comments!` provides more detailed information about the environment status and links to access the running application.
+## Create the Environment
 
-🔹 The comments provides insights into:
+<Steps>
 
-- **Build & Deploy Status**: Track when your environment is ready.
-- **Environment URLs**: Access the running frontend app.
-- **Telemetry Links**: Links to telemetry, build and deploy logs. (if enabled)
+### Create a branch
 
-## 8. Wait for Deployment
+```sh
+git switch -c docs-first-environment
+```
 
-Wait for the **builds & deploys** to complete. Once the status updates to **`deployed`**, your environment is live! 🚀
+### Validate the configuration
 
-When a new commit is pushed to your pull request Lifecycle automatically builds and deploys again so you always have the latest version of the application.
+Lifecycle accepts `lifecycle.yaml`, `lifecycle.yml`, `.lifecycle.yaml`, and
+`.lifecycle.yml`. The recommended name is `lifecycle.yaml`.
 
-<Callout type="info" icon={Info}>
-  If there are any errors during the build or deploy process, the environment
-  will not be created, and you will see an error message in the Lifecycle
-  comment.
-  <br />
-  <div>
-    You can check the logs from `lifecycle-worker` pods in your cluster to debug
-    the issue: <br /> `kubectl logs deploy/lifecycle-worker -n lifecycle-app -f
-    `
-  </div>
-</Callout>
+If you use the Lifecycle CLI, validate before pushing:
 
-## 9. Checkout the deployed application
+```sh
+lfc schema validate lifecycle.yaml
+```
 
-Once the deployment is complete, you can access your environment at the URL provided in the Lifecycle comment on your pull request. Click on the `frontend` link to open your application in a new tab.
+The server also validates the pushed file. See [Lifecycle
+CLI](/docs/features/cli#schema-validation) for CLI validation.
 
-The application has two simple pages:
+### Commit and push
 
-- **`/tasks`** – A simple to-do list.
-- **`/variables`** – Displays all environment variables from the container.
+```sh
+git add lifecycle.yaml
+git commit -m "configure Lifecycle environment"
+git push -u origin docs-first-environment
+```
 
-## Next Steps
+### Open a pull request
 
-Now that your first ephemeral environment is ready, move on to the next section where we:
+Open a pull request from the branch into the repository's default branch.
 
-🧪 Test the environment.<br />
-🧭 Explore the comments and logs.<br />
-⚙️ Customize the configuration.
+- If `environment.autoDeploy` is `true`, opening the pull request queues the
+  Environment automatically.
+- If `environment.autoDeploy` is not `true`, add the configured deploy label.
+  The default label is `lifecycle-deploy!`.
+
+Label names are operator-configurable. Use the label that your installation
+shows. Do not hard-code the default name in automation.
+
+### Follow the Lifecycle comment
+
+Lifecycle posts a Mission Control comment with the Environment identifier,
+selected Services, actions, and a link to the UI. Lifecycle also adds status updates by
+default. If your organization disabled default status comments, apply its
+configured status-comment label.
+
+</Steps>
+
+## Check the result
+
+Open the Environment link.
+
+Check these results:
+
+- The Environment reaches **Deployed**.
+- Each necessary Service reaches **Ready**.
+- The Service URL opens the expected application.
+
+You can also wait from a terminal:
+
+```sh
+lfc builds status <environment-id> --watch
+```
+
+If Lifecycle does not comment, start with
+[Missing pull-request comment](/docs/troubleshooting/github-app-webhooks).
+If a Service fails, use the phase-specific
+[build](/docs/troubleshooting/build-issues) or
+[deployment](/docs/troubleshooting/deploy-issues) guide.
+
+## Next steps
+
+- [Explore the Environment](/docs/getting-started/explore-environment)
+- [Configure Services and dependencies](/docs/getting-started/configure-environment)
+- [Use Mission Control](/docs/tips/using-mission-control)

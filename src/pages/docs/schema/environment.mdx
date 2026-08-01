@@ -1,6 +1,11 @@
 ---
-title: Environment Configuration
-description: Configure deployment behavior, service grouping, and automation for ephemeral environments
+title: Environment configuration
+description: Configure deployment behavior, Service groups, and automation for ephemeral Environments.
+audience:
+  - application-developer
+lastVerified: "2026-07-24"
+verificationBaseline: "2026-07-24-comprehensive-audit"
+contentProfile: asd-ste100
 tags:
   - schema
   - environment
@@ -11,23 +16,32 @@ tags:
 import { Callout } from "nextra/components";
 import { Tabs } from "nextra/components";
 
-The `environment` section controls how Lifecycle deploys and manages your ephemeral environments. It defines which services are deployed by default, which are optional, and how automation (webhooks) should behave.
+The `environment` section controls each ephemeral Environment. It selects
+default Services, optional Services, and webhook automation.
 
-## Fields Reference
+## Field reference
 
-| Field                    | Type    | Required | Description                              |
-| ------------------------ | ------- | -------- | ---------------------------------------- |
-| `autoDeploy`             | boolean | No       | Automatically deploy on PR updates       |
-| `defaultServices`        | array   | Yes      | Services deployed with every environment |
-| `optionalServices`       | array   | No       | Services available on-demand             |
-| `webhooks`               | array   | No       | Automation triggers on state changes     |
-| `enabledFeatures`        | array   | No       | Feature flags for the environment        |
-| `githubDeployments`      | boolean | No       | Create GitHub deployment records         |
-| `useGithubStatusComment` | boolean | No       | Post status comments on PRs              |
+| Field               | Type    | Required | Description                                |
+| ------------------- | ------- | -------- | ------------------------------------------ |
+| `autoDeploy`        | boolean | No       | Automatically deploy on PR updates         |
+| `defaultServices`   | array   | No       | Services active when an Environment starts |
+| `optionalServices`  | array   | No       | Services available on demand               |
+| `ignoreFiles`       | array   | No       | Shared push-redeploy ignore patterns       |
+| `webhooks`          | array   | No       | Automation triggers on state changes       |
+| `enabledFeatures`   | array   | No       | Per-Environment behavior flags             |
+| `githubDeployments` | boolean | No       | Create GitHub deployment records           |
+
+<Callout type="warning">
+  Do not use `useGithubStatusComment`. It has no effect. Use [configurable
+  labels](/docs/features/configurable-labels) for GitHub comment behavior.
+</Callout>
 
 ## defaultServices
 
-Services listed in `defaultServices` are deployed automatically when an environment is created. At least one default service is required.
+Lifecycle automatically deploys the Services in `defaultServices` when it
+creates an Environment. This field is optional. If `defaultServices` and
+`optionalServices` are missing, Lifecycle activates all Services in the same
+`lifecycle.yaml`.
 
 ```yaml filename="lifecycle.yaml"
 environment:
@@ -37,16 +51,21 @@ environment:
     - name: "database"
 ```
 
-### Service Reference Fields
+### Service reference fields
 
-Each entry in `defaultServices` can include optional fields to override the service configuration:
+Each entry in `defaultServices` can include optional fields that override the
+Service configuration:
 
 | Field        | Type   | Description                                                   |
 | ------------ | ------ | ------------------------------------------------------------- |
 | `name`       | string | **Required.** Name matching a service in the `services` array |
 | `repository` | string | Override the repository for this service                      |
 | `branch`     | string | Override the branch for this service                          |
-| `serviceId`  | number | Internal service ID reference                                 |
+
+<Callout type="warning">
+  Specify Services by `name`. Do not use `serviceId`. It causes an unsupported
+  field error. You can also add `repository` and `branch`.
+</Callout>
 
 ```yaml filename="lifecycle.yaml"
 environment:
@@ -58,7 +77,8 @@ environment:
 
 ## optionalServices
 
-Services listed in `optionalServices` are not deployed by default but can be added to an environment on-demand through the Lifecycle UI or API.
+Lifecycle does not deploy `optionalServices` by default. Add them through the
+Lifecycle UI or API when an Environment needs them.
 
 ```yaml filename="lifecycle.yaml"
 environment:
@@ -74,14 +94,14 @@ environment:
 ```
 
 <Callout type="info">
-  Optional services are useful for components that aren't always needed, like
-  background workers, caching layers, or additional databases for specific
-  testing scenarios.
+  Optional Services are useful for components that are not always necessary.
+  Examples include workers, caches, and more test databases.
 </Callout>
 
 ## autoDeploy
 
-When `autoDeploy` is enabled, Lifecycle automatically triggers a deployment whenever the PR is updated (new commits pushed).
+When `autoDeploy` is enabled, Lifecycle starts a deployment after each new
+commit on the pull request.
 
 ```yaml filename="lifecycle.yaml"
 environment:
@@ -91,13 +111,28 @@ environment:
 ```
 
 <Callout type="info">
-  With `autoDeploy: true`, environments are created automatically on every
-  commit to the PR branch without requiring manual label addition.
+  With `autoDeploy: true`, Lifecycle automatically creates Environments for each
+  commit to the pull-request branch. No manual label is necessary.
 </Callout>
+
+## ignoreFiles
+
+`ignoreFiles` contains repo-relative glob patterns shared by all Services in
+the Environment. An operator must also enable the global feature flag. See
+[Ignore File Patterns](/docs/features/ignore-file-patterns) before relying on a
+push skip.
+
+## enabledFeatures
+
+You can use this feature value:
+
+- `no-default-env-resolve` — do not substitute an unselected service's static
+  Environment hostname.
 
 ## webhooks
 
-Webhooks allow you to trigger external actions when the environment reaches certain states. See the [Webhooks](/docs/schema/webhooks) page for detailed configuration.
+Webhooks start external actions at specified Environment states. See
+[Webhooks](/docs/schema/webhooks) for the configuration.
 
 ```yaml filename="lifecycle.yaml"
 environment:
@@ -115,10 +150,10 @@ environment:
 
 ## Examples
 
-<Tabs items={["Minimal", "With Optional Services", "Complete"]}>
+<Tabs items={["Minimal", "Optional Services", "All fields"]}>
 
 <Tabs.Tab>
-The minimal configuration requires only `defaultServices`:
+To select a subset explicitly, add `defaultServices`:
 
 ```yaml filename="lifecycle.yaml"
 environment:
@@ -129,7 +164,7 @@ environment:
 </Tabs.Tab>
 
 <Tabs.Tab>
-Configuration with both default and optional services:
+Configuration with default and optional Services:
 
 ```yaml filename="lifecycle.yaml"
 environment:
@@ -153,13 +188,12 @@ environment:
 </Tabs.Tab>
 
 <Tabs.Tab>
-Complete configuration with all options:
+Expanded configuration with all options:
 
 ```yaml filename="lifecycle.yaml"
 environment:
   autoDeploy: true
   githubDeployments: true
-  useGithubStatusComment: true
 
   defaultServices:
     - name: "api"
@@ -184,21 +218,49 @@ environment:
         API_URL: "https://{{api_publicUrl}}"
         FRONTEND_URL: "https://{{frontend_publicUrl}}"
 
-    # Notify on errors
-    - name: "Slack Alert"
+    # Record errors with a non-secret receiver
+    - name: "Record Deployment Error"
       state: error
       type: command
       command:
         image: "alpine:latest"
         script: |
           apk add --no-cache curl
-          curl -X POST "$SLACK_WEBHOOK" \
+          curl --fail --request POST "$EVENT_ENDPOINT" \
             -H "Content-Type: application/json" \
-            -d '{"text":"Deployment failed for PR"}'
+            -d '{"event":"deployment_error"}'
       env:
-        SLACK_WEBHOOK: "https://hooks.slack.com/services/XXX/YYY/ZZZ"
+        EVENT_ENDPOINT: "https://events.example.org/lifecycle"
 ```
 
 </Tabs.Tab>
 
 </Tabs>
+
+## Environment and Service statuses
+
+The UI, API, CLI, and webhook configuration have related but different status
+sets.
+
+### Environment statuses
+
+| Status         | Meaning                                     |
+| -------------- | ------------------------------------------- |
+| `pending`      | Waiting for orchestration to begin          |
+| `queued`       | Lifecycle queued the work                   |
+| `building`     | Lifecycle builds one or more Service images |
+| `built`        | Image builds completed                      |
+| `deploying`    | Lifecycle deploys Services                  |
+| `deployed`     | The Environment deployed without errors     |
+| `tearing_down` | Teardown is in progress                     |
+| `torn_down`    | Teardown completed                          |
+| `error`        | Build or deployment failed                  |
+| `config_error` | Lifecycle could not apply configuration     |
+
+### Service Deploy statuses
+
+A Service can also report `cloning`, `ready`, `waiting`, `build_failed`, and
+`deploy_failed`. Examine the affected Service when one of these appears.
+
+Only lowercase `deployed`, `error`, and `torn_down` start `lifecycle.yaml`
+webhooks. See [Webhook configuration](/docs/schema/webhooks).

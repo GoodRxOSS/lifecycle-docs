@@ -1,6 +1,11 @@
 ---
 title: GitHub Service
-description: Build and deploy services from GitHub repositories with Docker
+description: Build and deploy Services from GitHub repositories with Docker.
+audience:
+  - application-developer
+lastVerified: "2026-07-24"
+verificationBaseline: "2026-07-24-comprehensive-audit"
+contentProfile: asd-ste100
 tags:
   - schema
   - github
@@ -12,11 +17,13 @@ tags:
 import { Callout } from "nextra/components";
 import { Tabs } from "nextra/components";
 
-The `github` service type builds and deploys applications from a GitHub repository using a Dockerfile. This is the most common service type for application code that needs to be built from source.
+The `github` Service type builds and deploys applications from a GitHub
+repository with a Dockerfile. Use this Service type for application code that
+Lifecycle must build from source.
 
 ## Examples
 
-<Tabs items={["Minimal", "With Deployment Options", "Complete"]}>
+<Tabs items={["Minimal", "Deployment options", "All fields"]}>
 
 <Tabs.Tab>
 Minimal configuration with only required fields:
@@ -49,7 +56,7 @@ services:
       docker:
         defaultTag: "main"
         builder:
-          engine: "buildkit" # Options: buildkit (default), codefresh, kaniko
+          engine: "buildkit" # Options: buildkit, kaniko, ci
         app:
           dockerfilePath: "Dockerfile"
           env:
@@ -77,7 +84,7 @@ services:
 </Tabs.Tab>
 
 <Tabs.Tab>
-Complete configuration with all options:
+Expanded configuration with all options:
 
 ```yaml filename="lifecycle.yaml"
 services:
@@ -88,7 +95,7 @@ services:
       docker:
         defaultTag: "main"
         builder:
-          engine: "buildkit" # Options: buildkit (default), codefresh, kaniko
+          engine: "buildkit" # Options: buildkit, kaniko, ci
           resources: # Optional - custom CPU/memory for the build job
             requests:
               cpu: "1"
@@ -119,7 +126,7 @@ services:
             - 9090
       deployment:
         public: true # true = creates ingress, false = internal only
-        capacityType: "spot" # Options: spot, on-demand
+        capacityType: "SPOT" # Options: SPOT, ON_DEMAND
         resource: # Custom CPU/memory requests and limits
           cpu:
             request: "100m"
@@ -135,7 +142,7 @@ services:
           periodSeconds: 10 # Check interval
           timeoutSeconds: 5 # Check timeout
           failureThreshold: 3 # Failures before unhealthy
-        hostnames: # Optional - auto-constructed from global_config if omitted
+        hostnames: # Optional - Lifecycle generates hostnames if omitted
           host: "api.example.com"
           defaultPublicUrl: "api.myapp.example.com"
         network: # Optional - advanced routing
@@ -158,9 +165,9 @@ services:
 
 </Tabs>
 
-## Docker Configuration
+## Docker configuration
 
-The `docker` section defines how the application is built and run.
+The `docker` section defines how Lifecycle builds and runs the application.
 
 ### docker.defaultTag
 
@@ -168,111 +175,155 @@ The default Docker image tag, typically matching the branch name.
 
 ### docker.builder
 
-Configuration for the Docker build process.
+Configuration for the Docker build operation.
 
-| Field                | Type                    | Description                                                                        |
-| -------------------- | ----------------------- | ---------------------------------------------------------------------------------- |
-| `engine`             | string                  | Build engine: `buildkit` (default), `kaniko`, `codefresh`                          |
-| `resources.requests` | object                  | Minimum CPU/memory guaranteed for the build job                                    |
-| `resources.limits`   | object                  | Maximum CPU/memory allowed for the build job                                       |
-| `podAnnotations`     | `Record<string,string>` | Custom annotations applied to the build pod template (merged with global defaults) |
+| Field                | Type                    | Description                                          |
+| -------------------- | ----------------------- | ---------------------------------------------------- |
+| `engine`             | string                  | Build engine: `buildkit`, `kaniko`, or `ci`          |
+| `resources.requests` | object                  | Minimum CPU/memory guaranteed for the build job      |
+| `resources.limits`   | object                  | Maximum CPU/memory allowed for the build job         |
+| `podAnnotations`     | `Record<string,string>` | Custom annotations applied to the build pod template |
 
-The `resources` field lets you configure CPU and memory for the build job container. Values use standard Kubernetes resource units (e.g., `"500m"` for CPU, `"1Gi"` for memory).
+The `resources` field configures CPU and memory for the build Job container.
+Use standard Kubernetes resource units. For example, use `"500m"` for CPU and
+`"1Gi"` for memory.
 
-**Precedence:** Per-service `resources` in lifecycle.yaml take priority over values set in `global_config`. If neither is set, built-in defaults are used.
+Service resource values replace the installation defaults. If you need a
+specific build engine, set `engine` explicitly. For `engine: ci`, also set
+`docker.pipelineId` to the Codefresh image-build pipeline.
 
 <Callout type="info">
-  Build pods automatically include the annotation
+  Each build pod automatically has the annotation
   `cluster-autoscaler.kubernetes.io/safe-to-evict: "false"` to prevent the
   Kubernetes cluster autoscaler from evicting long-running build jobs during
-  scale-down. You can add custom annotations per-service via `podAnnotations`
-  above, or globally via `podAnnotations` in `global_config.buildDefaults`.
-  Per-service values override global defaults, and the hardcoded `safe-to-evict`
-  annotation cannot be overridden.
+  scale-down. The `podAnnotations` field adds Service annotations. It cannot
+  override the `safe-to-evict` value.
 </Callout>
 
-| Engine   | Default CPU Request | Default Memory Request | Default CPU Limit | Default Memory Limit |
+| Engine   | Default CPU request | Default memory request | Default CPU limit | Default memory limit |
 | -------- | ------------------- | ---------------------- | ----------------- | -------------------- |
 | buildkit | 500m                | 1Gi                    | 2                 | 4Gi                  |
 | kaniko   | 300m                | 750Mi                  | 1                 | 2Gi                  |
 
 ```yaml filename="lifecycle.yaml"
-docker:
-  builder:
-    engine: "buildkit"
-    resources:
-      requests:
-        cpu: "1"
-        memory: "2Gi"
-      limits:
-        cpu: "4"
-        memory: "8Gi"
-    podAnnotations:
-      my-org/team: "backend"
-      my-org/cost-center: "engineering"
+services:
+  - name: "api"
+    github:
+      repository: "myorg/api"
+      branchName: "main"
+      docker:
+        defaultTag: "main"
+        builder:
+          engine: "buildkit"
+          resources:
+            requests:
+              cpu: "1"
+              memory: "2Gi"
+            limits:
+              cpu: "4"
+              memory: "8Gi"
+          podAnnotations:
+            my-org/team: "backend"
+            my-org/cost-center: "engineering"
+        app:
+          dockerfilePath: "Dockerfile"
 ```
 
-### docker.app (Required)
+### docker.app (required)
 
 Configuration for the main application container:
 
 - `dockerfilePath` - **Required.** Path to Dockerfile relative to repo root
 - `command` - Override container entrypoint
-- `arguments` - Arguments passed to the command. Use `%%SPLIT%%` as a delimiter for spaces (e.g., `-c%%SPLIT%%npm run start`)
+- `arguments` - Arguments passed to the command. Use `%%SPLIT%%` to delimit
+  spaces, for example, `-c%%SPLIT%%npm run start`.
 - `env` - Environment variables
 - `ports` - Exposed container ports
 
-### docker.init (Optional)
+Optional Docker-level fields:
 
-Configuration for an init container that runs before the main application. Uses the same fields as `docker.app`.
+| Field        | Description                                           |
+| ------------ | ----------------------------------------------------- |
+| `pipelineId` | Codefresh image-build pipeline used by `engine: ci`   |
+| `ecr`        | Registry identifier override used for the built image |
 
-## Deployment Options
+`docker.app.afterBuildPipelineConfig` can configure a follow-up Codefresh
+pipeline:
 
-The `deployment` section configures how the service is deployed to Kubernetes. All fields are optional.
+| Field                       | Description                                   |
+| --------------------------- | --------------------------------------------- |
+| `afterBuildPipelineId`      | Pipeline to run after an image build succeeds |
+| `description`               | Human-readable pipeline description           |
+| `detatchAfterBuildPipeline` | Legacy misspelled compatibility field         |
+
+<Callout type="warning">
+  `detatchAfterBuildPipeline` is the accepted spelling. Use it only with an
+  existing configuration that needs this behavior. Do not add it to a new
+  configuration.
+</Callout>
+
+### docker.init (optional)
+
+Configuration for an init container that runs before the primary application
+container. The init container has the fields from `docker.app`.
+
+## Deployment options
+
+The `deployment` section configures how Lifecycle deploys the Service to
+Kubernetes. All fields are optional.
 
 ### public
 
-Controls whether the service is exposed via ingress for external access.
+The `public` field controls ingress exposure.
 
-- `true` - Creates an ingress, service gets a public URL
-- `false` - Internal only, accessible only within the cluster
+- `true` - Lifecycle creates an ingress and a public URL.
+- `false` - Users can access the Service only in the cluster.
 
 ### capacityType
 
 Specifies the node capacity type for scheduling:
 
-- `spot` - Use spot/preemptible instances (cost-effective)
-- `on-demand` - Use on-demand instances (more reliable)
+- `SPOT` - Prefer spot instances. This is the default.
+- `ON_DEMAND` - Use only on-demand instances.
+
+`SPOT` adds a preferred spot-node affinity. Kubernetes can select on-demand
+capacity when spot capacity is unavailable. `ON_DEMAND` adds a mandatory
+on-demand affinity.
+
+<Callout type="warning">
+  Use `SPOT` or `ON_DEMAND`. Other spellings can prevent workload scheduling.
+</Callout>
 
 ### resource
 
 CPU and memory requests and limits for the container:
 
-| Field            | Description                               |
-| ---------------- | ----------------------------------------- |
-| `cpu.request`    | Minimum CPU guaranteed (e.g., `100m`)     |
-| `cpu.limit`      | Maximum CPU allowed (e.g., `1000m`)       |
-| `memory.request` | Minimum memory guaranteed (e.g., `256Mi`) |
-| `memory.limit`   | Maximum memory allowed (e.g., `1Gi`)      |
+| Field            | Description                                     |
+| ---------------- | ----------------------------------------------- |
+| `cpu.request`    | Minimum CPU guaranteed, for example, `100m`     |
+| `cpu.limit`      | Maximum CPU allowed, for example, `1000m`       |
+| `memory.request` | Minimum memory guaranteed, for example, `256Mi` |
+| `memory.limit`   | Maximum memory allowed, for example, `1Gi`      |
 
 ### readiness
 
-Health check configuration to determine when the service is ready to receive traffic.
+A health check tells Lifecycle when the Service is ready to receive traffic.
 
 **HTTP health check:**
 
-| Field          | Description                          |
-| -------------- | ------------------------------------ |
-| `httpGet.path` | HTTP endpoint path (e.g., `/health`) |
-| `httpGet.port` | Port to check                        |
+| Field          | Description                                |
+| -------------- | ------------------------------------------ |
+| `httpGet.path` | HTTP endpoint path, for example, `/health` |
+| `httpGet.port` | Port to check                              |
 
 **TCP health check:**
 
-| Field           | Description                    |
-| --------------- | ------------------------------ |
-| `tcpSocketPort` | TCP port to check connectivity |
+| Field           | Description                           |
+| --------------- | ------------------------------------- |
+| `disabled`      | Disable the generated readiness probe |
+| `tcpSocketPort` | TCP port to check connectivity        |
 
-**Common fields:**
+**Shared fields:**
 
 | Field                 | Description                          |
 | --------------------- | ------------------------------------ |
@@ -284,7 +335,8 @@ Health check configuration to determine when the service is ready to receive tra
 
 ### hostnames
 
-Custom hostname configuration. If omitted, hostnames are auto-constructed from `global_config` values.
+Custom hostname configuration. If `hostnames` is missing, Lifecycle generates
+the hostnames.
 
 | Field                     | Description                     |
 | ------------------------- | ------------------------------- |
@@ -297,29 +349,36 @@ Custom hostname configuration. If omitted, hostnames are auto-constructed from `
 
 Advanced network configuration:
 
-| Field             | Description                                |
-| ----------------- | ------------------------------------------ |
-| `ipWhitelist`     | Array of allowed IP ranges (CIDR notation) |
-| `pathPortMapping` | Map URL paths to container ports           |
-| `hostPortMapping` | Map hostnames to container ports           |
-| `grpc.enable`     | Enable gRPC support                        |
-| `grpc.host`       | gRPC hostname                              |
+| Field              | Description                                |
+| ------------------ | ------------------------------------------ |
+| `ipWhitelist`      | Array of allowed IP ranges (CIDR notation) |
+| `pathPortMapping`  | Map URL paths to container ports           |
+| `hostPortMapping`  | Map hostnames to container ports           |
+| `grpc.enable`      | Enable gRPC support                        |
+| `grpc.host`        | gRPC hostname                              |
+| `grpc.defaultHost` | Default gRPC hostname fallback             |
 
 ### serviceDisks
 
 Persistent volume mounts for stateful data:
 
-| Field         | Required | Description                        |
-| ------------- | -------- | ---------------------------------- |
-| `name`        | Yes      | Volume name                        |
-| `mountPath`   | Yes      | Path inside the container          |
-| `storageSize` | Yes      | Storage size (e.g., `10Gi`)        |
-| `accessModes` | No       | `ReadWriteOnce` or `ReadWriteMany` |
-| `medium`      | No       | Storage medium                     |
+| Field         | Required | Description                                                             |
+| ------------- | -------- | ----------------------------------------------------------------------- |
+| `name`        | Yes      | Volume name                                                             |
+| `mountPath`   | Yes      | Container path                                                          |
+| `storageSize` | Yes      | Storage size, for example, `10Gi`                                       |
+| `accessModes` | No       | `ReadWriteOnce`, `ReadOnlyMany`, `ReadWriteMany`, or `ReadWriteOncePod` |
+| `medium`      | No       | Storage medium                                                          |
 
-## Fields Reference
+### Node placement
 
-### Required Fields
+Use `deployment.node_selector` for simple Kubernetes node-label matches and
+`deployment.node_affinity` for a full Kubernetes `nodeAffinity` object.
+Custom node affinity replaces Lifecycle's capacity-type affinity.
+
+## Field reference
+
+### Required fields
 
 | Field        | Type   | Description                              |
 | ------------ | ------ | ---------------------------------------- |
@@ -327,16 +386,17 @@ Persistent volume mounts for stateful data:
 | `branchName` | string | Branch to build from                     |
 | `docker`     | object | Docker build configuration (see above)   |
 
-### Optional Fields
+### Optional fields
 
-| Field        | Type    | Description                                                                              |
-| ------------ | ------- | ---------------------------------------------------------------------------------------- |
-| `deployment` | object  | Deployment configuration (see above)                                                     |
-| `envLens`    | boolean | Enable environment lens ingress banner. Overrides the global `features.envLens` default. |
+| Field        | Type    | Description                                |
+| ------------ | ------- | ------------------------------------------ |
+| `deployment` | object  | Deployment configuration (see above)       |
+| `envLens`    | boolean | Enable the Environment Lens ingress banner |
 
-## Template Variables
+## Template variables
 
-Reference other services in your configuration using template variables. See the [Template Variables](/docs/features/template-variables) guide for the complete list.
+Use template variables to reference other Services in your configuration. See
+[Template variables](/docs/features/template-variables) for the full list.
 
 ```yaml
 env:

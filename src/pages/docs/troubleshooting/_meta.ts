@@ -15,13 +15,22 @@
  */
 
 export default {
+  "index": {
+    "title": "Troubleshooting"
+  },
+  "stuck-environment": {
+    "title": "Troubleshoot a stuck Environment"
+  },
   "build-issues": {
-    "title": "Build Issues"
+    "title": "Troubleshoot a failed build"
   },
   "deploy-issues": {
-    "title": "Deploy Issues"
+    "title": "Troubleshoot a failed deployment"
   },
   "github-app-webhooks": {
     "title": "Missing PR comment"
+  },
+  "access-and-api": {
+    "title": "Troubleshoot access and API errors"
   }
 };

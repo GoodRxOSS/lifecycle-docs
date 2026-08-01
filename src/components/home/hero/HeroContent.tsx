@@ -17,31 +17,14 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, Check, Copy, Github } from "lucide-react";
+import { ArrowRight, Github } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const installCommand = "git clone https://github.com/GoodRxOSS/lifecycle";
 const easeOutQuart = [0.25, 1, 0.5, 1] as const;
 
-type CopyState = "idle" | "copied" | "failed";
-
 export function HeroContent() {
-  const [copyState, setCopyState] = useState<CopyState>("idle");
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(installCommand);
-      setCopyState("copied");
-      setTimeout(() => setCopyState("idle"), 1800);
-    } catch {
-      setCopyState("failed");
-      setTimeout(() => setCopyState("idle"), 2400);
-    }
-  };
-
   return (
     <div className="mx-auto flex max-w-3xl flex-col items-start text-left motion-reduce:transition-none">
       <motion.div
@@ -78,68 +61,16 @@ export function HeroContent() {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: easeOutQuart, delay: 0.18 }}
-        className="mt-8 w-full max-w-xl"
-      >
-        <div className="flex items-stretch overflow-hidden rounded-md border border-border bg-muted/40 font-mono text-[13px]">
-          <span className="flex shrink-0 items-center px-3 text-muted-foreground">
-            $
-          </span>
-          <code className="flex-1 truncate py-2.5 pr-2 text-foreground">
-            {installCommand}
-          </code>
-          <button
-            type="button"
-            onClick={handleCopy}
-            aria-label={
-              copyState === "copied"
-                ? "Copied"
-                : copyState === "failed"
-                  ? "Copy failed"
-                  : "Copy install command"
-            }
-            className="flex shrink-0 items-center gap-1.5 border-l border-border px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
-          >
-            {copyState === "copied" ? (
-              <>
-                <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                copied
-              </>
-            ) : (
-              <>
-                <Copy className="h-3.5 w-3.5" aria-hidden="true" />
-                copy
-              </>
-            )}
-          </button>
-        </div>
-        <p
-          role="status"
-          aria-live="polite"
-          className={cn(
-            "mt-2 kicker transition-opacity",
-            copyState === "failed"
-              ? "text-foreground/80 opacity-100"
-              : "opacity-0",
-          )}
-        >
-          {copyState === "failed" ? "copy blocked · use ⌘C / Ctrl+C" : " "}
-        </p>
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: easeOutQuart, delay: 0.24 }}
-        className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4"
+        className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4"
       >
         <Link
-          href="/docs/getting-started/create-environment"
+          href="/docs"
           className={cn(
             buttonVariants({ size: "lg" }),
             "group h-11 px-6 text-base",
           )}
         >
-          Get started
+          Choose your path
           <ArrowRight
             className="ml-2 h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none"
             aria-hidden="true"

@@ -1,151 +1,102 @@
 ---
-title: AI Agent
+title: Lifecycle Agent
+description: Investigate a Lifecycle Environment, examine evidence, and do approved recovery tasks from the Environment details page.
+audience:
+  - agent-user
+lastVerified: "2026-07-24"
+verificationBaseline: "2026-07-24-comprehensive-audit"
+contentProfile: asd-ste100
 tags:
   - ai
   - agent
   - debugging
-  - investigation
-  - llm
+  - environments
 ---
 
 import { Callout } from "nextra/components";
 
-The **AI Agent** is an interactive assistant built into Lifecycle that helps you debug and investigate issues in your ephemeral environments. It inspects Kubernetes resources, reads pod logs, queries the Lifecycle database, browses your GitHub repository, and can apply fixes directly.
+Lifecycle Agent helps you investigate and recover an Environment without leaving
+its details page. It starts with the build and namespace in context, then uses
+the tools your administrator has allowed.
 
 <Callout type="info">
-  An administrator must enable the AI Agent before you can use it. If the
-  feature is not enabled, you see an **"AI Agent Not Enabled"** message with a
-  prompt to contact your administrator. See [AI Agent
-  Configuration](/docs/features/ai-agent-configuration) for setup details.
+  Lifecycle Agent is an administrator-controlled feature. The Agent panel and
+  available models or actions can be different for each deployment and
+  repository.
 </Callout>
 
-## Accessing the agent
+## Investigate an Environment
 
-Navigate to the AI Agent from any build's detail view:
+1. Open **Environments**.
+2. Select the Environment that you want to investigate.
+3. Open **Lifecycle Agent** from the Environment details page.
+4. Select **Diagnose failure**, **Repair**, or enter a focused question.
+5. Examine the agent's explanation and the evidence from its tool calls.
+6. After you check its target and effect, approve a proposed write action.
 
-```
-/builds/<build-uuid>/ai
-```
+Good prompts name the observed symptom and the outcome you want:
 
-The chat interface is scoped to that build's environment — the agent already knows which namespace, services, and resources to inspect.
+- "Why did the latest deploy fail?"
+- "Which Service cannot become ready, and what evidence supports that?"
+- "Propose the smallest repair. Do not make changes."
 
----
+The agent can offer follow-up actions such as **Investigate more**, **Open
+editor**, **Continue with workspace**, or **Start workspace** when those
+capabilities are available.
 
-## Debugging a failing environment
+## Tools and approvals
 
-Here's a typical debugging session:
+The agent can use these evidence types together:
 
-1. Open the AI Agent page for your build.
-2. Click one of the suggested prompts — for example, **"Why are my pods not starting?"**
-3. The agent queries Kubernetes for pod statuses, reads recent logs, and checks deployment configurations.
-4. It returns a structured response with a summary, per-service findings, and suggested fixes.
+| Area         | Typical use                                                     |
+| ------------ | --------------------------------------------------------------- |
+| Lifecycle    | Examine Environment, Build, Service, and job state              |
+| Kubernetes   | Read resources, events, and logs in the Environment namespace   |
+| Repository   | Read related source and configuration                           |
+| Workspace    | Examine or edit files and run commands in an isolated workspace |
+| External MCP | Use administrator-approved tools from connected MCP servers     |
 
-At this point, you should see a response with **service cards** and an **activity panel** (described below). If the agent suggests a fix, you can apply it with one click.
+Administrator and repository policies control tool availability. Some reads can
+run without approval. Policies can require approval for or deny writes, shell
+commands, network access, and deployment changes.
 
-<Callout type="tip">
-  You don't need to know which Kubernetes commands to run. Describe your problem
-  in plain language and let the agent investigate.
+<Callout type="warning">
+  An approval immediately authorizes the proposed action. The action can change
+  a running Environment or an external system. Before you approve it, make sure
+  of the repository, namespace, command, and affected files.
 </Callout>
 
-The suggested prompts on first load are:
+## Select a model
 
-- **"Why is my build failing?"**
-- **"What's wrong with deployments?"**
-- **"Why are my pods not starting?"**
+If your deployment offers more than one model, use the model selector in the
+Agent panel. The configured provider, allowed models, and default model are
+controlled by an administrator.
 
-You can also type your own question.
+Do not paste provider credentials into a chat or repository.
 
----
+## Start over
 
-## Understanding responses
+When prior messages do not apply, select **Reset conversation**. The new
+conversation does not include the previous investigation messages.
 
-The agent returns two response formats depending on the question:
+## Lifecycle Agent and Agent Sessions
 
-- **Plain text** — for simple or conversational answers
-- **Structured investigation** — for debugging queries, containing the sections below
+The Environment details panel covers one Lifecycle Environment. Agent Sessions
+support broader repository work when the Labs feature is available. See [Agent
+Sessions](/docs/features/agent-sessions) for the distinction.
 
-### Summary
+## Troubleshooting
 
-A brief overview at the top describing overall environment health and key findings.
+- **The Agent panel is missing:** an administrator can tell you if your
+  deployment and repository enable Lifecycle Agent.
+- **No models are available:** an administrator must configure a provider and
+  at least one allowed model.
+- **A tool is missing or denied:** tool and approval policies can be global or
+  for one repository. Tell an administrator to examine the combined policy.
+- **An action is waiting:** open its approval request and examine the full
+  operation. Only an authorized user can approve it.
 
-### Service cards
-
-Each service gets its own card with:
-
-- **Status chip** — service health: `healthy`, `degraded`, `failing`, `pending`, or `unknown`
-- **Issue** — root cause or current problem
-- **Errors** — specific error messages from logs or events
-- **Suggested fixes** — actionable steps you can follow
-- **Auto-fix button** — applies a fix directly (for example, restarting a deployment or committing a config change to your PR branch)
-- **Evidence** — links back to the tool calls that support the findings
-
-### Activity panel
-
-Each response includes a collapsible **Investigation** panel showing every tool call the agent made:
-
-- **Status icon** — spinner (in progress), green checkmark (success), or red X (failure)
-- **Description** — what the agent did (e.g., "Fetched pods in namespace env-abc123")
-- **Duration chip** — how long the call took
-
-A **total investigation time** appears at the top of the panel. Evidence references in the response link to specific entries in this panel.
-
----
-
-## Selecting a model
-
-A **Model** dropdown in the chat header displays available models in the format `provider:modelId` (for example, "Claude Sonnet" or "GPT-4o"). Your selection is saved to `localStorage` and persists across sessions.
-
-A **Clear** button appears when you have messages. It clears the conversation history and starts a new session.
-
-### Supported providers
-
-Each provider requires its own API key configured on the server:
-
-| Provider      | Environment Variable | Fallback Variable |
-| ------------- | -------------------- | ----------------- |
-| **Anthropic** | `ANTHROPIC_API_KEY`  | `AI_API_KEY`      |
-| **OpenAI**    | `OPENAI_API_KEY`     | `AI_API_KEY`      |
-| **Gemini**    | `GEMINI_API_KEY`     | `AI_API_KEY`      |
-
-<Callout type="tip">
-  Set `AI_API_KEY` as a universal fallback if all providers share the same key.
-  Provider-specific keys take precedence.
-</Callout>
-
----
-
-## Agent capabilities
-
-The agent has access to tools organized by category:
-
-| Category       | Tools                                           | What they do                                                                       |
-| -------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------- |
-| **Kubernetes** | Get Resources, Get Pod Logs, Get Lifecycle Logs | Inspect pods, deployments, services, events, and logs in the build namespace       |
-| **Kubernetes** | Patch Resource                                  | Restart deployments, scale replicas, delete stuck resources, apply patches         |
-| **Kubernetes** | Query Database                                  | Run read-only queries against the Lifecycle database for build and deploy metadata |
-| **GitHub**     | Get File, List Directory                        | Browse repository files and directories on the PR branch                           |
-| **GitHub**     | Update File                                     | Commit a fix directly to the PR branch                                             |
-| **GitHub**     | Get Issue Comment                               | Read PR comments for additional context                                            |
-
-<Callout>
-  Administrators can restrict which tools the agent uses per repository. See [AI
-  Agent Configuration](/docs/features/ai-agent-configuration#access-control) for
-  details.
-</Callout>
-
-You can also extend the agent with external tools via [MCP Integration](/docs/features/mcp-integration).
-
----
-
-## Summary
-
-| Feature             | Details                                                                                       |
-| ------------------- | --------------------------------------------------------------------------------------------- |
-| Access URL          | `/builds/<build-uuid>/ai`                                                                     |
-| Prerequisite        | Must be enabled by an administrator                                                           |
-| Suggested prompts   | "Why is my build failing?", "What's wrong with deployments?", "Why are my pods not starting?" |
-| Response format     | Plain text or structured investigation with service cards                                     |
-| Activity panel      | Collapsible list of tool calls with status and duration                                       |
-| Model selection     | Dropdown in header, persisted in localStorage                                                 |
-| Supported providers | Anthropic, OpenAI, Gemini                                                                     |
-| Auto-fix            | One-click fixes via Kubernetes patches or GitHub commits                                      |
+Administrators can continue with [Lifecycle Agent
+configuration](/docs/features/ai-agent-configuration), [MCP
+integration](/docs/features/mcp-integration), and [Agent
+administration](/docs/features/agent-administration).

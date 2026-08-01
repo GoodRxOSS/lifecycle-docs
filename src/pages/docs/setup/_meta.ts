@@ -16,18 +16,18 @@
 
 export default {
   "prerequisites": {
-    "title": "Prerequisites"
+    "title": "Starter infrastructure prerequisites"
   },
   "setup-infra": {
-    "title": "Setup your cluster"
+    "title": "Set up an evaluation cluster"
   },
   "install-lifecycle": {
     "title": "Install Lifecycle"
   },
   "create-github-app": {
-    "title": "Configure Application"
+    "title": "Create the GitHub App"
   },
   "configure-lifecycle": {
-    "title": "Additional Configuration"
+    "title": "Optional configuration"
   }
 };

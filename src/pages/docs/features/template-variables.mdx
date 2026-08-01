@@ -1,5 +1,12 @@
 ---
 title: Template Variables
+description: Use Environment, Service, and configuration values in Lifecycle Service settings.
+audience:
+  - application-developer
+  - platform-operator
+lastVerified: "2026-07-24"
+verificationBaseline: "2026-07-24-comprehensive-audit"
+contentProfile: asd-ste100
 tags:
   - template
   - variables
@@ -17,62 +24,110 @@ import { Callout } from "nextra/components";
 
 ## Overview
 
-Lifecycle uses [Mustache](https://github.com/janl/mustache.js) as the template rendering engine.
+Lifecycle uses [Mustache](https://github.com/janl/mustache.js) to render
+templates.
 
 ## Available Template Variables
 
-The following template variables are available for use within your configuration. Variables related to specific services should use the service name as a prefix.
+You can use these template variables in your configuration. A Service-specific
+variable starts with the Service name.
 
 ### General Variables
 
-- **`{{{buildUUID}}}`** - The unique identifier for the Lifecycle environment, e.g., `lively-down-881123`.
-- **`{{{namespace}}}`** - Namespace for the deployments, e.g., `env-lively-down-881123`.
-- **`{{{pullRequestNumber}}}`** - The GitHub pull request number associated with the environment.
-- **`{{{branchName}}}`** - The branch name of the pull request that triggered the environment.
-- **`{{{repoName}}}`** - The full repository name (e.g., `org/repo`) associated with the environment.
+- **`{{{buildUUID}}}`** - The unique Environment identifier, for example,
+  `lively-down-881123`.
+- **`{{{buildSHA}}}`** - The Lifecycle-generated build revision for the
+  Environment.
+- **`{{{namespace}}}`** - The deployment namespace, for example,
+  `env-lively-down-881123`.
+- **`{{{pullRequestNumber}}}`** - The GitHub pull request number, when the Environment has one.
+- **`{{{branchName}}}`** - The source branch name.
+- **`{{{repoName}}}`** - The full source repository name, such as `org/repo`.
 
 ### Service-Specific Variables
 
-For service-specific variables, replace `<service_name>` with the actual service name.
+For a Service-specific variable, replace `<service_name>` with the Service name.
 
-- **`{{{<service_name>_branchName}}}`** - The branch name associated with that service's deployment.
-- **`{{{<service_name>_dockerImage}}}`** - The fully qualified Docker image reference for the service.
-- **`{{{<service_name>_initDockerImage}}}`** - The fully qualified Docker image reference for the service's init container image.
-- **`{{{<service_name>_internalHostname}}}`** - The internal hostname of the deployed service. If the service is optional and not deployed, it falls back to `defaultInternalHostname`.
+- **`{{{<service_name>_branchName}}}`** - The branch name for the Service
+  deployment.
+- **`{{{<service_name>_dockerImage}}}`** - The fully qualified Docker image
+  reference for the Service.
+- **`{{{<service_name>_initDockerImage}}}`** - The fully qualified image
+  reference for the Service init container.
+- **`{{{<service_name>_internalHostname}}}`** - The internal hostname of the
+  deployed Service. For an optional Service that is not deployed, the value is
+  `defaultInternalHostname`.
 
   <Callout type="info">
-    `service_internalHostname` will be substituted with local cluster full
-    domain name like `service.namespace.svc.cluster.local` to be able to work
-    with deployments across namespaces.
+    Lifecycle replaces `service_internalHostname` with a cluster domain name
+    such as `service.namespace.svc.cluster.local`. This name supports
+    deployments across namespaces.
   </Callout>
 
 - **`{{{<service_name>_ipAddress}}}`** - The service IP address.
-- **`{{{<service_name>_namespace}}}`** - The Kubernetes namespace used by the service.
-- **`{{{<service_name>_publicUrl}}}`** - The public URL of the deployed service. If optional and not deployed, it defaults to `defaultPublicUrl` under the `services` table.
-- **`{{{<service_name>_sha}}}`** - The GitHub SHA that triggered the Lifecycle build.
-- **`{{{<service_name>_UUID}}}`** - The build UUID of the service. If listed under `optionalServices` or `defaultServices`, its value depends on whether the service is selected:
+- **`{{{<service_name>_namespace}}}`** - The Kubernetes namespace that the
+  Service uses.
+- **`{{{<service_name>_publicUrl}}}`** - The public URL of the deployed Service.
+  For an optional Service that is not deployed, the value is
+  `services.defaultPublicUrl`.
+- **`{{{<service_name>_sha}}}`** - The `sha` value of the Service deploy.
+- **`{{{<service_name>_UUID}}}`** - The build UUID of the Service. For a Service
+  in `optionalServices` or `defaultServices`, the value depends on its
+  selection:
   - If selected, it is equal to `buildUUID`.
-  - If not selected (or if service not part of deploys created), it defaults to **`dev-0`**.
+  - If not selected, Lifecycle uses the Service override for `defaultUUID`.
+  - If the Service has no override, Lifecycle uses the installation default.
 
-## Usage Example
+When a Service uses `deployment.network.hostPortMapping`, Lifecycle also
+creates `{{{<host>-<service_name>_publicUrl}}}` variables for the mapped hosts.
 
-```yaml
+### Configuration Data
+
+Lifecycle makes each key in an active
+[`configuration` Service](/docs/schema/configuration) available as a template
+variable. A data entry named `FEATURE_MODE` becomes
+`{{{FEATURE_MODE}}}`. The configuration Service name is not a prefix.
+
+## Example
+
+```yaml filename="lifecycle.yaml"
+version: "1.0.0"
+
+environment:
+  defaultServices:
+    - name: "frontend"
+    - name: "backend"
+
 services:
-  frontend:
-    # ...
-    env:
-      API_URL: "{{{backend_publicUrl}}}"
-      UUID: "{{{buildUUID}}}"
-      BACKEND_IMAGE: "{{{backend_dockerImage}}}"
-      BACKEND_NAMESPACE: "{{{backend_namespace}}}"
+  - name: "frontend"
+    github:
+      repository: "myorg/frontend"
+      branchName: "main"
+      docker:
+        defaultTag: "main"
+        app:
+          dockerfilePath: "Dockerfile"
+          env:
+            API_URL: "https://{{{backend_publicUrl}}}"
+            ENVIRONMENT_ID: "{{{buildUUID}}}"
+            SOURCE_SHA: "{{{buildSHA}}}"
+            BACKEND_IMAGE: "{{{backend_dockerImage}}}"
+            BACKEND_NAMESPACE: "{{{backend_namespace}}}"
+
+  - name: "backend"
+    docker:
+      dockerImage: "ghcr.io/myorg/backend"
+      defaultTag: "latest"
+      ports:
+        - 8080
 ```
 
-This ensures the `PUBLIC_URL` and `INTERNAL_HOST` variables are dynamically assigned based on the ephemeral environment deployment.
+Lifecycle renders the frontend values from the current Environment and backend
+Service before creating the workload.
 
- <Callout>
-- Undefined variables will result in an empty string unless handled explicitly.
-- Use triple curly braces (`{{{ }}}`) to prevent unwanted HTML escaping.
-- Ensure service names are correctly referenced in the template without any spaces.
+<Callout type="warning">
+  Undefined variables render as an empty string. For a raw URL or image name,
+  use triple braces (`{{{ }}}`). Make sure that Service names match.
 </Callout>
 
-For more details, refer to the [Mustache.js documentation](https://github.com/janl/mustache.js).
+See the [Mustache.js documentation](https://github.com/janl/mustache.js).

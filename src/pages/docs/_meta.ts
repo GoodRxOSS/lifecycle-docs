@@ -16,37 +16,49 @@
 
 export default {
   "index": {
-    "title": "What is Lifecycle?",
+    "title": "Lifecycle documentation",
     "display": "hidden"
   },
   "what-is-lifecycle": {
     "title": "What is Lifecycle?"
   },
-  "setup": {
-    "title": "Setup & Installation"
-  },
-  "-": {
-    "type": "separator"
-  },
   "getting-started": {
-    "title": "Getting Started"
-  },
-  "schema": {
-    "title": "Schema Reference"
-  },
-  "--": {
-    "type": "separator"
+    "title": "Getting started"
   },
   "features": {
     "title": "Features"
   },
-  "tips": {
-    "title": "Tips"
+  "-": {
+    "type": "separator"
+  },
+  "api-authentication": {
+    "title": "API authentication"
+  },
+  "api": {
+    "title": "HTTP API"
+  },
+  "schema": {
+    "title": "Lifecycle schema"
+  },
+  "reference": {
+    "title": "Reference"
+  },
+  "--": {
+    "type": "separator"
+  },
+  "setup": {
+    "title": "Setup and installation"
+  },
+  "operations": {
+    "title": "Operations"
+  },
+  "releases": {
+    "title": "Releases and compatibility"
   },
   "troubleshooting": {
     "title": "Troubleshooting"
   },
-  "----": {
-    "type": "separator"
+  "tips": {
+    "title": "Tips"
   }
 };

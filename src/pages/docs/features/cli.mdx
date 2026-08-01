@@ -1,5 +1,12 @@
 ---
 title: CLI (lfc)
+description: Install and use the Lifecycle CLI to examine Environments, manage Services, stream logs, and validate configuration.
+audience:
+  - application-developer
+  - platform-operator
+lastVerified: "2026-08-01"
+verificationBaseline: "2026-08-01-configuration-schema-fix"
+contentProfile: asd-ste100
 tags:
   - cli
   - lfc
@@ -10,64 +17,62 @@ tags:
 
 import { Callout } from "nextra/components";
 
-`lfc` is the command-line interface for Lifecycle. It lets you view and manage
-preview environments (builds), redeploy services, stream logs, host static
-sites, and validate configuration — straight from your terminal. It is built
-for **humans and agents**: every command supports `--json`, human-readable
-messages go to `stderr`, and machine output goes to `stdout`.
+`lfc` is the command-line interface for Lifecycle. Use it to view and manage
+preview Environments (Builds), redeploy Services, stream logs, host static
+sites, and validate configuration. Use `--json` for machine-readable results.
 
 <Callout type="info">
-  The CLI ships with **no deployment URLs baked in**. You point it at your own
-  Lifecycle deployment once with `lfc init`. All examples below use generic
-  placeholder hosts such as `https://lifecycle.example.com` and `myorg/myrepo` —
-  substitute your own values.
+  `lfc init` selects the Lifecycle deployment before first use.
+
+These examples use generic placeholder hosts such as
+`https://lifecycle.example.com` and `myorg/myrepo`. Your commands must use your
+deployment values.
+
 </Callout>
 
 ## Overview
 
-Requires Node ≥ 20.
+Node ≥ 20 is necessary.
 
 ```sh
 npm install -g lfc-cli
 lfc --help
 ```
 
-- **`--help` everywhere.** `lfc <command> --help` works on every command and
-  subcommand and lists all flags.
-- **`--json` everywhere.** Add `--json` for machine-readable output, or set
-  `LFC_JSON=1` to enable it globally.
-- **Humans and agents.** Interactive prompts appear only on a TTY; without one,
-  commands fail fast and name the missing flag/argument, so scripts and agents
-  stay deterministic. Run `lfc llms` to print agent-oriented instructions.
+- **`--help` for all commands.** `lfc <command> --help` works on all commands
+  and subcommands and lists all flags.
+- **`--json` for automation.** Add `--json`, or set `LFC_JSON=1`.
+- **`--quiet` when scripting.** Add `--quiet` to suppress informational output
+  while preserving command results and errors.
+- **Humans and agents.** Interactive prompts show only on a TTY. Without one,
+  commands fail fast and name the missing flag or argument. This behavior keeps
+  scripts and agents deterministic. Run `lfc llms` to print agent-oriented
+  instructions.
 
-## How it works
+## Profiles and output
 
-`lfc` is a thin client over your Lifecycle deployment's HTTP API. Nothing about
-your deployment is hard-coded — you configure it once and the CLI stores a
-**profile** locally.
+Each profile selects one Lifecycle deployment. Use separate profiles for
+deployments such as production and staging.
 
-- **Profiles.** Each profile points at one deployment (API URL, optional UI URL,
-  and auth settings). You can keep several (e.g. `default`, `staging`, `local`)
-  and switch between them. Config lives at
-  `~/.config/lifecycle-cli/config.json`.
-- **Authentication.** Deployments that enforce SSO use Keycloak (Authorization
-  Code + PKCE, or device code for headless machines). Tokens are cached per
-  profile under `~/.config/lifecycle-cli/tokens/` and refresh automatically.
-  Auth-less deployments (`authEnabled: false`) skip all of this.
-- **Output & scripting.** JSON goes to `stdout`; informational messages go to
-  `stderr`. Commands return meaningful exit codes:
+Commands use these exit codes:
 
-  | Code | Meaning                                                     |
-  | ---- | ----------------------------------------------------------- |
-  | `0`  | success                                                     |
-  | `1`  | failure (API error, failed build, invalid schema)           |
-  | `2`  | watch timeout (`--watch` did not converge in time)          |
-  | `3`  | not found (unknown uuid, no matching build, no config file) |
-  | `4`  | authentication error (not logged in, expired session)       |
+| Code | Meaning                                                           |
+| ---- | ----------------------------------------------------------------- |
+| `0`  | Success                                                           |
+| `1`  | API error, failed build, or invalid schema                        |
+| `2`  | Watch timeout or `lfc doctor` warning                             |
+| `3`  | Not found, missing config, or unresolved `lfc doctor --fix` error |
+| `4`  | Authentication error                                              |
 
 <Callout type="warning">
-  On exit code `4`, run `lfc login` (or `lfc login --device` on a headless
-  machine) and retry. Verify who you are with `lfc whoami`.
+  If the exit code is `4`, use one login command:
+
+- `lfc login`
+- `lfc login --device` on a headless machine
+
+Retry the failed command. Make sure of your identity:
+`lfc whoami`
+
 </Callout>
 
 ## Configuration
@@ -87,54 +92,27 @@ lfc init \
   --ui-url  https://lifecycle-ui.example.com \
   --issuer  https://sso.example.com/realms/lifecycle
 
-# auth-less deployment (e.g. local)
+# Authentication-free, trusted local deployment
 lfc init --api-url http://localhost:8080 --no-auth --name local
 ```
 
-`init` verifies the URL is reachable, writes the profile, and (when auth is on)
-starts the SSO login. Useful flags: `--ui-url` (enables `lfc builds open`),
-`--no-login` (skip the login step), `--device` (device-code login),
-`--name <profile>`, `--force` (overwrite an existing profile).
+`init` validates the URL format and tries to reach the API. If the API is not
+reachable, `init` shows a warning and saves the profile. When authentication is
+on, it starts the SSO login. These flags are useful:
 
-### Config file structure
+- `--ui-url` enables `lfc builds open`.
+- `--no-login` skips the login step.
+- `--device` uses device-code login.
+- `--name <profile>` names the profile.
+- `--force` overwrites an existing profile.
 
-Configuration lives at `~/.config/lifecycle-cli/config.json` and holds one entry
-per deployment under `profiles`, with the active one named by `currentProfile`:
-
-```json
-{
-  "currentProfile": "default",
-  "profiles": {
-    "default": {
-      "apiUrl": "https://lifecycle.example.com",
-      "uiUrl": "https://lifecycle-ui.example.com",
-      "authEnabled": true,
-      "keycloak": {
-        "issuer": "https://sso.example.com/realms/lifecycle",
-        "clientId": "lifecycle-cli"
-      }
-    },
-    "local": {
-      "apiUrl": "http://localhost:8080",
-      "authEnabled": false
-    }
-  }
-}
-```
-
-| Field               | Description                                                         |
-| ------------------- | ------------------------------------------------------------------- |
-| `apiUrl`            | Base URL of the Lifecycle API (required).                           |
-| `uiUrl`             | Base URL of the Lifecycle UI (optional; enables `lfc builds open`). |
-| `authEnabled`       | Whether the deployment enforces SSO.                                |
-| `keycloak.issuer`   | Keycloak realm issuer URL (when `authEnabled` is `true`).           |
-| `keycloak.clientId` | OAuth client id (defaults to `lifecycle-cli`).                      |
-
-Manage profiles without editing the file by hand:
+### Manage profiles
 
 ```sh
 lfc config list                         # all profiles
 lfc config get                          # active profile as JSON (no secrets)
+lfc config get apiUrl                   # one active-profile value
+lfc config set uiUrl https://lifecycle-ui.example.com
 lfc config add-profile staging --api-url https://lifecycle-staging.example.com --issuer <url>
 lfc config use-profile staging          # switch the active profile
 lfc --profile staging builds list       # one-off profile override
@@ -161,19 +139,20 @@ lfc --api-url http://localhost:8080 builds list
 
 ```sh
 lfc login                 # SSO in the browser
-lfc login --device        # headless: prints a URL + code to confirm elsewhere
+lfc login --device        # headless: prints a URL + code to enter in a browser
+lfc login --no-browser    # PKCE login: print the URL instead of opening it
 lfc whoami                # logged-in user, roles, token expiry
 lfc logout
 ```
 
-### Builds (preview environments)
+### Builds (preview Environments)
 
 ```sh
-lfc builds list [--mine] [--search <text>] [--all] [-n <limit>] [-p <page>]
-lfc builds get <uuid> [--manifest]
-lfc builds find --pr <url|number> [--repo myorg/myrepo]   # resolve a PR/branch → build
+lfc builds list [--mine] [--search <text>] [--exclude <statuses>] [--all] [-n <limit>] [-p <page>]
+lfc builds find --pr <url|number> [--repo myorg/myrepo]
 lfc builds find --branch <name> --repo myorg/myrepo
-lfc builds status <uuid> [--watch]        # exit 0 deployed, 1 failed, 2 timeout
+lfc builds get <uuid> [--manifest]
+lfc builds status <uuid> [--watch] [--interval <duration>] [--timeout <duration>]
 lfc builds redeploy <uuid> [--watch]
 lfc builds destroy <uuid> --yes
 lfc builds update-uuid <uuid> <new-uuid>
@@ -182,12 +161,18 @@ lfc builds webhooks <uuid> [--invoke]
 lfc builds open <uuid> [--print]          # open in the Lifecycle UI
 ```
 
-`builds find` resolves a build from a PR or branch — useful when you have a PR
-URL but not the uuid. A PR URL is self-contained; a bare PR number or a branch
-needs `--repo`. With `--json` it returns `{ found, build, matches }` (more than
-one `matches` entry means the selector was ambiguous). Exit `0` found, `3` no
-build yet (e.g. the PR was just opened), `1` if the scan was truncated before
-resolving.
+When you know the pull request or branch but do not know the Environment ID,
+use `lfc builds find`. A full pull request URL identifies the repository. A
+pull request number or branch name also needs `--repo`.
+
+When you use `--json`, a successful result contains `found`, `build`, and
+`matches`.
+Exit code `3` means that no build exists. Exit code `1` means that the scan
+stopped before it could give a conclusive result.
+
+Use `lfc builds list --search <text>` to search by Environment ID, namespace,
+pull request title, repository, or author. By default, list excludes
+`torn_down` and `pending`. Use `--all` or add `--exclude` to change that filter.
 
 Per-build environment-variable overrides:
 
@@ -197,23 +182,28 @@ lfc builds env set <uuid> KEY=VALUE [KEY=VALUE ...] [--init]
 lfc builds env unset <uuid> KEY [KEY ...]
 ```
 
-### Services (within a build)
+### Services in a build
 
 ```sh
 lfc services list <build-uuid> [--all]
 lfc services redeploy <build-uuid> <service>
-lfc services enable | disable <build-uuid> <service>
+lfc services enable <build-uuid> <service>
+lfc services disable <build-uuid> <service>
 lfc services set-branch <build-uuid> <service> <branch-or-url>
+lfc services edit <build-uuid>                         # interactive editor
 lfc services history <build-uuid> <service>          # build/deploy job history
-lfc services logs <build-uuid> <service> [--deploy] [--job <name>] [-f]
+lfc services logs <build-uuid> <service> [--deploy] [--job <name>] [-f] [--tail <n>] [--timestamps]
 ```
 
 ### Pods & runtime logs
 
 ```sh
 lfc pods list <build-uuid> [--service <name>]
-lfc pods logs <build-uuid> <pod-name> [-c <container>] [-f] [--tail <n>] [--timestamps]
+lfc pods logs <build-uuid> [pod-name] [--service <name>] [-c <container>] [-f] [--tail <n>] [--timestamps]
 ```
+
+On an interactive terminal, run the command without `pod-name` to select a pod
+and container. In automation, specify the pod and container.
 
 ### Schema validation
 
@@ -222,7 +212,13 @@ lfc schema validate [path]                              # finds lifecycle.yaml l
 lfc schema validate --repo myorg/myrepo --branch <branch>   # server-side check
 ```
 
-Exit `0` valid, `1` invalid (per-field errors printed), `3` no config file found.
+Exit code `0` means valid. Exit code `1` means invalid and prints errors for
+each field. Exit code `3` means that the CLI did not find a configuration file.
+
+<Callout type="warning">
+  Offline validation uses the schema in your installed CLI. If results differ,
+  use `--repo` and `--branch`. The server result controls that deployment.
+</Callout>
 
 ### Static sites
 
@@ -239,12 +235,13 @@ lfc sites delete <id> --yes
 
 ```sh
 lfc doctor                # environment/config/auth health checks
+lfc doctor --fix          # repair supported local permission issues
 lfc llms                  # print full agent-oriented usage instructions
 lfc --version
 ```
 
 <Callout type="info">
-  Every command supports `--help` and `--json`. For scripting and automation,
-  combine `--json` with a JSON processor, e.g.
+  All commands support `--help`. For automation, send `--json` results to a
+  JSON processor. For example, use
   `lfc builds get <uuid> --json | jq '.deploys[] | {name: .deployable.name, url: .publicUrl}'`.
 </Callout>

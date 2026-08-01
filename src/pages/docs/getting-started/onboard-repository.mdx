@@ -1,0 +1,76 @@
+---
+title: Onboard a repository
+description: Add a GitHub App installation repository to Lifecycle so pull-request and push events can create Environments.
+audience:
+  - application-developer
+lastVerified: "2026-07-24"
+verificationBaseline: "2026-07-24-comprehensive-audit"
+contentProfile: asd-ste100
+tags:
+  - github
+  - repository
+  - onboarding
+---
+
+import { Callout, Steps } from "nextra/components";
+import { Image } from "@lifecycle-docs/components";
+
+Onboarding adds a GitHub repository to Lifecycle's repository allowlist.
+Installing the Lifecycle GitHub App grants GitHub access, but it does not
+onboard the repository automatically.
+
+## Prerequisites
+
+- A platform operator has completed the Lifecycle GitHub App setup.
+- The App is installed for the repository or its organization.
+- Your Lifecycle account is allowed to manage repositories.
+
+## Onboard from the UI
+
+<Steps>
+
+### Open repository onboarding
+
+Open your Lifecycle UI. Go to `/onboard`.
+
+### Find the repository
+
+Search for your GitHub `owner/repository` name. Lifecycle lists only
+repositories that its GitHub App installation can access.
+
+<Image
+  src="/docs/getting-started/onboard-repository/repository-list.png"
+  alt="Repository onboarding shows one example repository, the Onboard action, Pick a repository, and Confirm."
+  width={768}
+  height={346}
+  ratio={768 / 346}
+/>
+
+If the repository is missing, update the App installation's repository access
+in GitHub. Then, go back to Lifecycle and retry.
+
+### Confirm the repository
+
+1. Select **Onboard**.
+2. Check the repository name.
+3. When the name is correct, select **Onboard repository**.
+
+After onboarding succeeds, the row shows the onboarded state.
+
+</Steps>
+
+## Check with a pull request
+
+Open a pull request that contains a correct Lifecycle configuration. If onboarding
+is correct, Lifecycle handles the webhook and creates a Mission Control
+comment.
+
+<Callout type="info">
+  Removing a repository from Lifecycle stops future repository events from
+  creating or updating Environments. Lifecycle keeps the existing build history.
+  You can onboard the repository again subsequently.
+</Callout>
+
+If the App is installed and the repository is onboarded but no comment appears,
+continue with
+[Missing pull-request comment](/docs/troubleshooting/github-app-webhooks).

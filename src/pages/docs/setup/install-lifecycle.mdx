@@ -1,49 +1,169 @@
 ---
 title: Install Lifecycle
+description: Select the OpenTofu-managed or standalone Helm installation path. Make sure that the API, UI, identity, and cluster are healthy.
+audience:
+  - evaluator
+  - platform-operator
+lastVerified: "2026-07-24"
+verificationBaseline: "2026-07-24-comprehensive-audit"
+contentProfile: asd-ste100
 tags:
   - lifecycle
   - install
-  - getting-started
+  - helm
   - setup
 ---
 
 import { Callout } from "nextra/components";
-import { Image } from "@lifecycle-docs/components";
 
-Now that the infrastructure components are setup, let's install the lifecycle app and create a new Github app that will send events to the application to process and create ephemeral dev environments.
+Select one installation owner for the Lifecycle Helm release. Do not let
+OpenTofu and a manual Helm command manage the same release.
 
-<Callout type="info">
-  Make sure you have updated the kube config to be able to `helm install` in the
-  cluster you just created!
+<Callout type="error">
+  The starter OpenTofu module and stock installation are evaluation paths, not a
+  production-hardening profile. The stock installation is not a complete
+  authentication-on profile for shared-network exposure. Before exposure, use a
+  complete authentication-on procedure for the installed release. If the release
+  does not supply this procedure, keep the deployment isolated. Also examine the
+  [security boundaries](/docs/operations/security).
 </Callout>
 
-- Follow installation steps in [lifecycle helm chart](https://github.com/GoodRxOSS/helm-charts/blob/main/charts/lifecycle/README.md)
+## Path A: OpenTofu-managed installation
 
-- Wait for the installation to complete and verify that the pods are running:
+The [starter infrastructure flow](/docs/setup/setup-infra) enables
+`app_lifecycle_enabled` by default. In that mode, `tofu apply` installs a Helm
+release named `lifecycle`. Do not install the chart a second time.
 
-```sh
-kubectl get pods -n lifecycle-app
-```
-
-- Once the pods are running, you can access the application at your configured domain (e.g. `https://app.0env.com`)
-
-<Image src="/setup/app-installed.png" width={1890} height={1089} />
-
-Just like that, you have successfully installed Lifecycle and set up the necessary infrastructure to start creating ephemeral environments for your GitHub pull requests!
-
-If you notice any secure certificate issues when accessing the application, you can check the status of your certificate using the following command:
+Set the namespace that you selected in `secrets.auto.tfvars`. Examine the
+managed release:
 
 ```sh
-kubectl get certificate -n lifecycle-app
+export LIFECYCLE_NAMESPACE="<namespace>"
+
+helm status lifecycle --namespace "$LIFECYCLE_NAMESPACE"
+kubectl get pods --namespace "$LIFECYCLE_NAMESPACE"
+kubectl get ingress --namespace "$LIFECYCLE_NAMESPACE"
 ```
 
-<Image
-  src="/setup/cert-ready.png"
-  width={2572}
-  height={844}
-  ratio={2572 / 844}
-/>
+OpenTofu pins its own chart and application versions. Before a module upgrade,
+examine the plan and pinned versions. Test a standalone chart version before
+you replace a module pin.
 
-Make sure the certificate is in the `Ready` state. If it is not, you may need to wait a bit longer for the certificate to be issued or troubleshoot any issues with your DNS settings.
+## Path B: operator-managed Helm installation
 
-Let's move on to the next step where we will create a GitHub app to connect Lifecycle with your repositories.
+If you operate a compatible Kubernetes cluster, use this path. You can also use
+it after you set `app_lifecycle_enabled = false` in the starter module.
+
+Use chart `0.9.10` with this procedure. Pin the version. Do not install an
+untested latest release.
+
+```sh
+export LIFECYCLE_CHART_VERSION="0.9.10"
+export LIFECYCLE_RELEASE="lifecycle"
+export LIFECYCLE_NAMESPACE="<namespace>"
+
+helm show values \
+  oci://ghcr.io/goodrxoss/helm-charts/lifecycle \
+  --version "$LIFECYCLE_CHART_VERSION" > lifecycle-values.yaml
+```
+
+Examine the generated file. Replace all `example.com` values. The core API, UI,
+identity provider, registry, and BuildKit registry must use one domain:
+
+```yaml
+global:
+  domain: lifecycle.example.org
+
+distribution:
+  ingress:
+    hostname: distribution.lifecycle.example.org
+
+buildkit:
+  buildkitdToml: |
+    debug = true
+    [registry."distribution.lifecycle.example.org"]
+      http = true
+      insecure = true
+    [worker.oci]
+      platforms = [ "linux/amd64" ]
+      reservedSpace = "60%"
+      maxUsedSpace = "80%"
+      max-parallelism = 25
+
+keycloak:
+  hostname: https://auth.lifecycle.example.org
+  clients:
+    lifecycleUi:
+      url: https://ui.lifecycle.example.org
+
+ui:
+  config:
+    apiUrl: https://app.lifecycle.example.org
+    authBaseUrl: https://auth.lifecycle.example.org
+    authRealm: lifecycle
+```
+
+`lifecycle.example.org` is a documentation-only domain. Use a domain that you
+control. Configure its DNS, ingress class, certificate issuer, storage classes,
+resource limits, secrets, backup policy, and identity integration. Do not put
+credentials in a committed values file or command line.
+
+Before installation, render the Kubernetes objects. Examine the output:
+
+```sh
+helm template "$LIFECYCLE_RELEASE" \
+  oci://ghcr.io/goodrxoss/helm-charts/lifecycle \
+  --version "$LIFECYCLE_CHART_VERSION" \
+  --namespace "$LIFECYCLE_NAMESPACE" \
+  --values lifecycle-values.yaml > rendered-lifecycle.yaml
+```
+
+After you examine the output, install the same pinned version:
+
+```sh
+helm upgrade --install "$LIFECYCLE_RELEASE" \
+  oci://ghcr.io/goodrxoss/helm-charts/lifecycle \
+  --version "$LIFECYCLE_CHART_VERSION" \
+  --namespace "$LIFECYCLE_NAMESPACE" \
+  --create-namespace \
+  --values lifecycle-values.yaml \
+  --wait \
+  --timeout 15m
+```
+
+## Test the installation
+
+An installed Helm release is not, by itself, proof that Lifecycle is ready.
+Make sure that each boundary is correct:
+
+1. `helm status` reports the expected release and chart version.
+2. All necessary pods are ready, and no workload is in a restart loop.
+3. The core API hostname answers its health endpoint with trusted TLS.
+4. The UI hostname loads with trusted TLS.
+5. After sign-in, make sure that the identity provider returns the user to
+   Lifecycle.
+6. Lifecycle rejects an unauthenticated v2 API request. The request does not
+   receive an administrator identity.
+
+```sh
+helm status "$LIFECYCLE_RELEASE" --namespace "$LIFECYCLE_NAMESPACE"
+kubectl get pods --namespace "$LIFECYCLE_NAMESPACE"
+kubectl get ingress --namespace "$LIFECYCLE_NAMESPACE"
+curl --fail --silent --show-error https://app.lifecycle.example.org/api/health
+```
+
+See [Authentication](/docs/features/authentication) for the full sign-in and
+security checks. If a workload is unhealthy, start with [platform
+monitoring](/docs/operations/monitoring) rather than continuing setup.
+
+## Continue setup
+
+When the API, UI, and sign-in flow are healthy:
+
+1. [Create the GitHub App](/docs/setup/create-github-app).
+2. [Onboard a repository](/docs/getting-started/onboard-repository).
+3. [Create the first Environment](/docs/getting-started/create-environment).
+
+The repository-installation step grants GitHub App access. Onboarding is a
+different Lifecycle step. Lifecycle cannot use the repository before
+onboarding.

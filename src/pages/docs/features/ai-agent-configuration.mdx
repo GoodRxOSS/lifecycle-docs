@@ -1,512 +1,119 @@
 ---
-title: AI Agent Configuration
+title: Configure Lifecycle Agent
+description: Configure models, instructions, tools, approvals, and repository overrides for Lifecycle Agent from Settings.
+audience:
+  - administrator
+lastVerified: "2026-07-24"
+verificationBaseline: "2026-07-24-comprehensive-audit"
+contentProfile: asd-ste100
 tags:
   - ai
   - agent
-  - configuration
-  - admin
-  - api
+  - administration
+  - settings
 ---
 
 import { Callout } from "nextra/components";
 
-The AI Agent configuration system gives administrators fine-grained control over agent behavior at two levels: **global defaults** that apply to all repositories, and **per-repository overrides** for specific projects. All configuration is managed through REST API endpoints.
+Lifecycle administrators configure Agent behavior in **Settings**. Start with a
+small global policy. Preview the combined instructions. Add repository
+overrides only where they are necessary.
 
 <Callout type="info">
-  For an overview of the AI Agent itself, see [AI
-  Agent](/docs/features/ai-agent). To extend the agent with external tools, see
-  [MCP Integration](/docs/features/mcp-integration).
+  Agent administration is available only to Lifecycle administrators. If these
+  settings are missing, ask the deployment owner if Agent Sessions is available.
 </Callout>
 
-## Configuration hierarchy
+## Before you start
 
-Global defaults live in the Lifecycle `global_config` table under the `aiAgent` key. Per-repository overrides are stored in the `ai_agent_repo_config` table and merged on top of global defaults at runtime.
+These items are necessary:
 
-### Fields
+- Lifecycle administrator access
+- At least one model provider configured by the deployment owner
+- A test repository and nonproduction Environment
+- Agreement on which actions need approval
 
-| Field                              | Type               | Default                               | Description                                                                    |
-| ---------------------------------- | ------------------ | ------------------------------------- | ------------------------------------------------------------------------------ |
-| `enabled`                          | `boolean`          | `false`                               | Whether the AI Agent is available                                              |
-| `maxMessagesPerSession`            | `number`           | `50`                                  | Maximum messages per chat session                                              |
-| `sessionTTL`                       | `number`           | `3600`                                | Session time-to-live in seconds                                                |
-| `providers`                        | `ProviderConfig[]` | `[]`                                  | LLM provider configurations (global only)                                      |
-| `additiveRules`                    | `string[]`         | `[]`                                  | Extra rules appended to the system prompt                                      |
-| `systemPromptOverride`             | `string`           | `undefined`                           | Full replacement for the system prompt                                         |
-| `excludedTools`                    | `string[]`         | `[]`                                  | Tools the agent cannot use                                                     |
-| `excludedFilePatterns`             | `string[]`         | `[]`                                  | Glob patterns for files the agent cannot access                                |
-| `allowedWritePatterns`             | `string[]`         | `["lifecycle.yaml", "lifecycle.yml"]` | Glob patterns for additional file paths the agent is allowed to write to       |
-| `maxIterations`                    | `number`           | `20`                                  | Maximum orchestration loop iterations (global only)                            |
-| `maxToolCalls`                     | `number`           | `50`                                  | Maximum total tool calls per query (global only)                               |
-| `maxRepeatedCalls`                 | `number`           | `1`                                   | Maximum repeated calls with same arguments before loop detection (global only) |
-| `compressionThreshold`             | `number`           | `80000`                               | Token count before conversation history is compressed (global only)            |
-| `observationMaskingRecencyWindow`  | `number`           | `3`                                   | Number of recent tool results preserved when masking (global only)             |
-| `observationMaskingTokenThreshold` | `number`           | `25000`                               | Token count before observation masking activates (global only)                 |
-| `toolExecutionTimeout`             | `number`           | `30000`                               | Tool execution timeout in milliseconds (global only)                           |
-| `toolOutputMaxChars`               | `number`           | `30000`                               | Maximum characters in tool output before truncation (global only)              |
-| `retryBudget`                      | `number`           | `10`                                  | Maximum retry attempts per query on provider errors (global only)              |
+Keep provider credentials in the approved deployment secret store. Do not put
+credentials in Agent instructions, chats, or repositories.
 
-### How merging works
+## Configure the global policy
 
-When a repository has an override, the effective configuration is computed by merging the override on top of global defaults:
+Open **Settings**. Examine each Agent section:
 
-- **Scalar fields** (`enabled`, `maxMessagesPerSession`, `sessionTTL`, `systemPromptOverride`) — the repository value replaces the global value.
-- **Array fields** (`additiveRules`, `excludedTools`, `excludedFilePatterns`, `allowedWritePatterns`) — repository values are **appended** to global values. Duplicates are removed automatically.
+| Section                       | What it controls                                                  |
+| ----------------------------- | ----------------------------------------------------------------- |
+| **Availability & models**     | If Agent is available and which models users can select           |
+| **Instructions & run limits** | Administrator guidance and the maximum number of agent iterations |
+| **Permissions & approvals**   | Which classes of action run, require approval, or are denied      |
+| **Tools & integrations**      | Built-in tool availability and shared MCP servers                 |
+| **Agent workspaces**          | Workspace behavior and lifecycle                                  |
+| **Runtime backends**          | Where new Agent workspaces run                                    |
+| **Safety lists**              | Excluded tools and paths, plus allowed write paths                |
+| **Session review**            | Audit records for Agent sessions                                  |
 
-Here's a concrete example. Say your global config looks like this:
+Save one section at a time. Use a test session to make sure that each result is
+correct. A new session clearly shows the changed instructions or policy.
 
-```json
-{
-  "enabled": true,
-  "maxMessagesPerSession": 50,
-  "excludedTools": ["patch_k8s_resource"], // blocked org-wide
-  "additiveRules": ["Always confirm before scaling."]
-}
-```
+## Add instructions for one repository
 
-And `myorg/frontend` has this override:
-
-```json
-{
-  "maxMessagesPerSession": 100, // raises the limit
-  "excludedTools": ["update_github_file"], // blocked for this repo only
-  "additiveRules": ["Prefer CSS fixes over JS."] // repo-specific rule
-}
-```
-
-The effective config for `myorg/frontend`:
-
-```json
-{
-  "enabled": true, // inherited
-  "maxMessagesPerSession": 100, // replaced
-  "excludedTools": ["patch_k8s_resource", "update_github_file"], // combined
-  "additiveRules": [
-    "Always confirm before scaling.",
-    "Prefer CSS fixes over JS."
-  ] // combined
-}
-```
-
-### Provider and model configuration
-
-The `providers` field defines which LLM providers and models are available. This is a **global-only** field — repository overrides cannot change provider configuration.
-
-Each provider entry has the following structure:
-
-| Field          | Type            | Required | Description                                           |
-| -------------- | --------------- | -------- | ----------------------------------------------------- |
-| `name`         | `string`        | Yes      | Provider identifier (`anthropic`, `openai`, `gemini`) |
-| `enabled`      | `boolean`       | Yes      | Whether this provider is available                    |
-| `apiKeyEnvVar` | `string`        | Yes      | Environment variable containing the API key           |
-| `models`       | `ModelConfig[]` | Yes      | List of models for this provider                      |
-
-Each model entry:
-
-| Field                  | Type      | Required | Description                                                     |
-| ---------------------- | --------- | -------- | --------------------------------------------------------------- |
-| `id`                   | `string`  | Yes      | Model identifier sent to the provider API                       |
-| `displayName`          | `string`  | Yes      | Human-readable name shown in the UI dropdown                    |
-| `enabled`              | `boolean` | Yes      | Whether this model is selectable                                |
-| `default`              | `boolean` | Yes      | Whether this is the default model (one per provider)            |
-| `maxTokens`            | `integer` | Yes      | Maximum output tokens for the model                             |
-| `inputCostPerMillion`  | `number`  | No       | Cost per 1M input tokens (USD). Enables cost display in the UI  |
-| `outputCostPerMillion` | `number`  | No       | Cost per 1M output tokens (USD). Enables cost display in the UI |
-
-<Callout type="info">
-  When `inputCostPerMillion` and `outputCostPerMillion` are both set for a
-  model, the UI displays a computed cost alongside token counts in the X-Ray
-  debug panel. If either field is omitted, cost is not shown.
-</Callout>
-
-Example with pricing configured:
-
-```json
-{
-  "providers": [
-    {
-      "name": "anthropic",
-      "enabled": true,
-      "apiKeyEnvVar": "ANTHROPIC_API_KEY",
-      "models": [
-        {
-          "id": "claude-sonnet-4-20250514",
-          "displayName": "Claude Sonnet",
-          "enabled": true,
-          "default": true,
-          "maxTokens": 8096,
-          "inputCostPerMillion": 3.0,
-          "outputCostPerMillion": 15.0
-        }
-      ]
-    },
-    {
-      "name": "gemini",
-      "enabled": true,
-      "apiKeyEnvVar": "GEMINI_API_KEY",
-      "models": [
-        {
-          "id": "gemini-2.5-pro-preview-05-06",
-          "displayName": "Gemini 2.5 Pro",
-          "enabled": true,
-          "default": true,
-          "maxTokens": 65536,
-          "inputCostPerMillion": 1.25,
-          "outputCostPerMillion": 10.0
-        }
-      ]
-    }
-  ]
-}
-```
-
-### Caching
-
-<Callout type="info">
-  Configurations are cached at three layers: in-memory (30 seconds), Redis (5
-  minutes), and the database (source of truth). Updating via the API immediately
-  invalidates both the Redis and in-memory caches for that repository.
-</Callout>
-
----
-
-## Prompt customization
-
-### Additive rules
-
-The `additiveRules` field accepts an array of strings appended to the system prompt. Use this to add organization-specific guidelines, restrict behaviors, or provide extra context.
-
-Because additive rules use **additive merge**, global rules and repository rules are combined. Set organization-wide rules globally and layer project-specific rules per repository.
-
-```json
-{
-  "additiveRules": [
-    "Always check pod resource limits before suggesting scaling changes.",
-    "Prefer rolling restarts over full redeployments."
-  ]
-}
-```
-
-### System prompt override
-
-The `systemPromptOverride` field replaces the entire default system prompt. This is a **full replacement**, not additive.
+Repository settings combine with the global policy. Before you save, use the
+preview to examine the final instructions and policy.
 
 <Callout type="warning">
-  Setting `systemPromptOverride` replaces the entire built-in system prompt,
-  including safety instructions. Use this only when you need complete control
-  over the agent's behavior. Maximum length is **50,000 characters**.
+  A repository override can make the combined policy more permissive. Preview
+  the merged result. Test the merged result.
 </Callout>
 
-When set at the repository level, the override applies only to that repository. The scalar merge rule means the repository value fully replaces any global override.
+## Preview combined instructions
 
----
+Use the prompt preview to examine the instruction order. Check the
+administrator instructions, global rules, repository rules, and added guidance.
 
-## Access control
+The preview does not include session-dependent tools, skills, or runtime
+context. Use a test session to make sure that those parts operate correctly.
 
-### Excluded tools
+## Set approval policy
 
-The `excludedTools` field prevents the agent from using specific tools. This is useful for restricting write operations in sensitive repositories.
+Each action category can be:
 
-Available tool names:
+- `allow` — run without a person approving it
+- `require_approval` — pause and show the full action
+- `deny` — do not offer or run the action
 
-- `get_k8s_resources`
-- `get_lifecycle_logs`
-- `patch_k8s_resource`
-- `query_database`
-- `get_github_file`
-- `list_github_directory`
-- `update_github_file`
-- `get_issue_comment`
+Categories include read operations, external MCP reads, workspace writes, shell
+execution, Git writes, network access, Kubernetes mutations, and external MCP
+writes. Allow read operations first. Require approval for consequential
+actions. Deny actions that are not necessary for users.
 
-<Callout type="warning">
-  `query_database` is a **core tool** and cannot be excluded. Attempting to
-  exclude it returns a `400` error.
-</Callout>
+Capabilities can be available to users, reserved for administrators or the
+system, or disabled. You can also limit custom Agent creation.
 
-Because excluded tools use additive merge, tools excluded at the global level cannot be "un-excluded" at the repository level.
+## Configure MCP and workspace backends
 
-### Excluded file patterns
+- Use [MCP integration](/docs/features/mcp-integration) to add shared tools.
+- Let users complete their own connection fields.
+- Use [Workspace backends](/docs/features/workspace-backends) to select where
+  new workspace-backed sessions run.
 
-The `excludedFilePatterns` field accepts glob patterns that restrict which files the agent can access through the GitHub tools.
+After a backend change, start a test session and verify a new workspace.
 
-**Validation rules:**
+## Configuration API
 
-| Rule                       | Limit                                  |
-| -------------------------- | -------------------------------------- |
-| Maximum number of patterns | 50                                     |
-| Maximum pattern length     | 200 characters                         |
-| Forbidden patterns         | `*`, `**`, `**/*` (overly broad)       |
-| Path traversal             | `../` is not allowed                   |
-| Absolute paths             | Patterns starting with `/` not allowed |
+Use **Settings** for interactive administration. For automation, use the
+authenticated v2 routes in the deployment API reference:
 
-```json
-{
-  "excludedFilePatterns": [
-    "*.env", // environment files
-    "secrets/**", // secrets directory
-    "config/production.*" // production configs
-  ]
-}
-```
+- `GET`, `PUT`, or `PATCH /api/v2/ai/agent/runtime-config`
+- repository runtime configuration below
+  `/api/v2/ai/agent/runtime-config/repos/`
+- instruction rules, templates, and prompt preview below
+  `/api/v2/ai/admin/agent/`
 
-Like other array fields, file patterns use additive merge. Global patterns and repository patterns are combined and deduplicated.
+See [API overview](/docs/api/overview) for authentication and discovery.
 
-### Allowed write patterns
+## Change check
 
-The `allowedWritePatterns` field controls which file paths the agent is permitted to modify through the `update_file` tool. By default, the agent can only write to `lifecycle.yaml` and `lifecycle.yml` (plus any files explicitly referenced in the lifecycle configuration such as Dockerfiles and Helm value files).
-
-To allow the agent to modify additional files, add glob patterns to this field. For example, to allow modifications to Helm charts, Dockerfiles, and Ansible playbooks:
-
-```json
-{
-  "allowedWritePatterns": [
-    "lifecycle.yaml",
-    "lifecycle.yml",
-    "helm/**/*.{yaml,yml}",
-    "sysops/helm/**/*.{yaml,yml}",
-    "sysops/dockerfiles/**/*.dockerfile",
-    "sysops/ansible/**/*.{yaml,yml}"
-  ]
-}
-```
-
-<Callout type="warning">
-  Setting `allowedWritePatterns` at the global or repository level defines the
-  full set of writable paths (in addition to files referenced in the lifecycle
-  config). Keep the list minimal to limit the blast radius of agent changes.
-</Callout>
-
-Like other array fields, allowed write patterns use additive merge. Global patterns and repository patterns are combined and deduplicated.
-
----
-
-## Orchestration limits
-
-These fields control the agent's internal behavior. They are all **global-only** settings — repository overrides cannot change them. If omitted, the defaults below are used.
-
-### Loop protection
-
-Controls for the agent's tool-calling loop that prevent runaway behavior.
-
-| Field              | Default | Description                                                                                         |
-| ------------------ | ------- | --------------------------------------------------------------------------------------------------- |
-| `maxIterations`    | `20`    | Maximum number of LLM round-trips in a single query. Prevents runaway conversations.                |
-| `maxToolCalls`     | `50`    | Maximum total tool invocations across all iterations. Caps resource usage for broad investigations. |
-| `maxRepeatedCalls` | `1`     | How many times the same tool can be called with identical arguments before loop detection kicks in. |
-
-When a limit is hit, the agent stops and returns an error message to the user explaining what happened.
-
-### Context management
-
-Controls how the agent manages conversation context to stay within LLM token limits.
-
-| Field                              | Default | Description                                                                                                                               |
-| ---------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `compressionThreshold`             | `80000` | Token count at which the conversation history is summarized into a compact form. Higher values preserve more context but use more tokens. |
-| `observationMaskingRecencyWindow`  | `3`     | Number of recent tool results kept in full when masking older observations. Older results are replaced with placeholders.                 |
-| `observationMaskingTokenThreshold` | `25000` | Token count at which observation masking activates. Below this threshold, all tool results are kept in full.                              |
-
-### Tool execution
-
-Controls for tool execution behavior and output handling.
-
-| Field                  | Default | Description                                                                                                                     |
-| ---------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `toolExecutionTimeout` | `30000` | Maximum time in milliseconds a single tool call can run before being terminated. Increase for slow K8s clusters or MCP servers. |
-| `toolOutputMaxChars`   | `30000` | Maximum characters in a tool's output before truncation. Larger values give the agent more data but cost more tokens.           |
-
-### Resilience
-
-Controls for error recovery when communicating with LLM providers.
-
-| Field         | Default | Description                                                                                                                                |
-| ------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `retryBudget` | `10`    | Maximum retry attempts per query when the LLM provider returns transient errors. Higher values improve reliability at the cost of latency. |
-
-```json
-{
-  "maxIterations": 30,
-  "maxToolCalls": 80,
-  "maxRepeatedCalls": 2,
-  "compressionThreshold": 100000,
-  "observationMaskingRecencyWindow": 5,
-  "observationMaskingTokenThreshold": 40000,
-  "toolExecutionTimeout": 60000,
-  "toolOutputMaxChars": 50000,
-  "retryBudget": 15
-}
-```
-
-<Callout type="info">
-  Increasing these limits allows the agent to perform deeper investigations but
-  consumes more LLM tokens. Lower values are safer for cost control.
-</Callout>
-
----
-
-## Managing configuration via API
-
-All endpoints are under `/api/v2/ai/agent-config`. Request and response bodies use JSON.
-
-### Global configuration
-
-**Get the current global config:**
-
-```
-GET /api/v2/ai/agent-config
-```
-
-```json
-{
-  "status": "success",
-  "data": {
-    "enabled": true,
-    "providers": [],
-    "maxMessagesPerSession": 50,
-    "sessionTTL": 3600,
-    "additiveRules": [],
-    "excludedTools": [],
-    "excludedFilePatterns": [],
-    "allowedWritePatterns": ["lifecycle.yaml", "lifecycle.yml"]
-  }
-}
-```
-
-**Update the global config:**
-
-```
-PUT /api/v2/ai/agent-config
-```
-
-```json
-{
-  "enabled": true,
-  "providers": [],
-  "maxMessagesPerSession": 100, // raise the session limit
-  "sessionTTL": 7200 // 2 hours
-}
-```
-
-Returns the updated configuration on success. Returns `400` for validation failures (invalid schema, prompt too long, core tool exclusion, bad file patterns).
-
----
-
-### Repository overrides
-
-**List all repository overrides:**
-
-```
-GET /api/v2/ai/agent-config/repos
-```
-
-```json
-{
-  "status": "success",
-  "data": [
-    {
-      "id": 1,
-      "repositoryFullName": "myorg/myrepo",
-      "config": {
-        "enabled": false,
-        "excludedTools": ["patch_k8s_resource"]
-      },
-      "createdAt": "2025-01-15T10:00:00.000Z",
-      "updatedAt": "2025-01-15T10:00:00.000Z"
-    }
-  ]
-}
-```
-
-**Get a single repository override:**
-
-```
-GET /api/v2/ai/agent-config/repos/{owner}/{repo}
-```
-
-Returns only the override fields, not the merged result. Returns `404` if no override exists.
-
-**Get the effective (merged) configuration:**
-
-```
-GET /api/v2/ai/agent-config/repos/{owner}/{repo}/effective
-```
-
-```json
-{
-  "status": "success",
-  "data": {
-    "repoFullName": "myorg/myrepo",
-    "effectiveConfig": {
-      "enabled": false,
-      "providers": [],
-      "maxMessagesPerSession": 50,
-      "sessionTTL": 3600,
-      "additiveRules": [],
-      "excludedTools": ["patch_k8s_resource"], // merged from global + repo
-      "excludedFilePatterns": [],
-      "allowedWritePatterns": ["lifecycle.yaml", "lifecycle.yml"]
-    }
-  }
-}
-```
-
-<Callout type="tip">
-  Use the `/effective` endpoint to verify exactly what configuration a
-  repository uses at runtime, after merge.
-</Callout>
-
-**Create or update a repository override:**
-
-```
-PUT /api/v2/ai/agent-config/repos/{owner}/{repo}
-```
-
-Uses upsert semantics. Only include the fields you want to override.
-
-```json
-{
-  "enabled": false,
-  "excludedTools": ["patch_k8s_resource", "update_github_file"],
-  "additiveRules": ["Do not restart pods without explicit user confirmation."]
-}
-```
-
-Returns the saved override on success. Returns `400` for validation failures.
-
-**Delete a repository override:**
-
-```
-DELETE /api/v2/ai/agent-config/repos/{owner}/{repo}
-```
-
-Soft-deletes the override. The repository reverts to global defaults.
-
----
-
-## Troubleshooting
-
-### Config changes not taking effect
-
-Configuration is cached at multiple layers. The API automatically invalidates caches on update, but if you changed the database directly, you may need to wait:
-
-- **In-memory cache** — expires after 30 seconds
-- **Redis cache** — expires after 5 minutes
-
-Use the `/effective` endpoint to confirm what the agent sees.
-
-### Cannot exclude a core tool
-
-`query_database` is required for agent operation. If you include it in `excludedTools`, the API returns:
-
-```
-Cannot exclude core tool: "query_database". Core tools are required for agent operation.
-```
-
-Remove it from your exclusion list.
-
-### Excluded tool still being used
-
-Array fields use **additive merge**. If you removed a tool from a repository override but it's still excluded, check the global config — the tool may be excluded there. Global exclusions cannot be overridden at the repo level.
-
-### System prompt override not working as expected
-
-`systemPromptOverride` **completely replaces** the built-in prompt, including safety instructions and tool usage guidelines. If the agent behaves unexpectedly, try `additiveRules` instead — it appends to the default prompt rather than replacing it.
+1. Preview the combined global and repository instructions.
+2. Start a new Agent session as a representative user.
+3. Make sure that the intended model and tools are available.
+4. Do one read, one approval-required action, and one denied action.
+5. Before you expand access, examine the session audit.

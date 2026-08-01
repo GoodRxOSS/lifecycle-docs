@@ -1,52 +1,75 @@
 ---
 title: What is Lifecycle?
-description: Lifecycle is your effortless way to test and create ephemeral environments
+description: Understand how Lifecycle creates connected, isolated application Environments for pull requests and API-driven workflows.
+audience:
+  - evaluator
+lastVerified: "2026-07-24"
+verificationBaseline: "2026-07-24-comprehensive-audit"
+contentProfile: asd-ste100
 tags:
   - core
   - lifecycle
-  - intro
+  - concepts
 ---
 
-import { Image } from "@lifecycle-docs/components";
 import Iframe from "@/components/iframe";
 
-Lifecycle is an **ephemeral** _(/əˈfem(ə)rəl/, lasting for a very short time)_ environment orchestrator that transforms your GitHub pull requests into fully functional development environments. It enables developers to test, validate, and collaborate on features without the hassle of managing infrastructure manually.
+Lifecycle creates isolated application Environments on Kubernetes. It selects
+the Services that a change requires. It builds the changed sources and
+deploys the result with its dependencies. Lifecycle publishes useful URLs and
+cleans up Environments that are no longer necessary.
 
-> With **Lifecycle**, every pull request gets its own connected playground—ensuring that changes can be previewed, integrated, and verified before merging into its main branch.
+Pull requests are the usual trigger, but Lifecycle can also create
+Environments without a pull request through an enabled UI or API workflow.
+Long-lived static Environments can supply fallback Services.
 
-## A Developer’s Story
+## The core flow
 
-Imagine working in an organization that develops multiple services. Managing and testing changes across these services can be challenging, especially when multiple developers are working on different features simultaneously.
+1. A repository contains a correct Lifecycle configuration.
+2. A pull request, UI action, or API request asks for an Environment.
+3. Lifecycle resolves necessary and optional Services and their source
+   revisions.
+4. Lifecycle builds the changed sources and deploys the Kubernetes workloads.
+5. Users examine status, logs, URLs, and actions in GitHub, the UI, CLI, API, or
+   MCP.
+6. When the owning workflow ends or its lease expires, Lifecycle tears down
+   ephemeral resources.
 
-Meet **Nick Holiday 👨‍💻**, an engineer who needs to update a database schema and modify the corresponding API in a backend service. Additionally, his change requires frontend service updates to display the new data correctly.
+An **Environment** is the user-facing unit. Some API and CLI interfaces use the
+historical term **build** or the field name `uuid`. Those names usually refer to
+the same Environment or its human-readable ID.
 
-### Traditional Workflow Challenges
+## What Lifecycle helps with
 
-- **Shared environments** – Nick deploys his backend service changes to a shared dev or staging environment, but another engineer is testing unrelated changes at the same time.
-- **Conflicting updates** – The frontend engineers working on the UI might face issues if their code depends on a stable backend service that keeps changing.
-- **Environment management** – Setting up and maintaining an isolated environment for testing requires significant effort.
+- **Fast feedback:** Test changes before merging.
+- **Isolation:** Prevent unrelated changes from colliding in a shared staging
+  Environment.
+- **Connected Services:** Use changed Services with configured
+  dependencies and fallbacks.
+- **Shareable results:** Supply developers, QA, and stakeholders with stable links
+  for the lifetime of the Environment.
+- **Controlled cleanup:** Tear down pull-request Environments automatically
+  and expire leased API Environments.
+- **Agent workflows:** When enabled, let users and approved AI tools examine
+  the same Lifecycle state through governed interfaces.
 
-### Enter Lifecycle
+## View the demo
 
-With Lifecycle, as soon as Nick opens a pull request, the system automatically:
+<Iframe
+  src="https://www.youtube.com/embed/ld9rWBPU3R8?si=ff-_y0lXTNOmRxdT"
+  title="Lifecycle product overview video"
+/>
 
-1. 🏗️ **Creates an isolated development environment** – This environment includes Nick’s updated backend service along with the necessary frontend services.
-2. 🚀 **Deploys the application** – Everything is set up exactly as it would be in production, ensuring a reliable test scenario.
-3. 🔗 **Generates a shareable URL** – Nick and his teammates can interact with the new features without setting up anything locally.
-4. 🧹 **Cleans up automatically** – Once the PR is merged or closed, Lifecycle removes the environment, keeping things tidy.
+## Select your next step
 
-## Watch a Quick Demo
-
-<Iframe src="https://www.youtube.com/embed/ld9rWBPU3R8?si=ff-_y0lXTNOmRxdT" />
-
-## How It Works
-
-<Image src="/docs/simple-workflow.png" width={1941} height={1613} />
-
-## Why Use Lifecycle?
-
-- **Faster Feedback Loops** - Get instant previews of your changes without waiting for staging deployments.
-- **Isolation** - Each PR runs in its own sandbox, preventing conflicts.
-- **Seamless Collaboration** - Share URLs with stakeholders, designers, or QA engineers.
-- **Automatic Cleanup** - No more stale test environments; Lifecycle manages cleanup for you.
-- **Works with Your Stack** - Supports containerized applications and integrates with Kubernetes.
+- **Application developer:** [Onboard a repository](/docs/getting-started/onboard-repository)
+  and [create your first Environment](/docs/getting-started/create-environment).
+- **Evaluator or platform operator:** [Select an installation
+  path](/docs/setup/install-lifecycle). Use the [starter infrastructure
+  prerequisites](/docs/setup/prerequisites) only for the OpenTofu evaluation
+  path.
+- **API user:** [Create a personal API key](/docs/api-authentication/api-keys)
+  and [create a PR-less Environment](/docs/features/api-environments).
+- **Agent user or administrator:** Start with
+  [Agent Sessions](/docs/features/agent-sessions) and
+  [Agent administration](/docs/features/agent-administration).

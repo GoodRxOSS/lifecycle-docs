@@ -1,81 +1,106 @@
 ---
-title: Explore static environment
-description: Create the first and default static environment
+title: Create a default static Environment
+description: Create and pin a long-lived dev-0 Environment with supported Lifecycle controls.
+audience:
+  - application-developer
+lastVerified: "2026-07-24"
+verificationBaseline: "2026-07-24-comprehensive-audit"
+contentProfile: asd-ste100
 tags:
-  - tutorial
+  - environment
   - dev-0
   - static
-  - onboard
 ---
 
-import { Callout } from "nextra/components";
+import { Callout, Steps } from "nextra/components";
 
-A **static environment** in Lifecycle is a persistent environment that serves as a fallback when dependent services do not need to be rebuilt.
+A static Environment does not use the usual pull-request teardown lifecycle.
+Teams use `dev-0` as a fallback for Services that an ephemeral Environment does
+not override.
 
-Unlike ephemeral environments that are built on short lived pull requests, static environments are built on top of long lived pull requests. These environments exist continuously and update automatically as changes are merged into the default branch of configured services.
+## Prerequisites
 
-## What is `dev-0`
-
-The **default static environment** is `dev-0`. This environment ensures that there is always a **stable and up-to-date version** of services available without needing to build every dependency manually.
+Required items are the Lifecycle CLI, Environment management permission, and an
+onboarded repository with the fallback Services.
 
 <Callout type="warning">
-
-The `dev-0` environment should be created for your installation.
-
-During the initial bootstrapping of Lifecycle, the `dev-0` build record is created automatically but this itself does not have any services built.
-
+  Lifecycle can reserve `dev-0` with an empty placeholder. Release the name with
+  the CLI procedure below.
 </Callout>
 
 ## Create `dev-0`
 
-- Delete the dummy `dev-0` build record from `builds` table in the database
+<Steps>
 
-```sql
-DELETE FROM builds WHERE uuid = 'dev-0';
+### Examine the placeholder
+
+```sh
+lfc builds get dev-0
 ```
 
-- Create a repository named `lifecycle-static-env` in your GitHub account
-- Install the Lifecycle GitHub App in this repository
-- Create a pull request in this repository with branch `dev-0`
-- Add `lifecycle.yaml` file to the root of the repository with all the services you want to include in the `dev-0` environment
+If this is the empty reserved placeholder, continue. If it is a non-placeholder
+Environment, do not replace it.
 
-  **Example:**
+### Release the reserved name
 
-```yaml
-environment:
-  defaultServices:
-    - name: "frontend"
-      repository: "account/frontend-repo"
-      branch: "main"
-    - name: "grpc"
-      repository: "account/backend-grpc"
-      branch: "main"
+```sh
+lfc builds update-uuid dev-0 dev-0-placeholder
 ```
 
-- Deploy the `dev-0` environment by adding `lifecycle-deploy!` label to the pull request
-- Update `uuid` for the environment to `dev-0` in the [mission control comment](/docs/tips/using-mission-control#override-uuid)
-- Finally, execute this query to track default branches of the services in the `dev-0` environment:
+If your installed CLI or server rejects this operation, stop and contact the
+platform operator. The operator can upgrade Lifecycle or give you the supported
+migration procedure.
 
-```sql
-UPDATE builds
-SET
-    "trackDefaultBranches" = true,
-    "isStatic" = true
-WHERE
-    uuid = 'dev-0';
+### Create the source Environment
+
+Create a long-lived pull request in the onboarded repository. Its
+`lifecycle.yaml` must select the fallback Services and their default
+branches. Wait until the generated Environment is deployed.
+
+### Rename and pin it
+
+```sh
+lfc builds update-uuid <generated-environment-id> dev-0
+lfc builds set dev-0 --static --track-defaults
 ```
 
-## Key Features
+`--static` prevents usual automatic teardown. When a default branch moves,
+`--track-defaults` redeploys Services that have no explicit branch override.
 
-**🏗️ Fallback for Optional Services**
+### Remove the placeholder
 
-- When optional services are not explicitly built in an ephemeral environment, Lifecycle defaults to using the latest build from `dev-0`.
+```sh
+lfc builds destroy dev-0-placeholder
+```
 
-**💪 Based on a Persistent PR**
+</Steps>
 
-- Similar to ephemeral environments, `dev-0` is based on a PR, but it remains open and continuously updates.
+## Check the fallback
 
-**👣 Tracks Changes on Default Branch Merges**
+```sh
+lfc builds get dev-0
+```
 
-- Whenever a service has a new change merged to its `main` branch, `dev-0` will **automatically pull, build, and redeploy** the latest changes.
-- This ensures `dev-0` always contains **the freshest version** of all services.
+Make sure that the output identifies the Environment as static. Check that
+default-branch tracking is enabled. Make sure that all fallback Services are
+**Ready**.
+
+In a different ephemeral Environment, do not select an optional Service. Make sure that
+its generated template variables point to the Service from `dev-0`. The fallback
+comes from each Service's configured `defaultUUID`. The template resolver does
+not always use `dev-0`.
+
+## Change or remove the static Environment
+
+To stop tracking default branches without removing the Environment:
+
+```sh
+lfc builds set dev-0 --no-track-defaults
+```
+
+To remove it, first unpin and then destroy it:
+
+```sh
+lfc builds set dev-0 --no-static
+lfc builds destroy dev-0
+```

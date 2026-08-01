@@ -1,0 +1,116 @@
+---
+title: Sites
+description: Upload and manage static HTML sites through Lifecycle's UI, CLI, or authenticated v2 API.
+audience:
+  - application-developer
+  - platform-operator
+lastVerified: "2026-07-24"
+verificationBaseline: "2026-07-24-comprehensive-audit"
+contentProfile: asd-ste100
+tags:
+  - sites
+  - static-hosting
+  - cli
+  - api
+---
+
+import { Callout } from "nextra/components";
+
+Sites publishes a static HTML file or ZIP archive at a stable Lifecycle URL. It
+is useful for generated reports, prototypes, and documentation previews. A
+server-side application is not necessary.
+
+<Callout type="warning">
+  Sites requires storage, gateway, DNS, and authentication configuration. If
+  **Sites** is not available, contact your deployment owner.
+</Callout>
+
+## Upload from the UI
+
+1. Open **Sites**.
+2. Select **Add site**.
+3. Select one HTML file or a ZIP archive with the entry point that your
+   deployment's upload policy requires.
+4. Add an optional display name.
+5. Examine the file.
+6. Upload the file.
+7. Open the returned URL.
+8. Make sure that its content is correct.
+
+Use search plus **All sites** or **My sites** to find an upload. From a site's
+actions menu you can replace its content or delete it.
+
+<Callout type="info">
+  **My sites** is a convenience filter based on creator or updater identity. It
+  does not make a site private. A caller with `sites:read` can list active
+  sites.
+</Callout>
+
+## Upload a directory with the CLI
+
+The CLI can upload a ZIP, one HTML file, or a directory:
+
+```bash
+lfc sites create ./dist --name "performance report"
+lfc sites list --mine
+lfc sites get a1b2c3d4e5
+lfc sites update a1b2c3d4e5 ./dist
+lfc sites extend a1b2c3d4e5
+lfc sites delete a1b2c3d4e5 --yes
+```
+
+For a directory, `lfc` builds the ZIP locally. It applies built-in ignores such
+as `.git`, `node_modules`, cache directories, and coverage output. Add an
+`.lfcsiteignore` file for patterns in the repository.
+
+Before creating or updating a site, the CLI fetches the deployment's upload
+policy and checks allowed extensions, file count, extracted size, and upload
+size.
+
+## Prepare static content
+
+- Build the site locally. Lifecycle does not run a server-side build command.
+- When the site generator supports relative asset URLs, use them.
+- Include the entry file that your deployment's Sites policy specifies.
+- Remove source maps, credentials, and internal data. Remove output that is not
+  necessary.
+- Open the published URL.
+- Before you share the URL, check its navigation and assets.
+
+When you replace content, the site keeps its URL. When you delete a site, its
+URL stops working. You cannot undo the deletion.
+
+## Expiration
+
+When the operator enables Sites TTL, a new site receives the deployment's
+configured expiration. **Extend** pushes the expiry out by the configured
+increment. When the operator disables TTL, a site can have no expiry.
+
+Use the expiry displayed by the UI or CLI. Do not use a fixed number of days.
+Get cleanup and previous-version retention information from the deployment
+owner.
+
+## API access
+
+Sites uses authenticated v2 routes:
+
+| Task            | Route                                    | Scope                         |
+| --------------- | ---------------------------------------- | ----------------------------- |
+| List or create  | `GET` or `POST /api/v2/sites`            | `sites:read` or `sites:write` |
+| Get or delete   | `GET` or `DELETE /api/v2/sites/{siteId}` | `sites:read` or `sites:write` |
+| Replace content | `PUT /api/v2/sites/{siteId}/content`     | `sites:write`                 |
+| Extend expiry   | `POST /api/v2/sites/{siteId}/extend`     | `sites:write`                 |
+
+Uploads use `multipart/form-data`. Use the deployment-local generated API
+reference for the current limits and schema. See [API
+overview](/docs/api/overview) and [API
+keys](/docs/api-authentication/api-keys).
+
+## Troubleshooting
+
+- **Sites is disabled or missing:** contact the deployment owner.
+- **The upload is rejected:** compare the file type, entry point, count, and
+  sizes with the policy returned by the deployment.
+- **Assets return 404:** rebuild with relative paths or the published base URL.
+- **A URL stopped working:** Lifecycle can expire a site, or a user can delete
+  it. Before you upload a replacement, examine the Sites list.

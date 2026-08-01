@@ -1,5 +1,12 @@
 ---
 title: Missing PR comment
+description: Diagnose failed GitHub App webhook deliveries without exposing credentials.
+audience:
+  - application-developer
+  - platform-operator
+lastVerified: "2026-07-24"
+verificationBaseline: "2026-07-24-comprehensive-audit"
+contentProfile: asd-ste100
 tags:
   - mission control
   - comment
@@ -10,41 +17,99 @@ tags:
 
 import { Callout } from "nextra/components";
 
-Let's quickly validate that the app is able to send events to the Lifecycle app successfully.
+When the Mission Control comment is missing, start with the matching GitHub
+`pull_request` delivery for that repository and time. An `installation`
+delivery can succeed while the affected pull-request event continues to fail.
 
-- Navigate to your Github app
-- Click `App Settings` link in the Github application page
-- Choose `Advanced` from the left sidebar
-- `Recent Deliveries` section should show a successful delivery of the `installation` event to the Lifecycle app.
+## Examine the affected delivery
 
-  <Callout type="warning">
-    If you see an error or no deliveries, make sure the app is installed in the
-    atleast one repository and that the webhook URL is set correctly by
-    navigating to the `General` section from the left sidebar and checking the
-    `Webhook URL` field.
-  </Callout>
+1. Open the Lifecycle GitHub App's **Advanced** settings.
+2. In **Recent deliveries**, select the `pull_request` event for the affected
+   repository and action.
+3. Record the non-secret delivery ID, event, action, timestamp, response status,
+   and response message.
+4. Make sure that the target is the configured Lifecycle webhook URL.
+5. Make sure that its TLS
+   certificate is valid.
 
-- If the delivery is successful, you should see a status code of `200 OK`
+If no matching delivery exists, make sure that:
 
-## Failing deliveries
+- an App installation includes that repository
+- the App subscribes to pull-request events
+- the App has the documented repository permissions
+- the repository is [onboarded in
+  Lifecycle](/docs/getting-started/onboard-repository)
 
-If you see a delivery failure, it could be due to various reasons. Here are some common issues and how to resolve them:
+Do not create a different pull request at this time. Keep the first failed
+delivery so the request and response stay correlated.
 
-### Github App secrets
+## Match the Lifecycle request
 
-- Make sure that the Github App secrets are correctly set in the `lifecycle-app` namespace. You can verify this by running the following command:
-
-```sh
-kubectl get secret app-secrets --namespace lifecycle-app \
-      -o jsonpath='{.data}' | jq 'with_entries(.value |= @base64d)'
-```
-
-- The output should include all the `GITHUB_*` variables with the correct values.
-
-- If the secrets are present but the delivery is still failing, try restarting the following deployments.
+Set the Helm release and namespace used by the installation, then search recent
+web logs for the GitHub delivery ID:
 
 ```sh
- kubectl rollout restart  deployment lifecycle-web lifecycle-worker -n lifecycle-app
+export HELM_RELEASE="<release-name>"
+export HELM_NAMESPACE="<namespace>"
+export GITHUB_DELIVERY_ID="<delivery-id>"
+
+kubectl logs --namespace "$HELM_NAMESPACE" \
+  -l "app.kubernetes.io/instance=$HELM_RELEASE,app.kubernetes.io/component=web" \
+  --all-containers=true --since=30m --prefix \
+  | grep -F "$GITHUB_DELIVERY_ID"
 ```
 
-- Try triggering a new event (create a pull request) by making a change in the repository or by manually redelivering a failed delivery.
+Use the response and matching log message to select the next check:
+
+| Evidence                         | Next check                                                                                                               |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| DNS, connection, or TLS failure  | Correct the public webhook hostname, DNS, certificate, or ingress path                                                   |
+| Signature or credential error    | Bootstrap Secret key presence and the approved credential-rotation workflow                                              |
+| Repository ignored or not found  | Make sure of App access and Lifecycle onboarding                                                                         |
+| Accepted delivery but no comment | Examine the worker queue and the affected Environment using [stuck Environment](/docs/troubleshooting/stuck-environment) |
+
+When you share evidence, include the delivery ID and status. Do not include
+payload secrets, signatures, authorization headers, or private repository
+content.
+
+## GitHub App key check
+
+When the response or Lifecycle log points to GitHub App configuration, run this
+procedure.
+
+Lifecycle computes the bootstrap Secret name from the Helm release. You can
+override this name. Use chart labels to find it:
+
+```sh
+BOOTSTRAP_SECRET="$(
+  kubectl get secrets --namespace "$HELM_NAMESPACE" \
+    -l "app.kubernetes.io/instance=$HELM_RELEASE,app.kubernetes.io/component=bootstrap" \
+    -o jsonpath='{.items[0].metadata.name}'
+)"
+test -n "$BOOTSTRAP_SECRET"
+```
+
+Make sure that the expected keys exist. Do not decode or print their values:
+
+```sh
+kubectl get secret "$BOOTSTRAP_SECRET" --namespace "$HELM_NAMESPACE" \
+  -o json | jq -r '.data | keys[]' | sort
+```
+
+The key list must include the necessary `GITHUB_*` entries. If a value can be
+incorrect, use the secure installation procedure to rotate it. Do not paste
+decoded secrets into terminals, tickets, or chat.
+
+## Correction check
+
+After you correct the identified cause, redeliver the same failed GitHub
+delivery. Make sure that it receives a success response. Make sure that
+Lifecycle creates or updates the Mission Control comment.
+
+Only if the approved procedure specifies a restart, restart the component. Key
+presence alone is not a reason to restart the web and worker deployments.
+
+<Callout type="warning">
+  A second delivery can queue duplicate work after a response timeout. Before
+  you redeliver, examine the Environment and queue state.
+</Callout>

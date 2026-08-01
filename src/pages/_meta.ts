@@ -28,9 +28,5 @@ export default {
   "docs": {
     "title": "Docs",
     "type": "page"
-  },
-  "tags": {
-    "title": "Tags",
-    "type": "page"
   }
 };

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Stage 1: Build the Nextra app with secrets injection
-FROM oven/bun:1.2.4 AS builder
+FROM oven/bun:1.2.8 AS builder
 WORKDIR /app
 
 # Copy dependency files

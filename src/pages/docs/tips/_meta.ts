@@ -16,9 +16,9 @@
 
 export default {
   "using-mission-control": {
-    "title": "Mission Control comment"
+    "title": "Use the Mission Control comment"
   },
   "telemetry": {
-    "title": "Telemetry"
+    "title": "Datadog application telemetry"
   }
 };

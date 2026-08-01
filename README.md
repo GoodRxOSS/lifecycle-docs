@@ -2,35 +2,75 @@
 
 Documentation for Lifecycle.
 
+Agents and contributors must read `AGENTS.md` before making changes. For
+documentation synchronization, gap analysis, or screenshot work, also follow
+`.agents/skills/update-lifecycle-docs/SKILL.md`.
+
 ---
 
-## Making a post
+## Adding documentation
 
-Making a post can be done in a few steps.
+1. Create the `.mdx` page under `src/pages/docs`.
+2. Add the required task and verification frontmatter:
 
-1. Create a new `.mdx` file in the `src/pages` directory.
-2. Add frontmatter to the top of the file including at least `title`, and `description`.
-   It will look like so:
    ```md
-    ---
-      title: "My Post"
-      description: "This is a description of my post."
-    ---
+   ---
+   title: My task
+   description: Complete the task safely and verify the result.
+   audience:
+     - application-developer
+   lastVerified: "<YYYY-MM-DD>"
+   verificationBaseline: "<registered-baseline-id>"
+   contentProfile: asd-ste100
+   ---
    ```
-3. Write your content in markdown.
-4. Add images to the `public` directory and reference them in your markdown.
-   Images should be placed in a subdirectory of `public` with the same name as the `.mdx` file.
-     ```txt
-       // example
-       src/pages/docs/troubleshooting/<new-page>
-       public/docs/troubleshooting/new-page>
-     ```
+
+   Use audience and baseline values registered in
+   `documentation-metadata.json`. Add `supportStatus` only when that registry
+   contains a product-approved value; omission does not mean Stable.
+
+3. Read
+   `.agents/skills/update-lifecycle-docs/references/language-profile.md`.
+   Write the page to ASD-STE100 Issue 9. Use
+   `.agents/skills/update-lifecycle-docs/references/ste100-review.md` to cover
+   all 53 rule identifiers.
+4. Add the page to the nearest `_meta.ts` in its intended public navigation
+   order.
+5. Put any maintained image under `public/` in a directory that mirrors the
+   documentation route:
+
+   ```txt
+   src/pages/docs/troubleshooting/<new-page>.mdx
+   public/docs/troubleshooting/<new-page>/
+   ```
+
+6. When adding a UI screenshot, follow the capture and catalog workflow in
+   `.agents/skills/update-lifecycle-docs/references/screenshots.md`.
+
+---
+
+## External contract checks
+
+`bun run check:contracts` validates against upstream contracts when their
+portable inputs are supplied:
+
+| Variable | Value |
+| --- | --- |
+| `DOCS_SCHEMA_VALIDATOR_COMMAND` | JSON argv array for the canonical validator; each extracted `filename="lifecycle.yaml"` file is appended |
+| `DOCS_OPENAPI_SPEC_PATH` | Path to the reviewed OpenAPI JSON artifact |
+| `DOCS_CLI_COMMAND` | JSON argv array for the reviewed `lfc` executable |
+
+The default command reports every unavailable input as **SKIP**. Use
+`bun run check:contracts --require-all` in a cross-repository validation job
+that supplies all three inputs. Commands are argv arrays, not shell strings, so
+the workflow remains portable and does not evaluate contributor-specific shell
+syntax.
 
 ---
 
 ## Components
 
-Lifecycle Docs provides a few extra components [in addition to components provided by Nextra](https://nextra.site/docs/guide/built-ins).
+Lifecycle Docs provides a few extra components [in addition to components provided by Nextra](https://nextra.site/docs/built-ins).
 View all the currently exported components [here](https://github.com/GoodRxOSS/lifecycle-docs/blob/main/src/components/index.tsx).
 
 - Components like Image & Iframe have been added to make the docs look more consistent visually.
@@ -41,23 +81,25 @@ View all the currently exported components [here](https://github.com/GoodRxOSS/l
 The `<Image>` component is a wrapper around next/image that provides a few extra features to make it easier to look nice in the docs.
 
 ```mdx
-import Image from '@lifecycle-docs/components';
+import { Image } from '@lifecycle-docs/components';
 
 <Image src="/path/to/image.png" alt="Alt text" width={16} height={9} ratio={16 / 9} />
 ```
 
-You can center the image by adding the `center` prop and some extra JSX.
+`alt` is required. Describe the information the image contributes to the
+surrounding instructions.
+
+You can constrain and center an image with normal layout classes:
 
 ```mdx
 <div className="grid pt-6">
-  <div className="place-self-center w-[500px]">
+  <div className="w-[500px] place-self-center">
     <Image
       src="/custom-multi-service-lifecycle-environments/additional-optional-services.png"
       alt="Additional Optional Services"
       height={906}
       width={538}
       ratio={538 / 906}
-      imagePosition="center"
     />
   </div>
 </div>
@@ -79,14 +121,7 @@ import { Iframe } from '@lifecycle-docs/components';
 
 ## Development
 
-Ensure you're using the correct version of node
-
-```bash
-# or, n i auto
-npm install bun -g
-```
-
-Install the dependencies
+Install the Bun version declared by `packageManager`, then install dependencies:
 
 ```bash
 bun install
@@ -98,71 +133,69 @@ Run the development server
 bun run dev
 ```
 
+Open the URL printed by the development server.
+
+Before opening a pull request, run:
+
+```bash
+bun run verify
+```
+
+Useful focused checks:
+
+```bash
+bun run check:docs
+bun run check:styles
+bun run check:llms
+bun run check:raw
+bun run check:screenshots
+```
+
+`public/llms.txt` is generated from curated public navigation and page
+frontmatter. Update the canonical page and `_meta.ts` files, then run
+`bun run build:llms`; do not edit `public/llms.txt` directly.
+
+## Raw Markdown
+
+Every documentation route also has clean Markdown at the same path with `.md`
+appended:
+
+| HTML | Markdown |
+| --- | --- |
+| `/docs` | `/docs.md` |
+| `/docs/features/cli` | `/docs/features/cli.md` |
+
+`bun run build:raw` projects MDX into untracked files under `public/` before
+the static build. Do not edit or commit `public/docs.md` or
+`public/docs/**/*.md`.
+
+The projector supports the repository component vocabulary and fails when a
+component cannot be represented without content loss. Read
+`.agents/skills/update-lifecycle-docs/references/raw-markdown.md` before you
+add a new MDX construct.
+
+`documentation-style-baseline.json` stores hashes for completed ASD-STE100
+page reviews. It also tracks documentation navigation, the visible root Docs
+navigation, and visible site chrome. After
+the human review and focused checks pass, run
+`bun run update:style-baseline`. Do not update the baseline only to silence a
+content change.
+
+The screenshot check validates references, intrinsic dimensions, catalog
+coverage, review status, and detectable tracked-text markers. It cannot decide
+whether rendered pixels show private data or whether the captured UI state is
+current. Manually inspect every final image and record the review in
+`.agents/skills/update-lifecycle-docs/references/screenshots.md`.
+
 ## Deployment
 
-This site is deployed to GitHub Pages using GitHub Actions. When changes are pushed to the `oss` branch, a GitHub Action workflow automatically builds the site and deploys it to the `gh-pages` branch.
+The canonical deployment path is the GitHub Actions workflow in
+`.github/workflows/deploy.yml`. A push to `main` builds the static site and
+publishes `out/` to the `gh-pages` branch.
 
-### Automatic Deployment
+`bun run deploy` creates the local static output and `.nojekyll` marker; it does
+not authorize or perform a production publication. Do not switch deployment
+branches, push generated output, or change GitHub Pages settings unless a
+maintainer explicitly authorizes that external state change.
 
-The deployment process is handled by a GitHub Actions workflow defined in `.github/workflows/deploy.yml`. This workflow:
-
-1. Runs when changes are pushed to the `oss` branch
-2. Sets up Bun
-3. Installs dependencies
-4. Builds the static site
-5. Deploys the built site to the `gh-pages` branch
-
-### GitHub Pages Configuration
-
-To enable GitHub Pages for this repository:
-
-1. Go to the repository on GitHub
-2. Click on "Settings"
-3. Scroll down to the "GitHub Pages" section
-4. Under "Source", select "Deploy from a branch"
-5. Under "Branch", select "gh-pages" and "/ (root)"
-6. Click "Save"
-
-The site will be available at `https://uselifecycle.com/`.
-
-### Static Build for GitHub Pages
-
-For GitHub Pages deployment, we use a simplified build process that doesn't require GitHub API access. This avoids the need for setting up GitHub secrets for the deployment workflow.
-
-The deployment process:
-1. Builds the site using the standard build process
-2. Creates a `.nojekyll` file to prevent GitHub Pages from processing the site with Jekyll
-
-### Manual Deployment
-
-You can also build and deploy the site manually:
-
-1. Build the site:
-   ```bash
-   bun run deploy
-   ```
-
-2. The static site will be generated in the `out` directory with a `.nojekyll` file.
-
-3. To deploy manually, you can push the `out` directory to the `gh-pages` branch:
-   ```bash
-   # First time setup
-   git checkout --orphan gh-pages
-   git reset --hard
-   git commit --allow-empty -m "Initial gh-pages commit"
-   git push origin gh-pages
-   git checkout oss
-
-   # For subsequent deployments
-   bun run deploy
-   git checkout gh-pages
-   git rm -rf .
-   cp -r out/* .
-   touch .nojekyll
-   git add .
-   git commit -m "Deploy to GitHub Pages"
-   git push origin gh-pages
-   git checkout oss
-   ```
-
-However, it's recommended to let the GitHub Actions workflow handle the deployment automatically.
+The public site is available at `https://uselifecycle.com/`.
