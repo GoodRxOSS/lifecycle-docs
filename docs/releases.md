@@ -54,41 +54,207 @@ lfc --version
 
 ## Adopt Lifecycle MCP
 
-The compatible Helm chart includes the credentials that Lifecycle API needs
-for MCP Keycloak configuration. Administrator enablement and change tools are
-off by default.
+These steps were verified with Lifecycle chart `0.9.11`. This chart bundles
+`lifecycle-keycloak` chart `0.7.6`.
 
-For a new bundled Keycloak realm, the initial realm import creates the required
-Lifecycle API credentials.
+Lifecycle MCP and its change tools are off by default.
+Use this procedure for an installed Lifecycle deployment.
 
-If the Lifecycle realm already exists, complete this migration before you
-enable Lifecycle MCP:
+### Before you enable MCP
 
-1. Create an enabled confidential OpenID Connect client named `lifecycle-api-keycloak-management`.
-2. Enable service accounts for the client.
-3. Disable the standard, implicit, and direct-access flows.
-4. Set full-scope access to off.
-5. Assign only `manage-clients` and `manage-realm` from the `realm-management` client to the service account.
-6. Add the same roles to the client scope mappings.
-7. Configure its secret to match the Secret referenced by `keycloak.clients.lifecycleApiKeycloakManagement.clientSecret.secretKeyRef`.
-8. Verify that its client-credentials token contains the required roles.
+- Confirm that Lifecycle authentication works at its canonical public URL.
+- Confirm that Lifecycle web has the management client credentials and a valid `ENCRYPTION_KEY`.
+- Back up the Keycloak realm and its matching Kubernetes Secrets.
+- Confirm that the installed chart includes the MCP Keycloak credentials.
 
-Use your approved external Keycloak administration process. Do not print or
-log the credential. Credential disclosure can compromise Lifecycle Keycloak.
+For a new bundled Keycloak realm, the initial import creates the management
+client. The chart creates the Secret and injects the credential into Lifecycle
+web. Do not create a second MCP client secret. Continue with
+[Verify the management client](#verify-the-management-client).
 
-Before the first enablement, record or back up the current anonymous client
-registration policy. Enablement can remove the exact stock `Trusted Hosts`
-component. Disable does not restore it.
+For an existing realm, complete the following migration first.
 
-1. Confirm the canonical Lifecycle MCP URL.
-2. Open **Platform administration → Lifecycle MCP**.
-3. Enable Lifecycle MCP.
-4. When agents need change tools, enable **Allow changes**.
-5. Add the URL to a compatible client.
-6. Complete Lifecycle OAuth sign-in.
+### Prepare the existing realm
 
-The chart declares the API credentials in its initial realm import. Lifecycle
-configures and verifies the MCP OAuth contract during enablement.
+1. Select the Lifecycle realm in Keycloak Admin Console.
+   The console can open in the `master` realm.
+2. Record the effective management client values.
+3. Record the anonymous client registration policies.
 
-Lifecycle MCP accepts OAuth bearer tokens only. Read [Lifecycle
-MCP](/docs/features/mcp-server) for tools, permissions, and troubleshooting.
+For the Lifecycle umbrella chart, use these values:
+
+- Client ID: `keycloak.clients.lifecycleApiKeycloakManagement.clientId`
+- Secret reference: `keycloak.clients.lifecycleApiKeycloakManagement.clientSecret.secretKeyRef`
+
+The default Client ID is `lifecycle-api-keycloak-management`.
+For the standalone `lifecycle-keycloak` chart, remove the `keycloak.` prefix.
+
+### Create the management client
+
+1. Open **Clients → Create client**.
+2. Set **Client type** to **OpenID Connect**.
+3. Set **Client ID** to the effective Helm value.
+   Do not use the display name as the Client ID.
+4. Optionally set **Name** to `Lifecycle API Keycloak management`.
+5. Select **Next**.
+6. Turn **Client authentication** on.
+7. Turn **Service accounts roles** on.
+8. Turn the standard, implicit, and direct-access flows off.
+9. Leave the login URLs empty.
+10. Select **Save**.
+
+![Keycloak capability settings show client authentication and service account roles on, with interactive authentication flows off.](/docs/releases/keycloak-management-client-capabilities.png)
+
+### Configure and connect the client secret
+
+Open **Credentials**. Confirm that **Client Authenticator** is **Client Id and
+Secret**.
+
+The management client secret must have the same value in Keycloak and the
+referenced Kubernetes Secret. Lifecycle web reads the credential through these
+environment variables:
+
+- `KEYCLOAK_MANAGEMENT_CLIENT_ID`
+- `KEYCLOAK_MANAGEMENT_CLIENT_SECRET`
+
+When you use the Lifecycle umbrella chart, do not add these variables manually.
+The chart sets them only on Lifecycle web from these values:
+
+- Client ID: `keycloak.clients.lifecycleApiKeycloakManagement.clientId`
+- Secret name and key:
+  `keycloak.clients.lifecycleApiKeycloakManagement.clientSecret.secretKeyRef`
+
+The Secret key defaults to `clientSecret`. If the Secret name is empty, the
+chart uses its release-specific generated Secret.
+
+If an external secret manager owns the credential, use this pattern:
+
+```yaml
+keycloak:
+  clients:
+    lifecycleApiKeycloakManagement:
+      enabled: true
+      clientId: lifecycle-api-keycloak-management
+      clientSecret:
+        secretKeyRef:
+          name: <secret-name>
+          key: clientSecret
+  secrets:
+    apiKeycloakManagement:
+      enabled: false
+```
+
+Before the Helm upgrade, confirm that the Secret exists in the release
+namespace. For the standalone `lifecycle-keycloak` chart, remove the
+`keycloak.` prefix from the values.
+
+For a non-chart deployment, set both environment variables on Lifecycle web
+only.
+
+The Admin Console generates the secret. It cannot set an existing secret
+value. Use one approved method:
+
+- Use Keycloak admin automation to set the client secret from the referenced
+  Secret.
+- Alternatively, regenerate the Keycloak secret.
+  Store it in the referenced Secret. Restart Lifecycle web.
+
+Do not print or log the secret. A Helm value change does not rotate an existing
+Keycloak client secret.
+
+Do not put this secret in an MCP client configuration. MCP clients use OAuth
+dynamic registration.
+
+The secret is only the credential step. Complete the client settings, service
+roles, scope mappings, and token verification before enablement.
+
+### Configure direct service roles
+
+1. Open **Service accounts roles**.
+2. Turn **Hide inherited roles** on.
+3. If Keycloak assigned direct roles by default, remove them.
+4. Select **Assign role → Client roles**.
+5. Assign `manage-clients` from the `realm-management` client.
+6. Assign `manage-realm` from the `realm-management` client.
+7. Confirm that no other direct role is assigned.
+
+### Configure client scope mappings
+
+1. Open **Client scopes → Setup**.
+2. Keep the dedicated scope and the `basic` and `roles` default scopes.
+3. Remove all other default and optional scope assignments.
+4. Open the dedicated client scope.
+5. Open **Scope**.
+6. Turn **Full scope allowed** off.
+7. Select **Assign role → Client roles**.
+8. Assign `manage-clients` and `manage-realm` from `realm-management`.
+9. Confirm that no other direct scope role is assigned.
+
+Keycloak can add realm defaults to a client that you create in the Admin
+Console. Remove those defaults after you assign the service account roles.
+
+![The dedicated Keycloak scope has full scope access off and only the two required realm-management roles.](/docs/releases/keycloak-management-client-scope.png)
+
+### Verify the management client
+
+1. Request a client-credentials token with an approved administration tool.
+2. Do not print or log the secret or token.
+3. Inspect `resource_access.realm-management.roles` in the token.
+4. Confirm that it includes `manage-clients` and `manage-realm`.
+
+The token can contain composite roles. Do not require an exact role count for
+this token check.
+
+### Protect the existing Keycloak configuration
+
+Lifecycle creates or reconciles reserved Keycloak objects during enablement.
+These objects include the `mcp` scope, five mappers, scope mappings, profiles,
+and anonymous client registration policies.
+
+Enablement removes the exact stock `Trusted Hosts` policy when it exists.
+It accepts an absent stock policy. It fails if customized or duplicate reserved
+objects conflict with the required configuration.
+
+Disable does not restore the previous Keycloak configuration. Keep the realm
+backup until you complete validation.
+
+### Enable Lifecycle MCP
+
+1. Open **Platform administration → Lifecycle MCP**.
+2. Confirm the displayed **Remote MCP URL**.
+3. Turn **Enable Lifecycle MCP** on.
+4. Confirm that no issue alert appears.
+5. Confirm that the status is **Read only**.
+6. Confirm that read tools are available and change tools are off.
+7. When agents need change tools, turn **Allow changes** on.
+8. Add the URL to a compatible MCP client.
+9. Complete Lifecycle OAuth sign-in.
+
+Lifecycle verifies the Keycloak and OAuth contract before it keeps MCP on.
+Lifecycle MCP accepts OAuth bearer tokens only.
+
+### Recover from failed enablement
+
+If verification fails, Lifecycle keeps MCP off. Correct the reported issue.
+Then, retry enablement.
+
+For a configuration issue, verify these details:
+
+- `APP_HOST` is the canonical public Lifecycle URL.
+- `APP_HOST` uses HTTPS unless it is a loopback URL.
+- The OIDC issuer and JWKS endpoints are reachable by Lifecycle.
+- OIDC discovery advertises the exact issuer and dynamic client registration.
+- OIDC discovery advertises `S256` PKCE and a usable `RS256` signing key.
+- `ENCRYPTION_KEY` is a 64-character hexadecimal value.
+- Lifecycle web has the Keycloak management client ID and secret.
+
+A failed probe can leave managed objects or a
+`Lifecycle MCP enablement probe` client. If cleanup fails and the client
+remains, remove the probe client.
+
+Disabling MCP is a containment action, not a rollback. A Helm upgrade does not
+repair a partially configured realm. Restore the saved realm only when you
+must roll back the Keycloak changes.
+
+Read [Lifecycle MCP](/docs/features/mcp-server) for tools, permissions, client
+setup, and troubleshooting.

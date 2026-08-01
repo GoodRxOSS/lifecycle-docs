@@ -113,7 +113,7 @@ The page shows:
 - an enable or disable control
 - the **Allow changes** control
 - capability and tool information
-- one actionable issue when enablement fails
+- one issue when enablement fails
 
 Enablement is one bounded request. Lifecycle configures the required Keycloak
 sign-in settings and verifies them against the MCP URL.

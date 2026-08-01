@@ -559,7 +559,7 @@ export const pageMap = [{
         "description": "Find your installed Lifecycle versions and the release information for an upgrade.",
         "audience": ["platform-operator", "application-developer"],
         "lastVerified": "2026-08-01",
-        "verificationBaseline": "2026-08-01-lifecycle-mcp-preparation",
+        "verificationBaseline": "2026-08-01-adopt-lifecycle-mcp-browser-validation",
         "contentProfile": "asd-ste100",
         "tags": ["release", "version", "changelog"]
       }
