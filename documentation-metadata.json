@@ -53,6 +53,26 @@
         "helm-charts": "78b680595d4beda3184124312d61d86ce0cc51e7",
         "lifecycle-opentofu": "b14865912608096379c28ef648f7ed99538b5600"
       }
+    },
+    "2026-09-14-sites-pending-release": {
+      "verifiedOn": "2026-09-14",
+      "sources": {
+        "lifecycle": "3e313fae532c4997c595e676e551a4f590dcc691",
+        "lifecycle-ui": "ab98c292aa2155ca0a08e62d6a9823507feeecd6",
+        "lifecycle-cli": "14552f966cc0eff3e4bb067a1f072f2d0b9dd57a",
+        "helm-charts": "992cfe38aa1175ea2acef517932a38f9dd974fef"
+      },
+      "notes": "These commits identify baseline checkouts only. Sites access-control behavior was reviewed in uncommitted working trees and is pending release. The implementation tracker records the exact file SHA256 manifest. Replace this baseline with implementing commit revisions before publication."
+    },
+    "2026-09-15-sites-rollout-pending-release": {
+      "verifiedOn": "2026-09-15",
+      "sources": {
+        "lifecycle": "3e313fae532c4997c595e676e551a4f590dcc691",
+        "lifecycle-ui": "ab98c292aa2155ca0a08e62d6a9823507feeecd6",
+        "lifecycle-cli": "14552f966cc0eff3e4bb067a1f072f2d0b9dd57a",
+        "helm-charts": "992cfe38aa1175ea2acef517932a38f9dd974fef"
+      },
+      "notes": "These commits identify baseline checkouts only. Rollout and directory configuration refer to uncommitted Sites access-control working trees, pending release. Restricted Keycloak 26.4.7 directory roles and token introspection were exercised in disposable realms. Current viewer source retains the exact authorizing token encrypted with a purpose-separated key derived from the existing bridge Secret, caps each record to 15 minutes and token/login expiry, and introspects that token on private reads. No session-list fallback or new configuration is used. This does not establish a supported released version set, production rollout, or final application acceptance. Replace with implementing commit revisions before publication."
     }
   }
 }

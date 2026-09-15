@@ -4,8 +4,8 @@ description: Select compatible Lifecycle components and prepare a safe upgrade o
 audience:
   - platform-operator
   - application-developer
-lastVerified: "2026-07-24"
-verificationBaseline: "2026-07-24-comprehensive-audit"
+lastVerified: "2026-09-15"
+verificationBaseline: "2026-09-15-sites-rollout-pending-release"
 contentProfile: asd-ste100
 tags:
   - release
@@ -35,5 +35,75 @@ version matrix, deprecation window, and rollback guarantee are not available.
 4. Back up the matched application data, configuration, and key material.
 5. Test the upgrade with representative data and enabled features.
 6. Test the documented rollback or restore checkpoint.
+
+## Sites access control pending release
+
+Private Sites is pending release.
+A compatible released version set and production acceptance are not yet established.
+The installation example's chart pin does not establish private Sites support.
+
+The migration preserves existing sites as public.
+Those sites have no assigned owner and cannot be changed through normal user controls.
+New user uploads default to private.
+Service-key uploads remain public and belong to the exact creating key.
+Email sharing and viewer or editor roles are outside this release.
+
+First, test the matched release in an isolated deployment:
+
+1. Prepare the [Sites configuration](/docs/operations/configuration#sites-configuration-pending-release).
+2. Complete the [directory checks](/docs/operations/configuration#sites-directory-release-prerequisite).
+3. Enable both `sitesPrivate.enabled` and `ui.sitesPrivate.enabled` in that deployment.
+4. Test owner access, unrelated-user denial, publication, privatization, expiration, deletion, and logout.
+5. Verify that disabled users and terminated sessions cannot access private content.
+6. After privatization, verify that the old content hostname stops serving content.
+
+For production, schedule a maintenance window:
+
+1. Back up the database, private object storage, configuration, and Secrets together.
+2. Before replacing workloads, provision directory and bridge configuration.
+3. Verify that configuration.
+4. Keep both production private Sites flags disabled.
+5. Suspend reconcilers that could restart older workloads.
+6. Block Sites requests, including internal uploads and content requests.
+7. Drain requests.
+8. Stop every older API writer, worker, and gateway.
+9. Before any new core image starts, verify that all older instances have stopped.
+10. Start one compatible API instance.
+11. Verify migration completion.
+12. Replace every remaining API, worker, gateway, and UI instance with the compatible version.
+13. Verify directory access, public-site management, and denial of private content.
+14. Verify that no old gateway or direct bucket URL can serve content.
+15. Upgrade CLI clients.
+16. Replace personal API keys that lack identity binding.
+17. Enable both production private Sites flags while requests remain blocked.
+18. Repeat the isolated access tests through a restricted operator test path.
+19. After the tests pass, permit traffic.
+20. Resume reconcilers with the compatible configuration.
+
+Core startup runs the migration even when private Sites is disabled.
+An ordinary rolling image upgrade does not stop older writers before that migration.
+Use the selected chart release's [coordinated maintenance procedure](https://github.com/GoodRxOSS/helm-charts/blob/main/docs/sites-private-release-check.md#coordinated-production-barrier).
+Checks with disabled flags cannot verify private access.
+
+If migration fails, keep traffic blocked.
+If access tests fail, disable both flags.
+Before restoring public traffic, verify private-content denial.
+Keep compatible core and gateway images, the schema, and directory and bridge credentials during recovery.
+
+Older clients that fetch the configuration cache need an upgrade.
+That endpoint now requires administrator authentication.
+Sites clients must use the capabilities endpoint.
+Concurrent replacement can return `409`, including for older clients without revision fields.
+Fetch current site details before you retry a change.
+
+Do not downgrade to an older gateway or remove access-control data after enabling private Sites.
+The access-control migration does not provide a safe down migration.
+Disabling private Sites preserves private status and denies private access.
+
+An older UI can remove the logout protection that private Sites requires.
+For a UI rollback, retain compatible sign-in, site-opening, and logout behavior.
+Otherwise, disable private Sites before the UI rollback.
+Verify that private content is unavailable before you replace the UI.
+Use the release's tested recovery procedure or restore the complete pre-upgrade backup in isolation.
 
 Use [Day-two operations](/docs/operations/day-two) for the full procedure.
