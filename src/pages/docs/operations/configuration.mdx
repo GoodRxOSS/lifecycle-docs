@@ -59,22 +59,18 @@ Administrators manage upload limits through `GET /api/v2/config/sites` and `PUT 
 Ordinary Sites clients use `GET /api/v2/sites/capabilities` for upload limits and allowed visibility.
 The legacy configuration-cache endpoint requires administrator authentication and is not a Sites client interface.
 
-The upcoming core chart uses these `sitesPrivate` values:
+Sites uses its existing `enabled` setting in core configuration.
+No additional private-Sites feature flag is required.
+The chart supplies `LIFECYCLE_UI_URL` from `ui.config.appUrl` or the configured global UI domain.
+For a separately installed UI, set the core chart's existing `ui.config.appUrl` value.
+Private Sites requires an HTTPS UI URL and a separate content domain.
 
-| Value                   | Purpose                                                                                                   |
-| ----------------------- | --------------------------------------------------------------------------------------------------------- |
-| `enabled`               | Permit private Sites. Defaults to `false`. Use the coordinated enablement procedure.                      |
-| `uiOrigin`              | Exact HTTPS origin of the Lifecycle UI. The umbrella chart derives the default from its UI configuration. |
-| `trustedProxyAddresses` | Comma-separated IP string, for example `"192.0.2.10,192.0.2.11"`. Empty ignores forwarded addresses.      |
-
-For a separately installed UI, set `sitesPrivate.uiOrigin` to its canonical HTTPS origin.
 The UI uses its existing application URL, API URL, and sign-in configuration.
 No additional UI Sites flag or shared bridge Secret is required.
 
 The gateway component must remain enabled.
-Disabling private Sites stops private access and all human uploads, including explicitly public uploads.
-Service-key public uploads remain available when Sites is enabled.
-Disabling private Sites does not make private sites public.
+Disabling Sites stops all Sites uploads and content access, including public sites.
+It does not make private sites public.
 
 Private viewer access depends on Redis.
 Missing or corrupt authorization records prevent private access.
@@ -86,11 +82,11 @@ If Redis is unavailable, restore it before retrying private access.
 ## Sites directory release prerequisite
 
 Sites reuses the existing read-only identity client configured under `keycloak.clients.lifecycleApiPrincipalSync`.
-The chart supplies that client to worker, web, and gateway workloads.
-Keep this client configured when private Sites is disabled.
+The chart supplies that client to worker and web workloads.
+The gateway does not receive this credential.
 Its existing client ID and Secret-reference overrides remain applicable.
 
-Human Sites management requires identity checks even when private creation is disabled.
+Human Sites management requires identity checks for public and private sites.
 New browser access grants also require identity checks.
 Do not substitute the identity management credential.
 

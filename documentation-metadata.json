@@ -67,10 +67,10 @@
     "2026-09-15-sites-rollout-pending-release": {
       "verifiedOn": "2026-09-15",
       "sources": {
-        "lifecycle": "932650d3b3158bdb806626b335dc6531a3094526",
+        "lifecycle": "d2af3d1f651dcfb1e38b38619ebfd89ab2760012",
         "lifecycle-ui": "b925d650870109859deca23e218f298e349b2879",
         "lifecycle-cli": "6814da76083fa989ffcc967e433b931d40f1dd7f",
-        "helm-charts": "abc06cf3002f0ae7f19fecc85f7733708a412bf4"
+        "helm-charts": "4acd7917c4f19f4f0d8420af3f62e5db43438e3f"
       },
       "notes": "Sites access-control behavior was verified against these implementing commits and remains pending release. User JWTs authorize Site-only browser access, capped at five minutes and JWT expiry. Private reads check current Site state. Ordinary UI logout does not immediately revoke issued access. These checks do not establish a supported released version set or production rollout."
     }
