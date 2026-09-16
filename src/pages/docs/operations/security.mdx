@@ -67,20 +67,23 @@ Do not cache private content or serve it through an older gateway.
 A private site's content requires its owner and a valid browser session.
 A copied URL, administrator role, or unrelated API key does not grant access.
 
-Each private content request checks the OAuth token that authorized its browser access.
-Keycloak must still consider that exact token active.
-Lifecycle retains that token encrypted in Redis.
-Each record lasts at most 15 minutes.
-The record expires earlier if the token or application login expires.
-Content cookies and Site responses contain no retained OAuth token or ciphertext.
+Core verifies the user's JWT, identity status, and Site ownership before issuing browser access.
+The browser receives Site-only access that expires within five minutes and no later than the authorizing JWT.
+Each private content request checks that grant and the current Site owner, access state, and availability.
+Content cookies contain no reusable OAuth access token or refresh token.
+Private asset requests do not contact Keycloak for each file.
 
-Protect Redis access and the bridge Secret.
-See [Sites configuration](/docs/operations/configuration#sites-configuration-pending-release) for dependency failures and Secret rotation.
+Protect Redis access.
+Missing authorization records prevent private access.
+See [Sites configuration](/docs/operations/configuration#sites-configuration-pending-release) for dependency requirements.
 
 Private content blocks Web Workers, SharedWorkers, service workers, and display inside an iframe.
 Applications that require these features need a compatible site build.
 
-After logout, verify that another private content request requires sign-in.
+Ordinary UI logout does not immediately revoke issued JWTs or Site browser grants.
+An existing grant can remain valid until expiry.
+A valid user session can obtain another grant after fresh authorization.
+This release does not guarantee a fixed five-minute cutoff measured from logout.
 Previously displayed or downloaded content can remain on the device.
 Making a public site private cannot remove copies that other users already obtained.
 

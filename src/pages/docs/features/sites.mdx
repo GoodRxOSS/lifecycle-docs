@@ -113,6 +113,17 @@ Deletion or expiration stops new content requests.
 Deletion cannot be undone.
 Content already downloaded or displayed can remain on a user's device.
 
+## Private access and logout
+
+Sign in as the owner to open a private site.
+Browser access expires within five minutes and no later than the authorizing JWT.
+If content stops loading after access expires, reopen the stable Site link.
+A valid user session can obtain access again after an ownership check.
+
+Ordinary UI logout does not immediately revoke issued access.
+This release does not guarantee a fixed five-minute cutoff measured from logout.
+An unrelated signed-in user cannot open your private site.
+
 ## Private content compatibility
 
 Private sites block Web Workers, SharedWorkers, and service workers.

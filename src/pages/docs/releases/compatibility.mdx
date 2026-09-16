@@ -52,17 +52,18 @@ First, test the matched release in an isolated deployment:
 
 1. Prepare the [Sites configuration](/docs/operations/configuration#sites-configuration-pending-release).
 2. Complete the [directory checks](/docs/operations/configuration#sites-directory-release-prerequisite).
-3. Enable both `sitesPrivate.enabled` and `ui.sitesPrivate.enabled` in that deployment.
+3. Enable `sitesPrivate.enabled` in that deployment.
 4. Test owner access, unrelated-user denial, publication, privatization, expiration, deletion, and logout.
-5. Verify that disabled users and terminated sessions cannot access private content.
+5. Verify that disabled users and revoked tokens cannot obtain new private access grants.
+   Verify that existing browser grants expire within five minutes and no later than their authorizing JWTs.
 6. After privatization, verify that the old content hostname stops serving content.
 
 For production, schedule a maintenance window:
 
 1. Back up the database, private object storage, configuration, and Secrets together.
-2. Before replacing workloads, provision directory and bridge configuration.
+2. Before replacing workloads, configure the UI origin and existing read-only identity client.
 3. Verify that configuration.
-4. Keep both production private Sites flags disabled.
+4. Keep production `sitesPrivate.enabled` disabled.
 5. Suspend reconcilers that could restart older workloads.
 6. Block Sites requests, including internal uploads and content requests.
 7. Drain requests.
@@ -75,7 +76,7 @@ For production, schedule a maintenance window:
 14. Verify that no old gateway or direct bucket URL can serve content.
 15. Upgrade CLI clients.
 16. Replace personal API keys that lack identity binding.
-17. Enable both production private Sites flags while requests remain blocked.
+17. Enable production `sitesPrivate.enabled` while requests remain blocked.
 18. Repeat the isolated access tests through a restricted operator test path.
 19. After the tests pass, permit traffic.
 20. Resume reconcilers with the compatible configuration.
@@ -83,12 +84,12 @@ For production, schedule a maintenance window:
 Core startup runs the migration even when private Sites is disabled.
 An ordinary rolling image upgrade does not stop older writers before that migration.
 Use the selected chart release's [coordinated maintenance procedure](https://github.com/GoodRxOSS/helm-charts/blob/main/docs/sites-private-release-check.md#coordinated-production-barrier).
-Checks with disabled flags cannot verify private access.
+Checks with private Sites disabled cannot verify authorized private access.
 
 If migration fails, keep traffic blocked.
-If access tests fail, disable both flags.
+If access tests fail, disable private Sites.
 Before restoring public traffic, verify private-content denial.
-Keep compatible core and gateway images, the schema, and directory and bridge credentials during recovery.
+Keep compatible core and gateway images, the schema, Redis, and the existing identity configuration during recovery.
 
 Older clients that fetch the configuration cache need an upgrade.
 That endpoint now requires administrator authentication.
@@ -100,8 +101,7 @@ Do not downgrade to an older gateway or remove access-control data after enablin
 The access-control migration does not provide a safe down migration.
 Disabling private Sites preserves private status and denies private access.
 
-An older UI can remove the logout protection that private Sites requires.
-For a UI rollback, retain compatible sign-in, site-opening, and logout behavior.
+For a UI rollback, retain compatible sign-in and site-opening behavior.
 Otherwise, disable private Sites before the UI rollback.
 Verify that private content is unavailable before you replace the UI.
 Use the release's tested recovery procedure or restore the complete pre-upgrade backup in isolation.

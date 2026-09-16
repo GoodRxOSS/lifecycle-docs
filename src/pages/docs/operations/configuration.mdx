@@ -61,146 +61,69 @@ The legacy configuration-cache endpoint requires administrator authentication an
 
 The upcoming core chart uses these `sitesPrivate` values:
 
-| Value                                            | Purpose                                                                                              |
-| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| `enabled`                                        | Permit private Sites. Defaults to `false`. Use the coordinated enablement procedure.                 |
-| `uiOAuthClientId`                                | Match the UI `NEXT_PUBLIC_KEYCLOAK_CLIENT_ID`.                                                       |
-| `uiOrigin`                                       | Exact HTTPS origin of the Lifecycle UI.                                                              |
-| `bridgeSecret.name` and `bridgeSecret.key`       | Reference an externally provisioned bridge Secret.                                                   |
-| `directory.clientId`                             | Identify the dedicated Keycloak directory client.                                                    |
-| `directory.secretName` and `directory.secretKey` | Reference that client's Secret.                                                                      |
-| `trustedProxyAddresses`                          | Comma-separated IP string, for example `"192.0.2.10,192.0.2.11"`. Empty ignores forwarded addresses. |
+| Value                   | Purpose                                                                                                   |
+| ----------------------- | --------------------------------------------------------------------------------------------------------- |
+| `enabled`               | Permit private Sites. Defaults to `false`. Use the coordinated enablement procedure.                      |
+| `uiOrigin`              | Exact HTTPS origin of the Lifecycle UI. The umbrella chart derives the default from its UI configuration. |
+| `trustedProxyAddresses` | Comma-separated IP string, for example `"192.0.2.10,192.0.2.11"`. Empty ignores forwarded addresses.      |
 
-The UI chart also needs `sitesPrivate.enabled`, `uiOrigin`, and the same bridge Secret value.
-Its optional `sitesPrivate.apiInternalUrl` selects the internal API connection.
-Use the web Service DNS name and `components.web.service.port`, which defaults to `80`.
-For an umbrella installation, configure the UI chart under `ui.sitesPrivate`.
-
-Use a random bridge Secret with at least 32 bytes.
-Do not reuse the NextAuth secret or another signing secret.
-Before replacing existing workloads, complete the [directory release prerequisite](#sites-directory-release-prerequisite).
-Do not reuse management or worker synchronization credentials.
-
-Even when private creation is disabled, human Sites management requires directory access and the matching UI OAuth client ID.
+For a separately installed UI, set `sitesPrivate.uiOrigin` to its canonical HTTPS origin.
+The UI uses its existing application URL, API URL, and sign-in configuration.
+No additional UI Sites flag or shared bridge Secret is required.
 
 The gateway component must remain enabled.
 Disabling private Sites stops private access and all human uploads, including explicitly public uploads.
 Service-key public uploads remain available when Sites is enabled.
-It does not make private sites public.
-Keep bridge and directory credentials configured for logout and public-site management.
+Disabling private Sites does not make private sites public.
 
-Private viewer access also depends on Redis and the existing bridge Secret.
+Private viewer access depends on Redis.
 Missing or corrupt authorization records prevent private access.
-Changing or losing the bridge Secret makes existing encrypted records unusable.
-
-During Secret rotation, configure the same replacement value on core web, gateway, and UI workloads.
-After rotation, ask users to sign in again.
-Ask users to reopen the stable Site link.
-After normal viewer expiry, reopen the stable Site link.
-If Redis or token checks are unavailable, restore those dependencies before retrying private access.
-Do not disable authorization to restore access.
+Each browser access grant expires within five minutes and no later than its authorizing JWT.
+After expiry, reopen the stable Site link to obtain access with a valid user session.
+An existing Site cookie cannot renew itself.
+If Redis is unavailable, restore it before retrying private access.
 
 ## Sites directory release prerequisite
 
-Use a dedicated confidential OpenID Connect client in the Lifecycle realm.
-The following procedure applies to Keycloak `26.4.7` with its built-in `realm-management` roles.
-Complete these checks again for another Keycloak version or a customized permission model.
-Do not replace existing Lifecycle workloads until the directory checks and isolated Sites tests pass.
+Sites reuses the existing read-only identity client configured under `keycloak.clients.lifecycleApiPrincipalSync`.
+The chart supplies that client to worker, web, and gateway workloads.
+Keep this client configured when private Sites is disabled.
+Its existing client ID and Secret-reference overrides remain applicable.
 
-An identity administrator provisions the client through the Keycloak Admin REST API.
-In the paths below, `ADMIN` means the Keycloak base URL plus `/admin/realms/REALM`.
-`CLIENT_ID`, `SERVICE_USER_ID`, and `ROLE_CLIENT_ID` are internal IDs from the API responses.
-Keep administrative credentials separate from the resulting directory credential.
+Human Sites management requires identity checks even when private creation is disabled.
+New browser access grants also require identity checks.
+Do not substitute the identity management credential.
 
-1. Create the client with `POST ADMIN/clients` and this representation:
+Before replacing workloads, verify that the configured client can read user status, effective roles, and group roles.
+Verify that it can introspect incoming user access tokens.
+Use separate disposable users for direct roles, group-derived roles, missing roles, and disabled status.
+Keep credentials and token values out of logs and reports.
 
-   ```json
-   {
-     "clientId": "lifecycle-sites-directory",
-     "enabled": true,
-     "protocol": "openid-connect",
-     "publicClient": false,
-     "serviceAccountsEnabled": true,
-     "standardFlowEnabled": false,
-     "directAccessGrantsEnabled": false,
-     "fullScopeAllowed": false,
-     "defaultClientScopes": ["roles"]
-   }
-   ```
+In an isolated deployment, verify these results:
 
-2. Obtain `CLIENT_ID` with `GET ADMIN/clients?clientId=lifecycle-sites-directory`.
-3. Obtain `SERVICE_USER_ID` with `GET ADMIN/clients/CLIENT_ID/service-account-user`.
-4. Obtain `ROLE_CLIENT_ID` with `GET ADMIN/clients?clientId=realm-management`.
-5. Obtain the role representation with `GET ADMIN/clients/ROLE_CLIENT_ID/roles/view-users`.
-6. Put that unchanged role representation in a JSON array.
-7. Assign it with `POST ADMIN/users/SERVICE_USER_ID/role-mappings/clients/ROLE_CLIENT_ID`.
-8. Apply the same array with `POST ADMIN/clients/CLIENT_ID/scope-mappings/clients/ROLE_CLIENT_ID`.
-9. Store the client credential from `GET ADMIN/clients/CLIENT_ID/client-secret` through your approved Secret provider.
-10. Configure `sitesPrivate.directory` with the client ID and Secret reference.
-
-The `view-users` composite includes `query-users` and `query-groups` in this version.
-It permits realm-wide user, group, role-mapping, and session reads.
-This permission exceeds an enabled-status check.
-Do not assign user-management, client-management, or realm-management write roles to this client.
-Do not grant `view-clients`: it also permits access to client secrets in this version.
-Restrict the credential to core web and gateway workloads.
-
-### Verify directory access
-
-Obtain a token with the directory client's credentials and `grant_type=client_credentials` at `/realms/REALM/protocol/openid-connect/token`.
-Keep the token in memory or approved secret tooling.
-Do not print it in logs or reports.
-
-Using that token, verify these requests return `200`:
-
-| Request                                                           | Expected result                              |
-| ----------------------------------------------------------------- | -------------------------------------------- |
-| `GET ADMIN/users/USER_ID`                                         | The correct enabled or disabled state.       |
-| `GET ADMIN/users/USER_ID/role-mappings/realm/composite`           | Expanded realm roles for the selected user.  |
-| `GET ADMIN/users/USER_ID/groups?briefRepresentation=true&max=100` | The user's group memberships.                |
-| `GET ADMIN/groups/GROUP_ID/role-mappings/realm/composite`         | Expanded realm roles for the selected group. |
-
-Use separate disposable users for direct roles, composite roles, group-derived roles, no Lifecycle role, and disabled status.
-For group testing, assign a composite containing `user` to a top-level group.
-Give its test user no directly assigned Lifecycle role.
-Verify the group role response includes `user`.
-
-### Verify token status
-
-Use the same directory client to authenticate requests to `/realms/REALM/protocol/openid-connect/token/introspect`.
-Send a form-encoded `POST` with `client_id`, `client_secret`, `token`, and `token_type_hint=access_token`.
-Keep all credentials and token values out of reports and command history.
-No client-search permission or client UUID mapping is required.
-
-In an isolated realm, verify these results:
-
-1. Submit an eligible user's current token.
-2. Verify `active: true`.
-3. Terminate its online session.
-4. Resubmit that unexpired online token.
-5. Verify `active: false`.
-6. After its online session ends, verify that a CLI offline token remains active.
-7. Revoke that offline grant.
-8. Verify its unexpired token returns `active: false`.
-9. Repeat the offline checks with a dynamically registered MCP client.
-10. Disable a disposable user with an active token.
-11. Verify that token returns `active: false`.
+1. An eligible user's current token permits Sites management.
+2. A group-derived Lifecycle role permits the same access.
+3. A disabled user cannot manage Sites or obtain a new private browser grant.
+   A user without the required role has the same restriction.
+4. A revoked online token cannot obtain a new grant.
+5. A revoked CLI or MCP offline grant cannot authorize new Sites operations.
+6. An unrelated user cannot obtain a private owner's Site content.
+7. An existing private browser grant expires within five minutes and no later than its authorizing JWT.
 
 Offline grants can remain valid after identity-provider SSO logout.
 Revoke the offline grant to terminate that client's offline access.
-An unavailable token-status service must prevent protected Sites access.
 
-### Verify Sites access
+Existing Site browser grants remain valid until their own expiry, subject to current Site ownership, access state, and availability.
+Ordinary UI logout does not immediately revoke issued JWTs or Site browser grants.
+A valid authenticated session can obtain another grant after fresh authorization.
+This release does not guarantee a fixed five-minute cutoff measured from logout.
 
-In the isolated Lifecycle deployment, verify successful Sites reads for eligible direct-role and group-role users.
-Disable a disposable owner after sign-in and verify that Sites management and private content deny access.
-Terminate another disposable browser login and verify that its existing credentials cannot access private content.
-Revoke a disposable CLI offline grant and verify that its existing credentials cannot access private content.
-Revoke a disposable owner's authorizing OAuth token while the account remains enabled.
-Verify that its existing private viewer cookie no longer grants access.
+Private asset requests use the Site grant and current Site state.
+They do not contact Keycloak for each asset.
+If identity checks are unavailable, new protected Sites operations fail closed.
+Existing browser grants can continue until their expiry while Redis and Site state remain available.
 
-If any required read fails, keep production unchanged and correct the permission configuration.
-Do not substitute a management credential.
+If a required identity check fails, keep production unchanged and correct the existing read-only client configuration.
 
 ## Secret handling
 
