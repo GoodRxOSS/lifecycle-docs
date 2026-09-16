@@ -4,8 +4,8 @@ description: Select the OpenTofu-managed or standalone Helm installation path. M
 audience:
   - evaluator
   - platform-operator
-lastVerified: "2026-07-24"
-verificationBaseline: "2026-07-24-comprehensive-audit"
+lastVerified: "2026-09-15"
+verificationBaseline: "2026-09-15-sites-rollout-pending-release"
 contentProfile: asd-ste100
 tags:
   - lifecycle
@@ -155,6 +155,16 @@ curl --fail --silent --show-error https://app.lifecycle.example.org/api/health
 See [Authentication](/docs/features/authentication) for the full sign-in and
 security checks. If a workload is unhealthy, start with [platform
 monitoring](/docs/operations/monitoring) rather than continuing setup.
+
+## Prepare private Sites
+
+Private Sites access control is pending release.
+The chart version pinned above does not establish support for this feature.
+Before any upgraded core image starts, follow [Sites compatibility](/docs/releases/compatibility#sites-access-control-pending-release) and [Sites configuration](/docs/operations/configuration#sites-configuration-pending-release).
+
+Use a separate registrable domain for Sites content and trusted HTTPS certificates.
+Keep Sites storage private.
+The API, UI, identity directory, and authorization-capable gateway must pass the feature's access tests together.
 
 ## Continue setup
 

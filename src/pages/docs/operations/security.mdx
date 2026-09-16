@@ -3,8 +3,8 @@ title: Security boundaries
 description: Understand Lifecycle authentication, network, Kubernetes, secret, and Agent boundaries before other networks can reach a deployment.
 audience:
   - platform-operator
-lastVerified: "2026-07-24"
-verificationBaseline: "2026-07-24-comprehensive-audit"
+lastVerified: "2026-09-15"
+verificationBaseline: "2026-09-15-sites-rollout-pending-release"
 contentProfile: asd-ste100
 tags:
   - operator
@@ -48,6 +48,44 @@ and user synchronization.
 | API             | Use authenticated v2. Reachable v1 endpoints are not a supported automation interface.                             |
 | Agents and MCP  | Tool permissions, approvals, external connections, workspace egress, and session review expand the trust boundary. |
 | Backups         | Recovery must include database, key material, and object storage together.                                         |
+
+## Private Sites pending release
+
+Sites access controls require the compatible release described in [Sites compatibility](/docs/releases/compatibility#sites-access-control-pending-release).
+Sites management requires authentication even on an authentication-disabled deployment.
+Disabling authentication does not expose private site content.
+Public site content remains readable without signing in.
+
+Use HTTPS for both the Lifecycle UI and Sites content.
+The content domain must have a different registrable domain from the UI.
+For example, `ui.example.com` and `report.example.net` meet this separation requirement.
+Sibling hosts such as `ui.example.com` and `report.example.com` do not.
+
+Keep object storage private and inaccessible through public bucket URLs.
+Route every content request through the authorization-capable gateway.
+Do not cache private content or serve it through an older gateway.
+A private site's content requires its owner and a valid browser session.
+A copied URL, administrator role, or unrelated API key does not grant access.
+
+Core verifies the user's JWT, identity status, and Site ownership before issuing browser access.
+The browser receives Site-only access that expires within five minutes and no later than the authorizing JWT.
+Each private content request checks that grant and the current Site owner, access state, and availability.
+Content cookies contain no reusable OAuth access token or refresh token.
+Private asset requests do not contact Keycloak for each file.
+
+Protect Redis access.
+Missing authorization records prevent private access.
+See [Sites configuration](/docs/operations/configuration#sites-configuration-pending-release) for dependency requirements.
+
+Private content blocks Web Workers, SharedWorkers, service workers, and display inside an iframe.
+Applications that require these features need a compatible site build.
+
+Ordinary UI logout does not immediately revoke issued JWTs or Site browser grants.
+An existing grant can remain valid until expiry.
+A valid user session can obtain another grant after fresh authorization.
+This release does not guarantee a fixed five-minute cutoff measured from logout.
+Previously displayed or downloaded content can remain on the device.
+Making a public site private cannot remove copies that other users already obtained.
 
 ## Vulnerability reporting
 

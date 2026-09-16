@@ -4,8 +4,8 @@ description: Select a supported UI, API, Helm, or repository configuration surfa
 audience:
   - platform-operator
   - administrator
-lastVerified: "2026-08-01"
-verificationBaseline: "2026-08-01-lifecycle-mcp-preparation"
+lastVerified: "2026-09-15"
+verificationBaseline: "2026-09-15-sites-rollout-pending-release"
 contentProfile: asd-ste100
 tags:
   - operator
@@ -48,6 +48,78 @@ For a supported change:
 
 Do not restart all components unless the applicable procedure tells you to do
 so.
+
+## Sites configuration pending release
+
+Private Sites requires compatible components and additional operator configuration.
+The currently documented installation pin does not establish support for this feature.
+See [Sites upgrade requirements](/docs/releases/compatibility#sites-access-control-pending-release).
+
+Administrators manage upload limits through `GET /api/v2/config/sites` and `PUT /api/v2/config/sites`.
+Ordinary Sites clients use `GET /api/v2/sites/capabilities` for upload limits and allowed visibility.
+The legacy configuration-cache endpoint requires administrator authentication and is not a Sites client interface.
+
+Sites uses its existing `enabled` setting in core configuration.
+No additional private-Sites feature flag is required.
+The chart supplies `LIFECYCLE_UI_URL` from `ui.config.appUrl` or the configured global UI domain.
+For a separately installed UI, set the core chart's existing `ui.config.appUrl` value.
+Private Sites requires an HTTPS UI URL and a separate content domain.
+
+The UI uses its existing application URL, API URL, and sign-in configuration.
+No additional UI Sites flag or shared bridge Secret is required.
+
+The gateway component must remain enabled.
+Disabling Sites stops all Sites uploads and content access, including public sites.
+It does not make private sites public.
+
+Private viewer access depends on Redis.
+Missing or corrupt authorization records prevent private access.
+Each browser access grant expires within five minutes and no later than its authorizing JWT.
+After expiry, reopen the stable Site link to obtain access with a valid user session.
+An existing Site cookie cannot renew itself.
+If Redis is unavailable, restore it before retrying private access.
+
+## Sites directory release prerequisite
+
+Sites reuses the existing read-only identity client configured under `keycloak.clients.lifecycleApiPrincipalSync`.
+The chart supplies that client to worker and web workloads.
+The gateway does not receive this credential.
+Its existing client ID and Secret-reference overrides remain applicable.
+
+Human Sites management requires identity checks for public and private sites.
+New browser access grants also require identity checks.
+Do not substitute the identity management credential.
+
+Before replacing workloads, verify that the configured client can read user status, effective roles, and group roles.
+Verify that it can introspect incoming user access tokens.
+Use separate disposable users for direct roles, group-derived roles, missing roles, and disabled status.
+Keep credentials and token values out of logs and reports.
+
+In an isolated deployment, verify these results:
+
+1. An eligible user's current token permits Sites management.
+2. A group-derived Lifecycle role permits the same access.
+3. A disabled user cannot manage Sites or obtain a new private browser grant.
+   A user without the required role has the same restriction.
+4. A revoked online token cannot obtain a new grant.
+5. A revoked CLI or MCP offline grant cannot authorize new Sites operations.
+6. An unrelated user cannot obtain a private owner's Site content.
+7. An existing private browser grant expires within five minutes and no later than its authorizing JWT.
+
+Offline grants can remain valid after identity-provider SSO logout.
+Revoke the offline grant to terminate that client's offline access.
+
+Existing Site browser grants remain valid until their own expiry, subject to current Site ownership, access state, and availability.
+Ordinary UI logout does not immediately revoke issued JWTs or Site browser grants.
+A valid authenticated session can obtain another grant after fresh authorization.
+This release does not guarantee a fixed five-minute cutoff measured from logout.
+
+Private asset requests use the Site grant and current Site state.
+They do not contact Keycloak for each asset.
+If identity checks are unavailable, new protected Sites operations fail closed.
+Existing browser grants can continue until their expiry while Redis and Site state remain available.
+
+If a required identity check fails, keep production unchanged and correct the existing read-only client configuration.
 
 ## Secret handling
 
