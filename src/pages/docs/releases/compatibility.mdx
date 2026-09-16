@@ -83,7 +83,6 @@ For production, schedule a maintenance window:
 
 Core startup runs the migration even when private Sites is disabled.
 An ordinary rolling image upgrade does not stop older writers before that migration.
-Use the selected chart release's [coordinated maintenance procedure](https://github.com/GoodRxOSS/helm-charts/blob/main/docs/sites-private-release-check.md#coordinated-production-barrier).
 Checks with private Sites disabled cannot verify authorized private access.
 
 If migration fails, keep traffic blocked.
