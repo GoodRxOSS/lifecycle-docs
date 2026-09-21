@@ -64,6 +64,16 @@
       },
       "notes": "These commits identify baseline checkouts only. Sites access-control behavior was reviewed in uncommitted working trees and is pending release. Replace this baseline with implementing commit revisions before publication."
     },
+    "2026-09-21-sites-downgrade-pending-release": {
+      "verifiedOn": "2026-09-21",
+      "sources": {
+        "lifecycle": "5a95f69995272b9dec92c8a3c067458be46a65d4",
+        "lifecycle-ui": "a8d65d351d68ca7466d4368d9eb4018bd46621aa",
+        "lifecycle-cli": "6814da76083fa989ffcc967e433b931d40f1dd7f",
+        "helm-charts": "0b5a50890635c7941984aaff622cc6e4fe79d1c1"
+      },
+      "notes": "Sites V1 remains pending release. The core migration supports an intentional full downgrade that preserves Site rows and versions but publishes content through the older gateway and discards ACL metadata. An isolated PostgreSQL up/down/up test passed."
+    },
     "2026-09-21-sites-ui-filter-pending-release": {
       "verifiedOn": "2026-09-21",
       "sources": {

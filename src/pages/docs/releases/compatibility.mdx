@@ -4,8 +4,8 @@ description: Select compatible Lifecycle components and prepare a safe upgrade o
 audience:
   - platform-operator
   - application-developer
-lastVerified: "2026-09-15"
-verificationBaseline: "2026-09-15-sites-rollout-pending-release"
+lastVerified: "2026-09-21"
+verificationBaseline: "2026-09-21-sites-downgrade-pending-release"
 contentProfile: asd-ste100
 tags:
   - release
@@ -97,13 +97,46 @@ Sites clients must use the capabilities endpoint.
 Concurrent replacement can return `409`, including for older clients without revision fields.
 Fetch current site details before you retry a change.
 
-Do not downgrade to an older gateway or remove access-control data after enabling private Sites.
-The access-control migration does not provide a safe down migration.
-Disabling Sites preserves private status and denies all Sites content access.
+If private Sites must stay private, keep the access-control schema and a compatible gateway.
+Disable Sites while you fix the release.
+This preserves private status and denies all Sites content access.
+
+The Sites access-control migration also supports an intentional full downgrade.
+An older gateway serves active, unexpired Site content without an ownership check.
+A private content URL can stop working, while the older Site ID hostname serves the same content.
+The downgrade removes visibility, owner identity, creator-key identity, serving generation, revision fields, and personal-key issuer binding.
+
+It keeps Site rows, Site versions, and stored files.
+After a later upgrade, every surviving Site becomes public and unassigned.
+Personal API keys must be replaced before they can manage Sites again.
+
+For a full downgrade:
+
+1. Confirm that making all active Site content public and losing ownership metadata is acceptable.
+2. Back up the database and Site object storage together.
+3. Block Site uploads and content requests.
+4. Stop all core API, worker, and gateway instances.
+5. Stop reconcilers that could restart a new core instance.
+6. Verify that `035_sites_access_control.ts` is the latest applied migration.
+7. Start a one-off maintenance container with the candidate core image and database configuration.
+8. Bypass its normal startup command.
+9. Run this targeted migration command once:
+
+   ```bash
+   pnpm exec tsx node_modules/knex/bin/cli.js migrate:down 035_sites_access_control.ts
+   ```
+
+10. Verify that the migration completed and Site and version counts did not change.
+11. Deploy the matching older core, gateway, UI, and CLI versions.
+12. Before you permit Site traffic again, verify the expected public access.
+
+Do not use `pnpm db:rollback` for this step. It reverses an entire migration batch, which can contain other changes.
+Do not start a new core image after the down migration. Its startup would apply the migration again.
 
 For a UI rollback, retain compatible sign-in and site-opening behavior.
 Otherwise, disable Sites before the UI rollback.
 Verify that private content is unavailable before you replace the UI.
-Use the release's tested recovery procedure or restore the complete pre-upgrade backup in isolation.
+Use the privacy-preserving recovery path or the intentional full downgrade above.
+You can also restore the complete pre-upgrade backup in isolation.
 
 Use [Day-two operations](/docs/operations/day-two) for the full procedure.
