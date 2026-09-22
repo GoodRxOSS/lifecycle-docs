@@ -4,8 +4,8 @@ description: Install and use the Lifecycle CLI to examine Environments, manage S
 audience:
   - application-developer
   - platform-operator
-lastVerified: "2026-09-14"
-verificationBaseline: "2026-09-14-sites-pending-release"
+lastVerified: "2026-09-22"
+verificationBaseline: "2026-09-22-sites-stable-url-pending-release"
 contentProfile: asd-ste100
 tags:
   - cli
@@ -244,7 +244,7 @@ lfc sites delete <id> --yes
 ```
 
 The CLI prints the site's `openUrl`.
-Making a public site private retires the previous content URL.
+Changing visibility keeps the Site ID and content URL.
 If a change returns `409`, fetch the site again before you retry.
 See [Sites](/docs/features/sites) for access rules and API details.
 

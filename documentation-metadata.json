@@ -93,6 +93,16 @@
         "helm-charts": "4acd7917c4f19f4f0d8420af3f62e5db43438e3f"
       },
       "notes": "Sites access-control behavior was verified against these implementing commits and remains pending release. User JWTs authorize Site-only browser access, capped at five minutes and JWT expiry. Private reads check current Site state. Ordinary UI logout does not immediately revoke issued access. These checks do not establish a supported released version set or production rollout."
+    },
+    "2026-09-22-sites-stable-url-pending-release": {
+      "verifiedOn": "2026-09-22",
+      "sources": {
+        "lifecycle": "0af126b06788110e5db4762b9b7fe4d7491de8e1",
+        "lifecycle-ui": "eb73479ddc0543bf133a9d8146334e94641ae88e",
+        "lifecycle-cli": "8dab9f14b45673703f3244ae220919042f0805bd",
+        "helm-charts": "0b5a50890635c7941984aaff622cc6e4fe79d1c1"
+      },
+      "notes": "Sites V1 remains pending release. Verified stable Site ID and content URL on visibility changes, server owner checks, the temporary same-apex opt-in, and the intentional full downgrade. Live browser retest of private open remains pending."
     }
   }
 }

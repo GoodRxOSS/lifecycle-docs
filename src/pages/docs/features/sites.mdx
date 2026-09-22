@@ -4,8 +4,8 @@ description: Upload and manage static HTML sites through Lifecycle's UI, CLI, or
 audience:
   - application-developer
   - platform-operator
-lastVerified: "2026-09-21"
-verificationBaseline: "2026-09-21-sites-ui-filter-pending-release"
+lastVerified: "2026-09-22"
+verificationBaseline: "2026-09-22-sites-stable-url-pending-release"
 contentProfile: asd-ste100
 tags:
   - sites
@@ -65,8 +65,8 @@ Search and pagination do not expose other users' private sites.
 
 From an owned site's actions menu, you can replace content, change visibility, or delete it.
 The visibility dialog requires confirmation before publication.
-When you make a public site private, Lifecycle retires its previous content URL.
-Use the returned opening URL for access to the current site.
+When you change visibility, the site ID and content URL stay the same.
+New requests to a private site require owner access.
 
 ## Upload a directory with the CLI
 
@@ -102,8 +102,7 @@ Before an upload, the CLI checks the deployment's upload policy and allowed visi
 - Remove credentials, internal data, source maps, and unnecessary output.
 - Before publication, check navigation and assets.
 
-A content replacement preserves the current content URL.
-A public-to-private change creates a fresh content URL.
+A content replacement or visibility change preserves the current content URL.
 The API's `openUrl` opens the current site through Lifecycle.
 The `contentUrl` identifies the current content host.
 Neither URL grants access to a private site.
@@ -125,10 +124,12 @@ An unrelated signed-in user cannot open your private site.
 
 ## Private content compatibility
 
-Private sites block Web Workers, SharedWorkers, and service workers.
+Private sites block Web Workers, SharedWorkers, and new service workers.
 Features that require these workers, including some offline features, do not work.
 Use a site build that works without browser workers.
 Private sites also block display inside an iframe.
+If a site was public, a service worker installed in a visitor's browser can remain after you make it private.
+For sensitive content, upload a new private site instead of changing the public site's visibility.
 
 ## Expiration
 

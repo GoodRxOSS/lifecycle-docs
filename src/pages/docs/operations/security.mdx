@@ -3,8 +3,8 @@ title: Security boundaries
 description: Understand Lifecycle authentication, network, Kubernetes, secret, and Agent boundaries before other networks can reach a deployment.
 audience:
   - platform-operator
-lastVerified: "2026-09-15"
-verificationBaseline: "2026-09-15-sites-rollout-pending-release"
+lastVerified: "2026-09-22"
+verificationBaseline: "2026-09-22-sites-stable-url-pending-release"
 contentProfile: asd-ste100
 tags:
   - operator
@@ -57,9 +57,10 @@ Disabling authentication does not expose private site content.
 Public site content remains readable without signing in.
 
 Use HTTPS for both the Lifecycle UI and Sites content.
-The content domain must have a different registrable domain from the UI.
-For example, `ui.example.com` and `report.example.net` meet this separation requirement.
-Sibling hosts such as `ui.example.com` and `report.example.com` do not.
+A separate registrable content domain gives stronger isolation from the UI.
+For example, `ui.example.com` and `report.example.net` use separate domains.
+Internal deployments can use sibling hosts by setting `SITES_ALLOW_SHARED_APEX=true` on both web and gateway.
+This opt-in keeps the two hosts on the same browser site and does not provide separate-domain isolation.
 
 Keep object storage private and inaccessible through public bucket URLs.
 Route every content request through the authorization-capable gateway.
@@ -77,8 +78,10 @@ Protect Redis access.
 Missing authorization records prevent private access.
 See [Sites configuration](/docs/operations/configuration#sites-configuration-pending-release) for dependency requirements.
 
-Private content blocks Web Workers, SharedWorkers, service workers, and display inside an iframe.
+Private content blocks Web Workers, SharedWorkers, new service workers, and display inside an iframe.
 Applications that require these features need a compatible site build.
+An existing service worker from a public version of the same site can remain in a visitor's browser.
+For sensitive content, create a new private site instead of making that public site private.
 
 Ordinary UI logout does not immediately revoke issued JWTs or Site browser grants.
 An existing grant can remain valid until expiry.

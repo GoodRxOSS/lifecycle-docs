@@ -4,8 +4,8 @@ description: Select compatible Lifecycle components and prepare a safe upgrade o
 audience:
   - platform-operator
   - application-developer
-lastVerified: "2026-09-21"
-verificationBaseline: "2026-09-21-sites-downgrade-pending-release"
+lastVerified: "2026-09-22"
+verificationBaseline: "2026-09-22-sites-stable-url-pending-release"
 contentProfile: asd-ste100
 tags:
   - release
@@ -103,8 +103,8 @@ This preserves private status and denies all Sites content access.
 
 The Sites access-control migration also supports an intentional full downgrade.
 An older gateway serves active, unexpired Site content without an ownership check.
-A private content URL can stop working, while the older Site ID hostname serves the same content.
-The downgrade removes visibility, owner identity, creator-key identity, serving generation, revision fields, and personal-key issuer binding.
+The same content URL becomes public after a full downgrade.
+The downgrade removes visibility, owner identity, creator-key identity, revision fields, and personal-key issuer binding.
 
 It keeps Site rows, Site versions, and stored files.
 After a later upgrade, every surviving Site becomes public and unassigned.
