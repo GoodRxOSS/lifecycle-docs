@@ -5,7 +5,7 @@ audience:
   - platform-operator
   - administrator
 lastVerified: "2026-09-22"
-verificationBaseline: "2026-09-22-sites-stable-url-pending-release"
+verificationBaseline: "2026-09-22-sites-access-control-released"
 contentProfile: asd-ste100
 tags:
   - operator
@@ -49,11 +49,9 @@ For a supported change:
 Do not restart all components unless the applicable procedure tells you to do
 so.
 
-## Sites configuration pending release
+## Sites configuration
 
-Private Sites requires compatible components and additional operator configuration.
-The currently documented installation pin does not establish support for this feature.
-See [Sites upgrade requirements](/docs/releases/compatibility#sites-access-control-pending-release).
+Private Sites requires additional operator configuration.
 
 Administrators manage upload limits through `GET /api/v2/config/sites` and `PUT /api/v2/config/sites`.
 Ordinary Sites clients use `GET /api/v2/sites/capabilities` for upload limits and allowed visibility.
@@ -83,7 +81,7 @@ After expiry, reopen the stable Site link to obtain access with a valid user ses
 An existing Site cookie cannot renew itself.
 If Redis is unavailable, restore it before retrying private access.
 
-## Sites directory release prerequisite
+## Sites identity configuration
 
 Sites reuses the existing read-only identity client configured under `keycloak.clients.lifecycleApiPrincipalSync`.
 The chart supplies that client to worker and web workloads.
@@ -116,7 +114,7 @@ Revoke the offline grant to terminate that client's offline access.
 Existing Site browser grants remain valid until their own expiry, subject to current Site ownership, access state, and availability.
 Ordinary UI logout does not immediately revoke issued JWTs or Site browser grants.
 A valid authenticated session can obtain another grant after fresh authorization.
-This release does not guarantee a fixed five-minute cutoff measured from logout.
+There is no guaranteed fixed cutoff measured from logout.
 
 Private asset requests use the Site grant and current Site state.
 They do not contact Keycloak for each asset.

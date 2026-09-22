@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "updatedOn": "2026-08-01",
+  "updatedOn": "2026-09-22",
   "references": {
     "canonical": "ASD-STE100 Issue 9",
     "canonicalRules": [
@@ -69,8 +69,8 @@
     "/docs/api-authentication/api-keys": {
       "file": "src/pages/docs/api-authentication/api-keys.mdx",
       "profile": "asd-ste100",
-      "reviewedOn": "2026-07-25",
-      "sha256": "abccff28a910388f751789b3cd1ba7aba1ef81fc98e31ba66379427332eb6257"
+      "reviewedOn": "2026-09-22",
+      "sha256": "d26dc85ca89bf2fea22cb1b71994e64e7106375badc4605cd269c843e528c1a1"
     },
     "/docs/api-authentication/overview": {
       "file": "src/pages/docs/api-authentication/overview.mdx",
@@ -135,8 +135,8 @@
     "/docs/features/cli": {
       "file": "src/pages/docs/features/cli.mdx",
       "profile": "asd-ste100",
-      "reviewedOn": "2026-08-01",
-      "sha256": "88a35c2ebf6bb6ac52874de2df6edd96b99dab582e6e3de3414226d12cbe5c7c"
+      "reviewedOn": "2026-09-22",
+      "sha256": "0f57d131ad05effbf05847828dd7f30d8b5641c5ecde54af181c3aec6821e15b"
     },
     "/docs/features/cli-telemetry": {
       "file": "src/pages/docs/features/cli-telemetry.mdx",
@@ -177,8 +177,8 @@
     "/docs/features/mcp-server": {
       "file": "src/pages/docs/features/mcp-server.mdx",
       "profile": "asd-ste100",
-      "reviewedOn": "2026-08-01",
-      "sha256": "69ab72bfb6486d0189fc903d4a3d8e170c578be252d39335b7bea8e7c8b0da36"
+      "reviewedOn": "2026-09-22",
+      "sha256": "70ab60a321461fb609365c7184ad40fd7450e1ae68271748681b87be80d7e699"
     },
     "/docs/features/native-helm-deployment": {
       "file": "src/pages/docs/features/native-helm-deployment.mdx",
@@ -201,8 +201,8 @@
     "/docs/features/sites": {
       "file": "src/pages/docs/features/sites.mdx",
       "profile": "asd-ste100",
-      "reviewedOn": "2026-07-25",
-      "sha256": "598f40560777f7d3f2074137ba9b2a102ceb4f61946fc05bc74f3a85d64d6bca"
+      "reviewedOn": "2026-09-22",
+      "sha256": "6005f5d24aa14e604c0387568099d79cbc321e423f750edc59372fbf40eab773"
     },
     "/docs/features/template-variables": {
       "file": "src/pages/docs/features/template-variables.mdx",
@@ -273,8 +273,8 @@
     "/docs/operations/configuration": {
       "file": "src/pages/docs/operations/configuration.mdx",
       "profile": "asd-ste100",
-      "reviewedOn": "2026-08-01",
-      "sha256": "dcf78161c9d44e74638153de0f0b074361ba9ac6a8878a41338d35716860d755"
+      "reviewedOn": "2026-09-22",
+      "sha256": "fd1c2f4537187df8dfced9799dec480e5754c6ba519f548d244f65f66666717f"
     },
     "/docs/operations/day-two": {
       "file": "src/pages/docs/operations/day-two.mdx",
@@ -291,8 +291,8 @@
     "/docs/operations/security": {
       "file": "src/pages/docs/operations/security.mdx",
       "profile": "asd-ste100",
-      "reviewedOn": "2026-07-25",
-      "sha256": "892aafebdd33b0c39b51f5c8ae6817e067679e3797d02eaaceee949b6ce13365"
+      "reviewedOn": "2026-09-22",
+      "sha256": "96b4850da7e8fb65f5e7de8ddeeedf6fb4e409a2d67814f6a8453af4a674bf92"
     },
     "/docs/reference/statuses": {
       "file": "src/pages/docs/reference/statuses.mdx",
@@ -309,8 +309,8 @@
     "/docs/releases/compatibility": {
       "file": "src/pages/docs/releases/compatibility.mdx",
       "profile": "asd-ste100",
-      "reviewedOn": "2026-07-25",
-      "sha256": "1901b9d61ca33af98a41c41382624e7c07607c6cbaffb112e71718c3e17bbb1f"
+      "reviewedOn": "2026-09-22",
+      "sha256": "1f7e3d9d575e9f402afff84ede1c143bc40ffc879b7247470b92dc94ce1338d9"
     },
     "/docs/schema/aurora-restore": {
       "file": "src/pages/docs/schema/aurora-restore.mdx",
@@ -387,8 +387,8 @@
     "/docs/setup/install-lifecycle": {
       "file": "src/pages/docs/setup/install-lifecycle.mdx",
       "profile": "asd-ste100",
-      "reviewedOn": "2026-07-25",
-      "sha256": "675a15ac05fef8f53b5cd2e177eb24b1fac1f745e5189ae6d8fc3133d9580a0c"
+      "reviewedOn": "2026-09-22",
+      "sha256": "db86fea5d5f8521bc86e049fba7a157a1e6be1198cca3839efb686083445dcfa"
     },
     "/docs/setup/prerequisites": {
       "file": "src/pages/docs/setup/prerequisites.mdx",

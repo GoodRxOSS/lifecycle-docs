@@ -4,7 +4,7 @@ description: Understand Lifecycle authentication, network, Kubernetes, secret, a
 audience:
   - platform-operator
 lastVerified: "2026-09-22"
-verificationBaseline: "2026-09-22-sites-stable-url-pending-release"
+verificationBaseline: "2026-09-22-sites-access-control-released"
 contentProfile: asd-ste100
 tags:
   - operator
@@ -49,9 +49,8 @@ and user synchronization.
 | Agents and MCP  | Tool permissions, approvals, external connections, workspace egress, and session review expand the trust boundary. |
 | Backups         | Recovery must include database, key material, and object storage together.                                         |
 
-## Private Sites pending release
+## Private Sites
 
-Sites access controls require the compatible release described in [Sites compatibility](/docs/releases/compatibility#sites-access-control-pending-release).
 Sites management requires authentication even on an authentication-disabled deployment.
 Disabling authentication does not expose private site content.
 Public site content remains readable without signing in.
@@ -76,7 +75,7 @@ Private asset requests do not contact Keycloak for each file.
 
 Protect Redis access.
 Missing authorization records prevent private access.
-See [Sites configuration](/docs/operations/configuration#sites-configuration-pending-release) for dependency requirements.
+See [Sites configuration](/docs/operations/configuration#sites-configuration) for dependency requirements.
 
 Private content blocks Web Workers, SharedWorkers, new service workers, and display inside an iframe.
 Applications that require these features need a compatible site build.
@@ -86,7 +85,7 @@ For sensitive content, create a new private site instead of making that public s
 Ordinary UI logout does not immediately revoke issued JWTs or Site browser grants.
 An existing grant can remain valid until expiry.
 A valid user session can obtain another grant after fresh authorization.
-This release does not guarantee a fixed five-minute cutoff measured from logout.
+There is no guaranteed fixed cutoff measured from logout.
 Previously displayed or downloaded content can remain on the device.
 Making a public site private cannot remove copies that other users already obtained.
 

@@ -5,7 +5,7 @@ audience:
   - application-developer
   - platform-operator
 lastVerified: "2026-09-22"
-verificationBaseline: "2026-09-22-sites-stable-url-pending-release"
+verificationBaseline: "2026-09-22-sites-access-control-released"
 contentProfile: asd-ste100
 tags:
   - sites
@@ -14,18 +14,9 @@ tags:
   - api
 ---
 
-import { Callout } from "nextra/components";
-
 Sites hosts static HTML files and ZIP archives for reports, prototypes, and documentation previews.
 A server-side application is not necessary.
 
-<Callout type="warning">
-  Private Sites and the access controls on this page are pending release.
-  Compatible API, gateway, UI, CLI, and chart versions are required. Existing
-  releases do not provide these access controls.
-</Callout>
-
-For upgrade requirements, see [Sites compatibility](/docs/releases/compatibility#sites-access-control-pending-release).
 Sites requires storage, gateway, DNS, TLS, and authentication configuration.
 If **Sites** is unavailable, contact your deployment owner.
 
@@ -39,12 +30,12 @@ Administrator access does not give ownership rights.
 A public site lets anyone with its URL read its content without signing in.
 Other users cannot change it.
 Public content can contain copies that remain outside Lifecycle after you make the site private.
-Email invitations and viewer or editor roles are not available in this release.
+Email invitations and viewer or editor roles are not available.
 
-During migration, existing sites remain public.
+Sites that existed before ownership tracking was added remain public.
 These sites have no assigned owner and are read-only through normal user controls.
 For an unassigned site or a site owned by a retired service key, contact your platform operator.
-This release has no ownership transfer or recovery UI or API.
+There is no ownership transfer or recovery UI or API.
 
 ## Upload from the UI
 
@@ -119,7 +110,7 @@ If content stops loading after access expires, reopen the stable Site link.
 A valid user session can obtain access again after an ownership check.
 
 Ordinary UI logout does not immediately revoke issued access.
-This release does not guarantee a fixed five-minute cutoff measured from logout.
+There is no guaranteed fixed cutoff measured from logout.
 An unrelated signed-in user cannot open your private site.
 
 ## Private content compatibility

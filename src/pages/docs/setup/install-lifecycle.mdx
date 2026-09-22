@@ -4,8 +4,8 @@ description: Select the OpenTofu-managed or standalone Helm installation path. M
 audience:
   - evaluator
   - platform-operator
-lastVerified: "2026-09-15"
-verificationBaseline: "2026-09-15-sites-rollout-pending-release"
+lastVerified: "2026-09-22"
+verificationBaseline: "2026-09-22-sites-access-control-released"
 contentProfile: asd-ste100
 tags:
   - lifecycle
@@ -158,9 +158,7 @@ monitoring](/docs/operations/monitoring) rather than continuing setup.
 
 ## Prepare private Sites
 
-Private Sites access control is pending release.
-The chart version pinned above does not establish support for this feature.
-Before any upgraded core image starts, follow [Sites compatibility](/docs/releases/compatibility#sites-access-control-pending-release) and [Sites configuration](/docs/operations/configuration#sites-configuration-pending-release).
+Before you enable Sites, follow [Sites compatibility](/docs/releases/compatibility#sites-access-control-upgrade) and [Sites configuration](/docs/operations/configuration#sites-configuration).
 
 Use a separate registrable domain for Sites content and trusted HTTPS certificates.
 Keep Sites storage private.

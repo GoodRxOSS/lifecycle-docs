@@ -5,7 +5,7 @@ audience:
   - platform-operator
   - application-developer
 lastVerified: "2026-09-22"
-verificationBaseline: "2026-09-22-sites-stable-url-pending-release"
+verificationBaseline: "2026-09-22-sites-access-control-released"
 contentProfile: asd-ste100
 tags:
   - release
@@ -36,22 +36,21 @@ version matrix, deprecation window, and rollback guarantee are not available.
 5. Test the upgrade with representative data and enabled features.
 6. Test the documented rollback or restore checkpoint.
 
-## Sites access control pending release
+## Sites access control upgrade
 
-Private Sites is pending release.
-A compatible released version set and production acceptance are not yet established.
-The installation example's chart pin does not establish private Sites support.
+Private Sites requires matched API, gateway, UI, CLI, and chart versions.
+An older component does not enforce the access-control checks that a newer one expects.
 
 The migration preserves existing sites as public.
 Those sites have no assigned owner and cannot be changed through normal user controls.
 New user uploads default to private.
 Service-key uploads remain public and belong to the exact creating key.
-Email sharing and viewer or editor roles are outside this release.
+Email invitations and viewer or editor roles are not available.
 
 First, test the matched release in an isolated deployment:
 
-1. Prepare the [Sites configuration](/docs/operations/configuration#sites-configuration-pending-release).
-2. Complete the [directory checks](/docs/operations/configuration#sites-directory-release-prerequisite).
+1. Prepare the [Sites configuration](/docs/operations/configuration#sites-configuration).
+2. Complete the [identity checks](/docs/operations/configuration#sites-identity-configuration).
 3. Enable Sites through its existing core configuration setting.
 4. Test owner access, unrelated-user denial, publication, privatization, expiration, deletion, and logout.
 5. Verify that disabled users and revoked tokens cannot obtain new private access grants.

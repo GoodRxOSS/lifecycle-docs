@@ -103,6 +103,16 @@
         "helm-charts": "0b5a50890635c7941984aaff622cc6e4fe79d1c1"
       },
       "notes": "Sites V1 remains pending release. Verified stable Site ID and content URL on visibility changes, server owner checks, the temporary same-apex opt-in, and the intentional full downgrade. Live browser retest of private open remains pending."
+    },
+    "2026-09-22-sites-access-control-released": {
+      "verifiedOn": "2026-09-22",
+      "sources": {
+        "lifecycle": "e50c29f7659fc14dc98f061e0c8fa57b40b788c0",
+        "lifecycle-ui": "917d8a8936b6054ae9fc102571a5b9c808a0bcb7",
+        "lifecycle-cli": "a08d9c2d0abb79ab7941c12d6ead1783a70ea45f",
+        "helm-charts": "6aff91c22411e641964774bcbb09e5265ac1250c"
+      },
+      "notes": "All four Sites access-control implementing PRs merged to main and deployed to production. Live-verified end to end: owner-only private access, distinct denied-vs-missing responses on the management API, the CLI's visibility/create/list/get/update/extend/delete commands, the shared-apex opt-in, stable Site ID and content URL across visibility and content changes, and the intentional full downgrade path."
     }
   }
 }
