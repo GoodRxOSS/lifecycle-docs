@@ -4,7 +4,7 @@ description: Upload and manage static HTML sites through Lifecycle's UI, CLI, or
 audience:
   - application-developer
   - platform-operator
-lastVerified: "2026-09-22"
+lastVerified: "2026-09-23"
 verificationBaseline: "2026-09-22-sites-access-control-released"
 contentProfile: asd-ste100
 tags:
@@ -14,28 +14,29 @@ tags:
   - api
 ---
 
+import { Callout } from "nextra/components";
+
 Sites hosts static HTML files and ZIP archives for reports, prototypes, and documentation previews.
 A server-side application is not necessary.
 
-Sites requires storage, gateway, DNS, TLS, and authentication configuration.
-If **Sites** is unavailable, contact your deployment owner.
+<Callout type="warning">
+  Sites requires storage, gateway, DNS, TLS, and authentication configuration.
+  If **Sites** is unavailable, contact your platform operator.
+</Callout>
 
 ## Choose who can access a site
 
 New sites from your user account are private by default.
-Only the owner can view a private site.
-The owner can replace content, extend expiration, delete the site, or change visibility.
 Administrator access does not give ownership rights.
 
-A public site lets anyone with its URL read its content without signing in.
-Other users cannot change it.
-Public content can contain copies that remain outside Lifecycle after you make the site private.
-Email invitations and viewer or editor roles are not available.
+| Visibility        | Who can view it                         | Who can change it |
+| ----------------- | --------------------------------------- | ----------------- |
+| Private (default) | Only the owner                          | Only the owner    |
+| Public            | Anyone with the URL, without signing in | Only the owner    |
 
-Sites that existed before ownership tracking was added remain public.
-These sites have no assigned owner and are read-only through normal user controls.
-For an unassigned site or a site owned by a retired service key, contact your platform operator.
-There is no ownership transfer or recovery UI or API.
+The owner can replace content, extend expiration, delete the site, or change visibility.
+Public content can contain copies that remain outside Lifecycle after you make the site private.
+Sites has no email invitations or viewer or editor roles.
 
 ## Upload from the UI
 
@@ -181,11 +182,12 @@ See [API overview](/docs/api/overview) and [API keys](/docs/api-authentication/a
 
 ## Troubleshooting
 
-| Symptom                       | Action                                                                                 |
-| ----------------------------- | -------------------------------------------------------------------------------------- |
-| Private upload is unavailable | Ask the operator to check private Sites readiness.                                     |
-| Upload is rejected            | Compare the entry file, extensions, counts, and sizes with the returned upload policy. |
-| A private URL does not open   | Sign in as the owner through the site's opening URL.                                   |
-| A site returns 404            | Check its current URL, visibility, and expiration through an authorized account.       |
-| Assets return 404             | Rebuild with relative paths or the current content base URL.                           |
-| A change returns 409          | Fetch current site details before you retry the intended change.                       |
+| Symptom                       | Action                                                                                        |
+| ----------------------------- | --------------------------------------------------------------------------------------------- |
+| Private upload is unavailable | Ask the operator to check private Sites readiness.                                            |
+| Upload is rejected            | Compare the entry file, extensions, counts, and sizes with the returned upload policy.        |
+| A private URL does not open   | Sign in as the owner through the site's opening URL.                                          |
+| A site returns 404            | Check its current URL, visibility, and expiration through an authorized account.              |
+| A site has no assigned owner  | Contact your platform operator. Lifecycle has no self-service ownership transfer or recovery. |
+| Assets return 404             | Rebuild with relative paths or the current content base URL.                                  |
+| A change returns 409          | Fetch current site details before you retry the intended change.                              |

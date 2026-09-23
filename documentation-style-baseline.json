@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "updatedOn": "2026-09-22",
+  "updatedOn": "2026-09-23",
   "references": {
     "canonical": "ASD-STE100 Issue 9",
     "canonicalRules": [
@@ -69,8 +69,8 @@
     "/docs/api-authentication/api-keys": {
       "file": "src/pages/docs/api-authentication/api-keys.mdx",
       "profile": "asd-ste100",
-      "reviewedOn": "2026-09-22",
-      "sha256": "d26dc85ca89bf2fea22cb1b71994e64e7106375badc4605cd269c843e528c1a1"
+      "reviewedOn": "2026-09-23",
+      "sha256": "6ab98c32c5f8ebf35d609cdb62d6d67820fbaa6cc9ece818537948ab86eb4aa6"
     },
     "/docs/api-authentication/overview": {
       "file": "src/pages/docs/api-authentication/overview.mdx",
@@ -201,8 +201,8 @@
     "/docs/features/sites": {
       "file": "src/pages/docs/features/sites.mdx",
       "profile": "asd-ste100",
-      "reviewedOn": "2026-09-22",
-      "sha256": "6005f5d24aa14e604c0387568099d79cbc321e423f750edc59372fbf40eab773"
+      "reviewedOn": "2026-09-23",
+      "sha256": "7a1bbdb4b545c7fcba428fc4f4eaa336ee6f556916ee4cb9f2371203cdfaf1e8"
     },
     "/docs/features/template-variables": {
       "file": "src/pages/docs/features/template-variables.mdx",
@@ -291,8 +291,8 @@
     "/docs/operations/security": {
       "file": "src/pages/docs/operations/security.mdx",
       "profile": "asd-ste100",
-      "reviewedOn": "2026-09-22",
-      "sha256": "96b4850da7e8fb65f5e7de8ddeeedf6fb4e409a2d67814f6a8453af4a674bf92"
+      "reviewedOn": "2026-09-23",
+      "sha256": "0d56688220d7f4a802d79f085237ae6f8b9d57ec5e7566bc3e650ac401583b4d"
     },
     "/docs/reference/statuses": {
       "file": "src/pages/docs/reference/statuses.mdx",
@@ -309,8 +309,8 @@
     "/docs/releases/compatibility": {
       "file": "src/pages/docs/releases/compatibility.mdx",
       "profile": "asd-ste100",
-      "reviewedOn": "2026-09-22",
-      "sha256": "1f7e3d9d575e9f402afff84ede1c143bc40ffc879b7247470b92dc94ce1338d9"
+      "reviewedOn": "2026-09-23",
+      "sha256": "1901b9d61ca33af98a41c41382624e7c07607c6cbaffb112e71718c3e17bbb1f"
     },
     "/docs/schema/aurora-restore": {
       "file": "src/pages/docs/schema/aurora-restore.mdx",
@@ -387,8 +387,8 @@
     "/docs/setup/install-lifecycle": {
       "file": "src/pages/docs/setup/install-lifecycle.mdx",
       "profile": "asd-ste100",
-      "reviewedOn": "2026-09-22",
-      "sha256": "db86fea5d5f8521bc86e049fba7a157a1e6be1198cca3839efb686083445dcfa"
+      "reviewedOn": "2026-09-23",
+      "sha256": "675a15ac05fef8f53b5cd2e177eb24b1fac1f745e5189ae6d8fc3133d9580a0c"
     },
     "/docs/setup/prerequisites": {
       "file": "src/pages/docs/setup/prerequisites.mdx",
