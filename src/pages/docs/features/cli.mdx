@@ -4,8 +4,8 @@ description: Install and use the Lifecycle CLI to examine Environments, manage S
 audience:
   - application-developer
   - platform-operator
-lastVerified: "2026-08-01"
-verificationBaseline: "2026-08-01-configuration-schema-fix"
+lastVerified: "2026-09-22"
+verificationBaseline: "2026-09-22-sites-access-control-released"
 contentProfile: asd-ste100
 tags:
   - cli
@@ -222,14 +222,26 @@ each field. Exit code `3` means that the CLI did not find a configuration file.
 
 ### Static sites
 
+User uploads default to private.
+Public uploads require confirmation when you specify `--visibility public`.
+Only the owner can change a site.
+`--mine` selects ownership, and `--public` selects public sites.
+These filters cannot be combined.
+
 ```sh
-lfc sites create <file-or-dir> [--name <label>]   # returns a stable URL
-lfc sites list [--mine]
+lfc sites create <file-or-dir> [--name <label>] [--visibility private|public] [--yes]
+lfc sites list [--mine | --public] [--search <text>]
 lfc sites get <id>
 lfc sites update <id> <file-or-dir>
-lfc sites extend <id>                             # push out the expiry
+lfc sites visibility <id> private|public [--yes]
+lfc sites extend <id>                             # extend expiration
 lfc sites delete <id> --yes
 ```
+
+The CLI prints the site's `openUrl`.
+Changing visibility keeps the Site ID and content URL.
+If a change returns `409`, fetch the site again before you retry.
+See [Sites](/docs/features/sites) for access rules and API details.
 
 ### Diagnostics & agent instructions
 

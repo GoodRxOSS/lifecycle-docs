@@ -53,6 +53,66 @@
         "helm-charts": "78b680595d4beda3184124312d61d86ce0cc51e7",
         "lifecycle-opentofu": "b14865912608096379c28ef648f7ed99538b5600"
       }
+    },
+    "2026-09-14-sites-pending-release": {
+      "verifiedOn": "2026-09-14",
+      "sources": {
+        "lifecycle": "3e313fae532c4997c595e676e551a4f590dcc691",
+        "lifecycle-ui": "ab98c292aa2155ca0a08e62d6a9823507feeecd6",
+        "lifecycle-cli": "14552f966cc0eff3e4bb067a1f072f2d0b9dd57a",
+        "helm-charts": "992cfe38aa1175ea2acef517932a38f9dd974fef"
+      },
+      "notes": "These commits identify baseline checkouts only. Sites access-control behavior was reviewed in uncommitted working trees and is pending release. Replace this baseline with implementing commit revisions before publication."
+    },
+    "2026-09-21-sites-downgrade-pending-release": {
+      "verifiedOn": "2026-09-21",
+      "sources": {
+        "lifecycle": "5a95f69995272b9dec92c8a3c067458be46a65d4",
+        "lifecycle-ui": "a8d65d351d68ca7466d4368d9eb4018bd46621aa",
+        "lifecycle-cli": "6814da76083fa989ffcc967e433b931d40f1dd7f",
+        "helm-charts": "0b5a50890635c7941984aaff622cc6e4fe79d1c1"
+      },
+      "notes": "Sites V1 remains pending release. The core migration supports an intentional full downgrade that preserves Site rows and versions but publishes content through the older gateway and discards ACL metadata. An isolated PostgreSQL up/down/up test passed."
+    },
+    "2026-09-21-sites-ui-filter-pending-release": {
+      "verifiedOn": "2026-09-21",
+      "sources": {
+        "lifecycle": "4343694b08c158832f6fd269b81d848bcdaf9077",
+        "lifecycle-ui": "a8d65d351d68ca7466d4368d9eb4018bd46621aa",
+        "lifecycle-cli": "6814da76083fa989ffcc967e433b931d40f1dd7f",
+        "helm-charts": "0b5a50890635c7941984aaff622cc6e4fe79d1c1"
+      },
+      "notes": "Sites V1 behavior remains pending release. The UI offers My sites and Public list views; the API also supports view=all for other clients."
+    },
+    "2026-09-15-sites-rollout-pending-release": {
+      "verifiedOn": "2026-09-15",
+      "sources": {
+        "lifecycle": "d2af3d1f651dcfb1e38b38619ebfd89ab2760012",
+        "lifecycle-ui": "b925d650870109859deca23e218f298e349b2879",
+        "lifecycle-cli": "6814da76083fa989ffcc967e433b931d40f1dd7f",
+        "helm-charts": "4acd7917c4f19f4f0d8420af3f62e5db43438e3f"
+      },
+      "notes": "Sites access-control behavior was verified against these implementing commits and remains pending release. User JWTs authorize Site-only browser access, capped at five minutes and JWT expiry. Private reads check current Site state. Ordinary UI logout does not immediately revoke issued access. These checks do not establish a supported released version set or production rollout."
+    },
+    "2026-09-22-sites-stable-url-pending-release": {
+      "verifiedOn": "2026-09-22",
+      "sources": {
+        "lifecycle": "0af126b06788110e5db4762b9b7fe4d7491de8e1",
+        "lifecycle-ui": "eb73479ddc0543bf133a9d8146334e94641ae88e",
+        "lifecycle-cli": "8dab9f14b45673703f3244ae220919042f0805bd",
+        "helm-charts": "0b5a50890635c7941984aaff622cc6e4fe79d1c1"
+      },
+      "notes": "Sites V1 remains pending release. Verified stable Site ID and content URL on visibility changes, server owner checks, the temporary same-apex opt-in, and the intentional full downgrade. Live browser retest of private open remains pending."
+    },
+    "2026-09-22-sites-access-control-released": {
+      "verifiedOn": "2026-09-22",
+      "sources": {
+        "lifecycle": "e50c29f7659fc14dc98f061e0c8fa57b40b788c0",
+        "lifecycle-ui": "917d8a8936b6054ae9fc102571a5b9c808a0bcb7",
+        "lifecycle-cli": "a08d9c2d0abb79ab7941c12d6ead1783a70ea45f",
+        "helm-charts": "6aff91c22411e641964774bcbb09e5265ac1250c"
+      },
+      "notes": "All four Sites access-control implementing PRs merged to main and deployed to production. Live-verified end to end: owner-only private access, distinct denied-vs-missing responses on the management API, the CLI's visibility/create/list/get/update/extend/delete commands, the shared-apex opt-in, stable Site ID and content URL across visibility and content changes, and the intentional full downgrade path."
     }
   }
 }
