@@ -4,99 +4,177 @@
 
 Upload and manage static HTML sites through Lifecycle's UI, CLI, or authenticated v2 API.
 
-Sites publishes a static HTML file or ZIP archive at a stable Lifecycle URL. It
-is useful for generated reports, prototypes, and documentation previews. A
-server-side application is not necessary.
+Sites hosts static HTML files and ZIP archives for reports, prototypes, and documentation previews.
+A server-side application is not necessary.
 
 > [!WARNING]
-> Sites requires storage, gateway, DNS, and authentication configuration. If
-> **Sites** is not available, contact your deployment owner.
+> Sites requires storage, gateway, DNS, TLS, and authentication configuration.
+> If **Sites** is unavailable, contact your platform operator.
+
+## Choose who can access a site
+
+New sites from your user account are private by default.
+Administrator access does not give ownership rights.
+
+| Visibility        | Who can view it                         | Who can change it |
+| ----------------- | --------------------------------------- | ----------------- |
+| Private (default) | Only the owner                          | Only the owner    |
+| Public            | Anyone with the URL, without signing in | Only the owner    |
+
+The owner can replace content, extend expiration, delete the site, or change visibility.
+Public content can contain copies that remain outside Lifecycle after you make the site private.
+Sites has no email invitations or viewer or editor roles.
 
 ## Upload from the UI
 
 1. Open **Sites**.
 2. Select **Add site**.
-3. Select one HTML file or a ZIP archive with the entry point that your
-   deployment's upload policy requires.
+3. Select an HTML file or ZIP archive with the required entry file.
 4. Add an optional display name.
-5. Examine the file.
-6. Upload the file.
-7. Open the returned URL.
-8. Make sure that its content is correct.
+5. Select **Private** or **Public**.
+6. Examine the visibility and file.
+7. Select **Upload private site** or **Publish site**.
+8. Open the returned URL.
+9. Make sure that the content and assets are correct.
 
-Use search plus **All sites** or **My sites** to find an upload. From a site's
-actions menu you can replace its content or delete it.
+**My sites** shows sites that you own.
+**Public** shows public sites.
+Search matches the site name or ID.
+Search and pagination do not expose other users' private sites.
 
-> [!NOTE]
-> **My sites** is a convenience filter based on creator or updater identity. It
-> does not make a site private. A caller with `sites:read` can list active
-> sites.
+From an owned site's actions menu, you can replace content, change visibility, or delete it.
+The visibility dialog requires confirmation before publication.
+When you change visibility, the site ID and content URL stay the same.
+New requests to a private site require owner access.
 
 ## Upload a directory with the CLI
 
-The CLI can upload a ZIP, one HTML file, or a directory:
+The CLI accepts a ZIP, HTML file, or directory:
 
 ```bash
 lfc sites create ./dist --name "performance report"
+lfc sites create ./dist --visibility public --yes
 lfc sites list --mine
+lfc sites list --public --search report
 lfc sites get a1b2c3d4e5
 lfc sites update a1b2c3d4e5 ./dist
+lfc sites visibility a1b2c3d4e5 private --yes
 lfc sites extend a1b2c3d4e5
 lfc sites delete a1b2c3d4e5 --yes
 ```
 
-For a directory, `lfc` builds the ZIP locally. It applies built-in ignores such
-as `.git`, `node_modules`, cache directories, and coverage output. Add an
-`.lfcsiteignore` file for patterns in the repository.
+Omitting `--visibility` uses the server's default for your credentials.
+With user sign-in, that default is private.
+An explicit public upload requires confirmation or `--yes`.
+The CLI uses user sign-in and has no dedicated API-key input.
 
-Before creating or updating a site, the CLI fetches the deployment's upload
-policy and checks allowed extensions, file count, extracted size, and upload
-size.
+For a directory, `lfc` creates a ZIP locally.
+It excludes `.git`, `node_modules`, cache directories, and coverage output.
+Use `.lfcsiteignore` for additional exclusion patterns.
+Before an upload, the CLI checks the deployment's upload policy and allowed visibility.
 
-## Prepare static content
+## Prepare and replace content
 
-- Build the site locally. Lifecycle does not run a server-side build command.
-- When the site generator supports relative asset URLs, use them.
-- Include the entry file that your deployment's Sites policy specifies.
-- Remove source maps, credentials, and internal data. Remove output that is not
-  necessary.
-- Open the published URL.
-- Before you share the URL, check its navigation and assets.
+- Build the site locally.
+- When your site generator supports relative asset URLs, use them.
+- Include the entry file that the upload policy requires.
+- Remove credentials, internal data, source maps, and unnecessary output.
+- Before publication, check navigation and assets.
 
-When you replace content, the site keeps its URL. When you delete a site, its
-URL stops working. You cannot undo the deletion.
+A content replacement or visibility change preserves the current content URL.
+The API's `openUrl` opens the current site through Lifecycle.
+The `contentUrl` identifies the current content host.
+Neither URL grants access to a private site.
+
+Deletion or expiration stops new content requests.
+Deletion cannot be undone.
+Content already downloaded or displayed can remain on a user's device.
+
+## Private access and logout
+
+Sign in as the owner to open a private site.
+Browser access expires within five minutes and no later than the authorizing JWT.
+If content stops loading after access expires, reopen the stable Site link.
+A valid user session can obtain access again after an ownership check.
+
+Ordinary UI logout does not immediately revoke issued access.
+There is no guaranteed fixed cutoff measured from logout.
+An unrelated signed-in user cannot open your private site.
+
+## Private content compatibility
+
+Private sites block Web Workers, SharedWorkers, and new service workers.
+Features that require these workers, including some offline features, do not work.
+Use a site build that works without browser workers.
+Private sites also block display inside an iframe.
+If a site was public, a service worker installed in a visitor's browser can remain after you make it private.
+For sensitive content, upload a new private site instead of changing the public site's visibility.
 
 ## Expiration
 
-When the operator enables Sites TTL, a new site receives the deployment's
-configured expiration. **Extend** pushes the expiry out by the configured
-increment. When the operator disables TTL, a site can have no expiry.
-
-Use the expiry displayed by the UI or CLI. Do not use a fixed number of days.
-Get cleanup and previous-version retention information from the deployment
-owner.
+When the operator enables Sites TTL, new sites receive the configured expiration.
+The owner can extend expiration through the CLI or API.
+When TTL is disabled, a site can have no expiration.
+Use the displayed expiration instead of assuming a fixed number of days.
 
 ## API access
 
-Sites uses authenticated v2 routes:
+Management routes require authentication and the applicable scope.
+A scope permits an operation only when the caller also has the required ownership.
 
-| Task            | Route                                    | Scope                         |
-| --------------- | ---------------------------------------- | ----------------------------- |
-| List or create  | `GET` or `POST /api/v2/sites`            | `sites:read` or `sites:write` |
-| Get or delete   | `GET` or `DELETE /api/v2/sites/{siteId}` | `sites:read` or `sites:write` |
-| Replace content | `PUT /api/v2/sites/{siteId}/content`     | `sites:write`                 |
-| Extend expiry   | `POST /api/v2/sites/{siteId}/extend`     | `sites:write`                 |
+| Task              | Route                                 | Scope         |
+| ----------------- | ------------------------------------- | ------------- |
+| Read capabilities | `GET /api/v2/sites/capabilities`      | `sites:read`  |
+| List sites        | `GET /api/v2/sites`                   | `sites:read`  |
+| Create a site     | `POST /api/v2/sites`                  | `sites:write` |
+| Get a site        | `GET /api/v2/sites/{siteId}`          | `sites:read`  |
+| Delete a site     | `DELETE /api/v2/sites/{siteId}`       | `sites:write` |
+| Replace content   | `PUT /api/v2/sites/{siteId}/content`  | `sites:write` |
+| Extend expiration | `POST /api/v2/sites/{siteId}/extend`  | `sites:write` |
+| Change visibility | `PATCH /api/v2/sites/{siteId}/access` | `sites:write` |
 
-Uploads use `multipart/form-data`. Use the deployment-local generated API
-reference for the current limits and schema. See [API
-overview](/docs/api/overview) and [API
-keys](/docs/api-authentication/api-keys).
+Capabilities contain `enabled`, `upload`, `defaultVisibility`, `allowedVisibilities`, and `canCreate`.
+Capabilities do not expose administrator configuration or storage credentials.
+List requests accept `view=mine|public|all`, `q`, `page`, and `limit`.
+Results use the pagination fields `items`, `total`, `current`, and `limit`.
+
+Create and content-replacement requests use `multipart/form-data`.
+Creation accepts optional `visibility`.
+A personal API key defaults to private sites.
+A service API key can create only public sites and defaults to public.
+The service key owns its sites through that exact key identity.
+
+Use an existing API key with `sites:write` in `LIFECYCLE_API_KEY`.
+Set `LIFECYCLE_URL` to your Lifecycle API origin.
+To upload an HTML file with the key's default visibility, run:
+
+```bash
+curl --fail --silent --show-error \
+  --header "Authorization: Bearer ${LIFECYCLE_API_KEY}" \
+  --form "file=@./report.html" \
+  "${LIFECYCLE_URL}/api/v2/sites"
+```
+
+Visibility changes require JSON fields `visibility` and `expectedAccessRevision`.
+For replacement, send `expectedAccessRevision` and `expectedContentRevision` as multipart fields.
+Delete and extend requests accept `expectedAccessRevision` as a query parameter.
+Older replacement clients can also receive `409` after a concurrent change.
+
+For `409`, fetch the site again before you decide whether to retry.
+Do not automatically overwrite another change.
+Use `permissions` to show available actions and `currentRole` to identify ownership.
+Public results hide unrelated creator and updater identities.
+
+See [API overview](/docs/api/overview) and [API keys](/docs/api-authentication/api-keys).
 
 ## Troubleshooting
 
-- **Sites is disabled or missing:** contact the deployment owner.
-- **The upload is rejected:** compare the file type, entry point, count, and
-  sizes with the policy returned by the deployment.
-- **Assets return 404:** rebuild with relative paths or the published base URL.
-- **A URL stopped working:** Lifecycle can expire a site, or a user can delete
-  it. Before you upload a replacement, examine the Sites list.
+| Symptom                       | Action                                                                                        |
+| ----------------------------- | --------------------------------------------------------------------------------------------- |
+| Private upload is unavailable | Ask the operator to check private Sites readiness.                                            |
+| Upload is rejected            | Compare the entry file, extensions, counts, and sizes with the returned upload policy.        |
+| A private URL does not open   | Sign in as the owner through the site's opening URL.                                          |
+| A site returns 404            | Check its current URL, visibility, and expiration through an authorized account.              |
+| A site has no assigned owner  | Contact your platform operator. Lifecycle has no self-service ownership transfer or recovery. |
+| Assets return 404             | Rebuild with relative paths or the current content base URL.                                  |
+| A change returns 409          | Fetch current site details before you retry the intended change.                              |

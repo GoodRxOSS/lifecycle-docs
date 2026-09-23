@@ -76,6 +76,15 @@ When Sites is enabled, these tools are available:
 | `list_sites` | Lists visible Sites   |
 | `get_site`   | Gets one visible Site |
 
+> [!NOTE]
+> These tools return the user's private sites and public sites. `mineOnly`
+> selects ownership rather than creator or updater email. Sites tools provide
+> read access only.
+
+Results include visibility and `openUrl`.
+A private site's URL does not grant access to another user.
+The tools do not publish sites or send email invitations.
+
 An administrator can turn off all change tools. When change tools are off,
 clients do not discover them, and Lifecycle rejects their invocation.
 

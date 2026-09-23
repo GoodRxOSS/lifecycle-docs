@@ -42,15 +42,15 @@ creation.
 
 Lifecycle recognizes seven scopes:
 
-| Scope         | Access                                                              |
-| ------------- | ------------------------------------------------------------------- |
-| `env:read`    | Read Environments and Builds                                        |
-| `env:write`   | Create or change Environments and Builds. Also satisfies `env:read` |
-| `sites:read`  | Read sites. `sites:write` satisfies this scope.                     |
-| `sites:write` | Upload, replace, extend, or delete sites                            |
-| `repos:read`  | Read repository information. `repos:write` satisfies this scope.    |
-| `repos:write` | Change supported repository configuration                           |
-| `env:admin`   | Legacy/reserved Environment administration                          |
+| Scope         | Access                                                               |
+| ------------- | -------------------------------------------------------------------- |
+| `env:read`    | Read Environments and Builds                                         |
+| `env:write`   | Create or change Environments and Builds. Also satisfies `env:read`. |
+| `sites:read`  | Read sites. `sites:write` satisfies this scope.                      |
+| `sites:write` | Upload, replace, extend, or delete sites                             |
+| `repos:read`  | Read repository information. `repos:write` satisfies this scope.     |
+| `repos:write` | Change supported repository configuration                            |
+| `env:admin`   | Legacy/reserved Environment administration                           |
 
 New keys can request only the first six scopes. A legacy service key can keep
 `env:admin`. You cannot grant this scope to a new key.
@@ -62,6 +62,28 @@ grant `sites:read`.
 > **All repositories** is an explicit broad grant. Prefer a selected repository
 > list, especially for CI. An empty selected list does not mean all
 > repositories.
+
+## Sites access with API keys
+
+`sites:read` permits public reads and reads of sites owned by the caller.
+`sites:write` also permits creation and changes to owned sites, including visibility changes.
+Scopes do not grant access to another user's private site.
+Administrator status does not override ownership.
+
+A personal key uses its user's ownership and defaults to private uploads.
+An older personal key without an identity binding cannot access Sites.
+Create a replacement personal key through your signed-in account.
+
+Service keys create public sites only.
+Each service key owns only the sites created with that exact key.
+A replacement service key does not inherit site ownership.
+Before you retire a service key that owns sites, contact your platform operator.
+Revoked or expired keys cannot manage their sites.
+For sites with retired keys, see [Sites troubleshooting](/docs/features/sites#troubleshooting).
+
+Keep API keys in authorization headers.
+Do not put API keys in site content or URLs.
+For request details, see [Sites](/docs/features/sites#api-access).
 
 ## Select an expiration
 
