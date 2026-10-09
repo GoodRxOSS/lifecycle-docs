@@ -4,8 +4,8 @@ description: Install and use the Lifecycle CLI to examine Environments, manage S
 audience:
   - application-developer
   - platform-operator
-lastVerified: "2026-09-22"
-verificationBaseline: "2026-09-22-sites-access-control-released"
+lastVerified: "2026-10-09"
+verificationBaseline: "2026-10-09-sites-restore-released"
 contentProfile: asd-ste100
 tags:
   - cli
@@ -228,18 +228,24 @@ Only the owner can change a site.
 `--mine` selects ownership, and `--public` selects public sites.
 These filters cannot be combined.
 
+`--deleted` shows your deleted sites that you can restore.
+`--deleted` cannot be combined with `--public`.
+
 ```sh
 lfc sites create <file-or-dir> [--name <label>] [--visibility private|public] [--yes]
-lfc sites list [--mine | --public] [--search <text>]
+lfc sites list [--mine | --public | --deleted] [--search <text>]
 lfc sites get <id>
 lfc sites update <id> <file-or-dir>
 lfc sites visibility <id> private|public [--yes]
 lfc sites extend <id>                             # extend expiration
 lfc sites delete <id> --yes
+lfc sites restore <id>
 ```
 
 The CLI prints the site's `openUrl`.
 Changing visibility keeps the Site ID and content URL.
+After `delete`, the CLI shows the time until which you can restore the site.
+`restore` keeps the Site ID and URL.
 If a change returns `409`, fetch the site again before you retry.
 See [Sites](/docs/features/sites) for access rules and API details.
 

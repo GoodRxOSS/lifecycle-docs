@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "updatedOn": "2026-09-23",
+  "updatedOn": "2026-10-09",
   "references": {
     "canonical": "ASD-STE100 Issue 9",
     "canonicalRules": [
@@ -69,8 +69,8 @@
     "/docs/api-authentication/api-keys": {
       "file": "src/pages/docs/api-authentication/api-keys.mdx",
       "profile": "asd-ste100",
-      "reviewedOn": "2026-09-23",
-      "sha256": "6ab98c32c5f8ebf35d609cdb62d6d67820fbaa6cc9ece818537948ab86eb4aa6"
+      "reviewedOn": "2026-10-09",
+      "sha256": "474f3f6757f0a91793e3485b40c3a6f0091747a5debaf722e8d48e0a598c9c5f"
     },
     "/docs/api-authentication/overview": {
       "file": "src/pages/docs/api-authentication/overview.mdx",
@@ -111,8 +111,8 @@
     "/docs/features/api-environments": {
       "file": "src/pages/docs/features/api-environments.mdx",
       "profile": "asd-ste100",
-      "reviewedOn": "2026-07-25",
-      "sha256": "12ea39615d56eeab2a02438c2addbe6ed863b3d6e0c6baf4caff672a5c3fa39a"
+      "reviewedOn": "2026-10-09",
+      "sha256": "973889ba8bb7a0fbfe61f9845747f08d4350644d381b11c6d1b7bbb3f733917f"
     },
     "/docs/features/authentication": {
       "file": "src/pages/docs/features/authentication.mdx",
@@ -135,8 +135,8 @@
     "/docs/features/cli": {
       "file": "src/pages/docs/features/cli.mdx",
       "profile": "asd-ste100",
-      "reviewedOn": "2026-09-22",
-      "sha256": "0f57d131ad05effbf05847828dd7f30d8b5641c5ecde54af181c3aec6821e15b"
+      "reviewedOn": "2026-10-09",
+      "sha256": "b874b693d8a1acd30209d3351b5a64d4799415e21d4e73844c812908aae1bd5d"
     },
     "/docs/features/cli-telemetry": {
       "file": "src/pages/docs/features/cli-telemetry.mdx",
@@ -177,8 +177,8 @@
     "/docs/features/mcp-server": {
       "file": "src/pages/docs/features/mcp-server.mdx",
       "profile": "asd-ste100",
-      "reviewedOn": "2026-09-22",
-      "sha256": "70ab60a321461fb609365c7184ad40fd7450e1ae68271748681b87be80d7e699"
+      "reviewedOn": "2026-10-09",
+      "sha256": "68a24b2233654003826b9979499e26ab36fc84de01c7ec09b2ba3795930513f9"
     },
     "/docs/features/native-helm-deployment": {
       "file": "src/pages/docs/features/native-helm-deployment.mdx",
@@ -201,8 +201,8 @@
     "/docs/features/sites": {
       "file": "src/pages/docs/features/sites.mdx",
       "profile": "asd-ste100",
-      "reviewedOn": "2026-09-23",
-      "sha256": "7a1bbdb4b545c7fcba428fc4f4eaa336ee6f556916ee4cb9f2371203cdfaf1e8"
+      "reviewedOn": "2026-10-09",
+      "sha256": "1b20228a0ac155a39926073b6d26128df720a59acb13c1463ca05cb000472ca8"
     },
     "/docs/features/template-variables": {
       "file": "src/pages/docs/features/template-variables.mdx",
@@ -273,8 +273,8 @@
     "/docs/operations/configuration": {
       "file": "src/pages/docs/operations/configuration.mdx",
       "profile": "asd-ste100",
-      "reviewedOn": "2026-09-22",
-      "sha256": "fd1c2f4537187df8dfced9799dec480e5754c6ba519f548d244f65f66666717f"
+      "reviewedOn": "2026-10-09",
+      "sha256": "149172077735fcbd20dfa1bff1647708ff01c785bf16327169c9902e6601b33e"
     },
     "/docs/operations/day-two": {
       "file": "src/pages/docs/operations/day-two.mdx",

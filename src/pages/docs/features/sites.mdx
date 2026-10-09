@@ -4,8 +4,8 @@ description: Upload and manage static HTML sites through Lifecycle's UI, CLI, or
 audience:
   - application-developer
   - platform-operator
-lastVerified: "2026-09-23"
-verificationBaseline: "2026-09-22-sites-access-control-released"
+lastVerified: "2026-10-09"
+verificationBaseline: "2026-10-09-sites-restore-released"
 contentProfile: asd-ste100
 tags:
   - sites
@@ -34,7 +34,7 @@ Administrator access does not give ownership rights.
 | Private (default) | Only the owner                          | Only the owner    |
 | Public            | Anyone with the URL, without signing in | Only the owner    |
 
-The owner can replace content, extend expiration, delete the site, or change visibility.
+The owner can replace content, extend expiration, change visibility, delete the site, or restore a deleted site.
 Public content can contain copies that remain outside Lifecycle after you make the site private.
 Sites has no email invitations or viewer or editor roles.
 
@@ -60,6 +60,35 @@ The visibility dialog requires confirmation before publication.
 When you change visibility, the site ID and content URL stay the same.
 New requests to a private site require owner access.
 
+## Restore a deleted site
+
+When you delete a site, its URL stops working immediately.
+Lifecycle keeps the site content for the retention period.
+Your platform operator sets the retention period. The default is 30 days.
+After the retention period, Lifecycle permanently removes the content.
+For the retention settings, see [Configuration](/docs/operations/configuration#sites-configuration).
+
+Only the owner can see or restore a deleted site.
+
+To restore a site in the UI:
+
+1. Open **Sites**.
+2. Select **Recently deleted**.
+3. Find the site.
+4. Select **Restore**.
+
+The **Removed** column shows the time until Lifecycle removes the site.
+
+To restore a site with the CLI, run:
+
+```bash
+lfc sites list --deleted
+lfc sites restore a1b2c3d4e5
+```
+
+A restored site keeps its site ID, URL, and visibility.
+If the site expiration passed, Lifecycle sets a new expiration.
+
 ## Upload a directory with the CLI
 
 The CLI accepts a ZIP, HTML file, or directory:
@@ -74,6 +103,8 @@ lfc sites update a1b2c3d4e5 ./dist
 lfc sites visibility a1b2c3d4e5 private --yes
 lfc sites extend a1b2c3d4e5
 lfc sites delete a1b2c3d4e5 --yes
+lfc sites list --deleted
+lfc sites restore a1b2c3d4e5
 ```
 
 Omitting `--visibility` uses the server's default for your credentials.
@@ -100,19 +131,9 @@ The `contentUrl` identifies the current content host.
 Neither URL grants access to a private site.
 
 Deletion or expiration stops new content requests.
-Deletion cannot be undone.
+During the retention period, you can restore a deleted site.
+After the retention period, deletion cannot be undone.
 Content already downloaded or displayed can remain on a user's device.
-
-## Private access and logout
-
-Sign in as the owner to open a private site.
-Browser access expires within five minutes and no later than the authorizing JWT.
-If content stops loading after access expires, reopen the stable Site link.
-A valid user session can obtain access again after an ownership check.
-
-Ordinary UI logout does not immediately revoke issued access.
-There is no guaranteed fixed cutoff measured from logout.
-An unrelated signed-in user cannot open your private site.
 
 ## Private content compatibility
 
@@ -145,10 +166,12 @@ A scope permits an operation only when the caller also has the required ownershi
 | Replace content   | `PUT /api/v2/sites/{siteId}/content`  | `sites:write` |
 | Extend expiration | `POST /api/v2/sites/{siteId}/extend`  | `sites:write` |
 | Change visibility | `PATCH /api/v2/sites/{siteId}/access` | `sites:write` |
+| Restore a site    | `POST /api/v2/sites/{siteId}/restore` | `sites:write` |
 
-Capabilities contain `enabled`, `upload`, `defaultVisibility`, `allowedVisibilities`, and `canCreate`.
+Capabilities contain `enabled`, `upload`, `defaultVisibility`, `allowedVisibilities`, `canCreate`, and `deletedRetentionDays`.
 Capabilities do not expose administrator configuration or storage credentials.
-List requests accept `view=mine|public|all`, `q`, `page`, and `limit`.
+List requests accept `view=mine|public|all|deleted`, `q`, `page`, and `limit`.
+The `deleted` view shows only your deleted sites that you can restore.
 Results use the pagination fields `items`, `total`, `current`, and `limit`.
 
 Create and content-replacement requests use `multipart/form-data`.
@@ -170,8 +193,12 @@ curl --fail --silent --show-error \
 
 Visibility changes require JSON fields `visibility` and `expectedAccessRevision`.
 For replacement, send `expectedAccessRevision` and `expectedContentRevision` as multipart fields.
-Delete and extend requests accept `expectedAccessRevision` as a query parameter.
 Older replacement clients can also receive `409` after a concurrent change.
+Delete, extend, and restore requests accept `expectedAccessRevision` as a query parameter.
+
+A deleted site includes `deletedAt` and `restorableUntil`.
+`permissions.canRestore` shows whether you can restore the site.
+A deleted site returns `404` from `GET /api/v2/sites/{siteId}`.
 
 For `409`, fetch the site again before you decide whether to retry.
 Do not automatically overwrite another change.
@@ -182,12 +209,13 @@ See [API overview](/docs/api/overview) and [API keys](/docs/api-authentication/a
 
 ## Troubleshooting
 
-| Symptom                       | Action                                                                                        |
-| ----------------------------- | --------------------------------------------------------------------------------------------- |
-| Private upload is unavailable | Ask the operator to check private Sites readiness.                                            |
-| Upload is rejected            | Compare the entry file, extensions, counts, and sizes with the returned upload policy.        |
-| A private URL does not open   | Sign in as the owner through the site's opening URL.                                          |
-| A site returns 404            | Check its current URL, visibility, and expiration through an authorized account.              |
-| A site has no assigned owner  | Contact your platform operator. Lifecycle has no self-service ownership transfer or recovery. |
-| Assets return 404             | Rebuild with relative paths or the current content base URL.                                  |
-| A change returns 409          | Fetch current site details before you retry the intended change.                              |
+| Symptom                       | Action                                                                                         |
+| ----------------------------- | ---------------------------------------------------------------------------------------------- |
+| Private upload is unavailable | Ask the operator to check private Sites readiness.                                             |
+| Upload is rejected            | Compare the entry file, extensions, counts, and sizes with the returned upload policy.         |
+| A private URL does not open   | Sign in as the owner through the site's opening URL.                                           |
+| A site returns 404            | Check its URL, visibility, expiration, and **Recently deleted** through an authorized account. |
+| You deleted a site in error   | Restore it from **Recently deleted** or with `lfc sites restore` before its retention ends.    |
+| A site has no assigned owner  | Contact your platform operator. Lifecycle has no self-service ownership transfer or recovery.  |
+| Assets return 404             | Rebuild with relative paths or the current content base URL.                                   |
+| A change returns 409          | Fetch current site details before you retry the intended change.                               |

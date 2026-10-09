@@ -113,6 +113,16 @@
         "helm-charts": "6aff91c22411e641964774bcbb09e5265ac1250c"
       },
       "notes": "All four Sites access-control implementing PRs merged to main and deployed to production. Live-verified end to end: owner-only private access, distinct denied-vs-missing responses on the management API, the CLI's visibility/create/list/get/update/extend/delete commands, the shared-apex opt-in, stable Site ID and content URL across visibility and content changes, and the intentional full downgrade path."
+    },
+    "2026-10-09-sites-restore-released": {
+      "verifiedOn": "2026-10-09",
+      "sources": {
+        "lifecycle": "0cfc1a1436e5bbb325d299c79aee7246238d8d8e",
+        "lifecycle-ui": "c6750243dd1b458da4a9a89fc2695264cec7c7d6",
+        "lifecycle-cli": "9fbd757fac74ff05576121a5d99ef7663aaeb948",
+        "helm-charts": "6aff91c22411e641964774bcbb09e5265ac1250c"
+      },
+      "notes": "Sites soft delete, restore, Recently deleted view, deleted-site retention setting, MCP hosted site write tools, and creator-or-admin Environment teardown merged and deployed. Live-verified: delete then restore through UI, CLI 0.6.0, and MCP; deleted public sites return 404; cleanup purges after retention."
     }
   }
 }
