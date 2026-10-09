@@ -47,7 +47,7 @@ Lifecycle recognizes seven scopes:
 | `env:read`    | Read Environments and Builds                                         |
 | `env:write`   | Create or change Environments and Builds. Also satisfies `env:read`. |
 | `sites:read`  | Read sites. `sites:write` satisfies this scope.                      |
-| `sites:write` | Upload, replace, extend, or delete sites                             |
+| `sites:write` | Upload, replace, extend, delete, or restore sites                    |
 | `repos:read`  | Read repository information. `repos:write` satisfies this scope.     |
 | `repos:write` | Change supported repository configuration                            |
 | `env:admin`   | Legacy/reserved Environment administration                           |

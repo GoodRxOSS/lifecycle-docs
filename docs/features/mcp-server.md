@@ -34,8 +34,8 @@ MCP does not grant access to an Environment, repository, Site, or action.
 ## Understand the available tools
 
 Lifecycle MCP groups its core tools into three capabilities. When Lifecycle
-Sites is enabled, clients also discover a fourth **View Hosted Sites**
-capability.
+Sites is enabled, clients also discover the **View Hosted Sites** and
+**Manage Hosted Sites** capabilities.
 
 ### Understand Environments
 
@@ -67,6 +67,8 @@ capability.
 | `extend_environment`    | Extends Environment expiration            |
 | `destroy_environment`   | Previews or destroys an exact Environment |
 
+Only the user who created an Environment or an administrator can destroy it.
+
 ### View Hosted Sites
 
 When Sites is enabled, these tools are available:
@@ -78,12 +80,35 @@ When Sites is enabled, these tools are available:
 
 > [!NOTE]
 > These tools return the user's private sites and public sites. `mineOnly`
-> selects ownership rather than creator or updater email. Sites tools provide
-> read access only.
+> selects ownership rather than creator or updater email. `deleted` lists the
+> user's deleted sites that the user can restore.
 
 Results include visibility and `openUrl`.
 A private site's URL does not grant access to another user.
-The tools do not publish sites or send email invitations.
+
+### Manage Hosted Sites
+
+When Sites is enabled and **Allow changes** is on, these tools are available:
+
+| Tool                  | Result                                      |
+| --------------------- | ------------------------------------------- |
+| `create_site`         | Publishes one text file as a new Site       |
+| `update_site_content` | Replaces the content of an owned Site       |
+| `set_site_visibility` | Makes an owned Site private or public       |
+| `extend_site`         | Extends the expiration of an owned Site     |
+| `delete_site`         | Deletes an owned Site                       |
+| `restore_site`        | Restores an owned Site during its retention |
+
+New Sites are private by default.
+`create_site` and `update_site_content` accept one text file: HTML, Markdown, text, JSON, CSV, XML, or SVG.
+They do not accept ZIP archives, more than one file, or binary files.
+To publish a Site with assets, use the UI or `lfc sites create`.
+
+`set_site_visibility`, `delete_site`, and `restore_site` require the current `expectedAccessRevision`.
+For `set_site_visibility` and `delete_site`, get it from `get_site`.
+For `restore_site`, get it from `list_sites` with `deleted`.
+A deleted Site stays restorable until `restorableUntil`.
+The tools do not send email invitations.
 
 An administrator can turn off all change tools. When change tools are off,
 clients do not discover them, and Lifecycle rejects their invocation.

@@ -103,6 +103,10 @@ extension values.
 
 ## Teardown and reuse
 
+Only the user who created the Environment or an administrator can tear it down.
+A personal API key can tear down only Environments that its owner created.
+A service API key can tear down Environments in its allowed repositories.
+
 Deletion queues teardown and returns `202`. Continue polling while the details
 route returns `200`. A subsequent `404` means teardown is complete. You can
 then reuse its vanity name.
@@ -114,7 +118,8 @@ cleanup](/docs/features/environment-ttl).
 ## Troubleshooting
 
 - `403`: The administrator disabled API Environments, the key lacks `env:write`,
-  or the repository does not match its constraint.
+  or the repository does not match its constraint. For teardown, you must be
+  the creator of the Environment or an administrator.
 - `404 repo_not_onboarded`: onboard the repository before creating the
   Environment.
 - `409 name_conflict`: select a different vanity name or wait for teardown.

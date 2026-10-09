@@ -61,6 +61,15 @@ The chart supports this through each component's `deployment.extraEnv` list.
 The UI uses its existing application URL, API URL, and sign-in configuration.
 No additional UI Sites flag or shared bridge Secret is required.
 
+In the Sites configuration, `cleanup.deletedRetentionDays` sets how long a deleted site stays restorable.
+In the UI, this setting is **Deleted site retention (days)** under **Settings → Sites**.
+The default is 30 days. The range is 0 to 3650.
+
+With 0, users cannot restore a deleted site.
+The next cleanup run removes deleted sites.
+A change also applies to sites that users already deleted.
+When `cleanup.enabled` is false, deletion removes site content immediately.
+
 The gateway component must remain enabled.
 Disabling Sites stops all Sites uploads and content access, including public sites.
 It does not make private sites public.

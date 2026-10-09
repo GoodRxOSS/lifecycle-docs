@@ -48,8 +48,8 @@ export const pageMap = [{
         "title": "API keys",
         "description": "Create, scope, use, rotate, and revoke personal or service API keys for authenticated Lifecycle v2 requests.",
         "audience": ["api-user", "administrator"],
-        "lastVerified": "2026-09-23",
-        "verificationBaseline": "2026-09-22-sites-access-control-released",
+        "lastVerified": "2026-10-09",
+        "verificationBaseline": "2026-10-09-sites-restore-released",
         "contentProfile": "asd-ste100",
         "tags": ["api", "authentication", "api-keys", "security"]
       }
@@ -126,8 +126,8 @@ export const pageMap = [{
         "title": "API-created Environments",
         "description": "Create branch-based Lifecycle Environments without a pull request. Then, track, extend, redeploy, or tear them down.",
         "audience": ["api-user", "application-developer"],
-        "lastVerified": "2026-07-24",
-        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "lastVerified": "2026-10-09",
+        "verificationBaseline": "2026-10-09-sites-restore-released",
         "contentProfile": "asd-ste100",
         "tags": ["environments", "api", "automation", "ttl"]
       }
@@ -186,8 +186,8 @@ export const pageMap = [{
         "title": "CLI (lfc)",
         "description": "Install and use the Lifecycle CLI to examine Environments, manage Services, stream logs, and validate configuration.",
         "audience": ["application-developer", "platform-operator"],
-        "lastVerified": "2026-09-22",
-        "verificationBaseline": "2026-09-22-sites-access-control-released",
+        "lastVerified": "2026-10-09",
+        "verificationBaseline": "2026-10-09-sites-restore-released",
         "contentProfile": "asd-ste100",
         "tags": ["cli", "lfc", "operators", "tooling", "automation"]
       }
@@ -258,8 +258,8 @@ export const pageMap = [{
         "title": "Lifecycle MCP",
         "description": "Enable Lifecycle MCP, connect an OAuth client, and use Lifecycle tools with existing user permissions.",
         "audience": ["agent-user", "administrator", "platform-operator"],
-        "lastVerified": "2026-09-22",
-        "verificationBaseline": "2026-09-22-sites-access-control-released",
+        "lastVerified": "2026-10-09",
+        "verificationBaseline": "2026-10-09-sites-restore-released",
         "contentProfile": "asd-ste100",
         "tags": ["mcp", "oauth", "agents", "administration"]
       }
@@ -306,8 +306,8 @@ export const pageMap = [{
         "title": "Sites",
         "description": "Upload and manage static HTML sites through Lifecycle's UI, CLI, or authenticated v2 API.",
         "audience": ["application-developer", "platform-operator"],
-        "lastVerified": "2026-09-23",
-        "verificationBaseline": "2026-09-22-sites-access-control-released",
+        "lastVerified": "2026-10-09",
+        "verificationBaseline": "2026-10-09-sites-restore-released",
         "contentProfile": "asd-ste100",
         "tags": ["sites", "static-hosting", "cli", "api"]
       }
@@ -474,8 +474,8 @@ export const pageMap = [{
         "title": "Runtime configuration surfaces",
         "description": "Select a supported UI, API, Helm, or repository configuration surface and verify each change.",
         "audience": ["platform-operator", "administrator"],
-        "lastVerified": "2026-09-22",
-        "verificationBaseline": "2026-09-22-sites-access-control-released",
+        "lastVerified": "2026-10-09",
+        "verificationBaseline": "2026-10-09-sites-restore-released",
         "contentProfile": "asd-ste100",
         "tags": ["operator", "configuration", "settings"]
       }
