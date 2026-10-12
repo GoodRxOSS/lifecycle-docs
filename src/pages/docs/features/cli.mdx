@@ -236,6 +236,7 @@ lfc sites create <file-or-dir> [--name <label>] [--visibility private|public] [-
 lfc sites list [--mine | --public | --deleted] [--search <text>]
 lfc sites get <id>
 lfc sites update <id> <file-or-dir>
+lfc sites rename <id> <name>
 lfc sites visibility <id> private|public [--yes]
 lfc sites extend <id>                             # extend expiration
 lfc sites delete <id> --yes
@@ -243,7 +244,7 @@ lfc sites restore <id>
 ```
 
 The CLI prints the site's `openUrl`.
-Changing visibility keeps the Site ID and content URL.
+Renaming or changing visibility keeps the Site ID and content URL.
 After `delete`, the CLI shows the time until which you can restore the site.
 `restore` keeps the Site ID and URL.
 If a change returns `409`, fetch the site again before you retry.
