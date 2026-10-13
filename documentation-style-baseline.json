@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "updatedOn": "2026-10-09",
+  "updatedOn": "2026-10-12",
   "references": {
     "canonical": "ASD-STE100 Issue 9",
     "canonicalRules": [
@@ -135,8 +135,8 @@
     "/docs/features/cli": {
       "file": "src/pages/docs/features/cli.mdx",
       "profile": "asd-ste100",
-      "reviewedOn": "2026-10-09",
-      "sha256": "b874b693d8a1acd30209d3351b5a64d4799415e21d4e73844c812908aae1bd5d"
+      "reviewedOn": "2026-10-12",
+      "sha256": "5d5c2b5509c4423e79fb1725d96b5eb976b7ab2566b4463e69f735737ca752b4"
     },
     "/docs/features/cli-telemetry": {
       "file": "src/pages/docs/features/cli-telemetry.mdx",
@@ -201,8 +201,8 @@
     "/docs/features/sites": {
       "file": "src/pages/docs/features/sites.mdx",
       "profile": "asd-ste100",
-      "reviewedOn": "2026-10-09",
-      "sha256": "1b20228a0ac155a39926073b6d26128df720a59acb13c1463ca05cb000472ca8"
+      "reviewedOn": "2026-10-12",
+      "sha256": "5d0b69784c91e3931fd48c7d3fcf8559ae2339657e7cb95452f7d850d8218687"
     },
     "/docs/features/template-variables": {
       "file": "src/pages/docs/features/template-variables.mdx",
