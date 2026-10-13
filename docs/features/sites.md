@@ -21,7 +21,7 @@ Administrator access does not give ownership rights.
 | Private (default) | Only the owner                          | Only the owner    |
 | Public            | Anyone with the URL, without signing in | Only the owner    |
 
-The owner can replace content, extend expiration, change visibility, delete the site, or restore a deleted site.
+The owner can replace content, rename the site, extend expiration, change visibility, delete the site, or restore a deleted site.
 Public content can contain copies that remain outside Lifecycle after you make the site private.
 Sites has no email invitations or viewer or editor roles.
 
@@ -42,7 +42,9 @@ Sites has no email invitations or viewer or editor roles.
 Search matches the site name or ID.
 Search and pagination do not expose other users' private sites.
 
-From an owned site's actions menu, you can replace content, change visibility, or delete it.
+From an owned site's actions menu, you can replace content, rename it, change visibility, or delete it.
+Renaming changes only the display name.
+The site ID and content URL stay the same.
 The visibility dialog requires confirmation before publication.
 When you change visibility, the site ID and content URL stay the same.
 New requests to a private site require owner access.
@@ -87,6 +89,7 @@ lfc sites list --mine
 lfc sites list --public --search report
 lfc sites get a1b2c3d4e5
 lfc sites update a1b2c3d4e5 ./dist
+lfc sites rename a1b2c3d4e5 "performance report"
 lfc sites visibility a1b2c3d4e5 private --yes
 lfc sites extend a1b2c3d4e5
 lfc sites delete a1b2c3d4e5 --yes
@@ -152,6 +155,7 @@ A scope permits an operation only when the caller also has the required ownershi
 | Delete a site     | `DELETE /api/v2/sites/{siteId}`       | `sites:write` |
 | Replace content   | `PUT /api/v2/sites/{siteId}/content`  | `sites:write` |
 | Extend expiration | `POST /api/v2/sites/{siteId}/extend`  | `sites:write` |
+| Rename a site     | `PATCH /api/v2/sites/{siteId}`        | `sites:write` |
 | Change visibility | `PATCH /api/v2/sites/{siteId}/access` | `sites:write` |
 | Restore a site    | `POST /api/v2/sites/{siteId}/restore` | `sites:write` |
 
@@ -178,6 +182,7 @@ curl --fail --silent --show-error \
   "${LIFECYCLE_URL}/api/v2/sites"
 ```
 
+Renaming requires the JSON field `name` (1-255 characters) and accepts an optional `expectedAccessRevision`.
 Visibility changes require JSON fields `visibility` and `expectedAccessRevision`.
 For replacement, send `expectedAccessRevision` and `expectedContentRevision` as multipart fields.
 Older replacement clients can also receive `409` after a concurrent change.
