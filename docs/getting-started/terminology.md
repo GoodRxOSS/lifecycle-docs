@@ -22,8 +22,7 @@ external HTTP dependencies, Aurora restores, and configuration-only data. A
 single repository can define multiple Services.
 
 **Example:** \
-
-The frontend application needs the `frontend-service` and `frontend-cache`
+&#xA;The frontend application needs the `frontend-service` and `frontend-cache`
 Services.
 
 ## Environment
