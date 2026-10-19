@@ -24,7 +24,7 @@ COPY . .
 
 RUN bun run build
 
-FROM nginx:alpine
+FROM nginx:1.31.7-alpine
 WORKDIR /usr/share/nginx/html
 
 COPY --from=builder /app/out /usr/share/nginx/html
