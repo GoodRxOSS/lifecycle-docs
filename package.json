@@ -111,7 +111,7 @@
       "prettier --write"
     ]
   },
-  "packageManager": "bun@1.2.8",
+  "packageManager": "bun@1.4.3",
   "overrides": {
     "postcss": "^8.5.31",
     "@xmldom/xmldom": "^0.9.12"
