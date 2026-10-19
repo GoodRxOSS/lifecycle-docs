@@ -13,12 +13,12 @@
 # limitations under the License.
 
 # Stage 1: Build the Nextra app with secrets injection
-FROM oven/bun:1.2.8 AS builder
+FROM oven/bun:1.4.3 AS builder
 WORKDIR /app
 
 # Copy dependency files
-COPY package*.json bun.lock* ./
-RUN bun install
+COPY package*.json bun.lock* bunfig.toml ./
+RUN bun install --frozen-lockfile
 
 COPY . .
 

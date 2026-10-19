@@ -1,0 +1,5 @@
+[install]
+# Seconds. Only resolve package versions published at least 3 days ago.
+minimumReleaseAge = 259200
+# Package names exempt from the delay, e.g. for an urgent security fix.
+minimumReleaseAgeExcludes = []
