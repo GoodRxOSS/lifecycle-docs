@@ -123,6 +123,13 @@
         "helm-charts": "6aff91c22411e641964774bcbb09e5265ac1250c"
       },
       "notes": "Sites soft delete, restore, Recently deleted view, deleted-site retention setting, MCP hosted site write tools, and creator-or-admin Environment teardown merged and deployed. Live-verified: delete then restore through UI, CLI 0.6.0, and MCP; deleted public sites return 404; cleanup purges after retention."
+    },
+    "2026-10-21-build-cache-mode-released": {
+      "verifiedOn": "2026-10-21",
+      "sources": {
+        "lifecycle": "bc9dc7dfb5511161e2bf744580815551ebf28561"
+      },
+      "notes": "Lifecycle 0.2.3-alpha.45 (merge of docker.builder.cache.mode). Verified the schema enum (max, min, off, no other cache keys), BuildKit export and import flags per mode, Kaniko cache flags removed only for off, and no effect for the ci engine. Other claims on these pages carry over from 2026-07-24-comprehensive-audit."
     }
   }
 }

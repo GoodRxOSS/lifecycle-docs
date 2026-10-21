@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "updatedOn": "2026-10-12",
+  "updatedOn": "2026-10-21",
   "references": {
     "canonical": "ASD-STE100 Issue 9",
     "canonicalRules": [
@@ -351,14 +351,14 @@
     "/docs/schema/github": {
       "file": "src/pages/docs/schema/github.mdx",
       "profile": "asd-ste100",
-      "reviewedOn": "2026-07-25",
-      "sha256": "6d90c58a426518bc34d557468d91c80088ad64a6784c16eb692bd91c292fd6f3"
+      "reviewedOn": "2026-10-21",
+      "sha256": "41da652e5fbfbbcd3fc9613ae40d38f45ee6eed658b5702453678a0c5983f26b"
     },
     "/docs/schema/helm": {
       "file": "src/pages/docs/schema/helm.mdx",
       "profile": "asd-ste100",
-      "reviewedOn": "2026-07-25",
-      "sha256": "8e15742511246d8df0a91df004ccbd5b376fa9add9ec5bf1f8123cf0832e9a1d"
+      "reviewedOn": "2026-10-21",
+      "sha256": "5d91ca9765e848ccdc3a03909de73c418eba175ecbc7dba7fe01911f08920566"
     },
     "/docs/schema/overview": {
       "file": "src/pages/docs/schema/overview.mdx",

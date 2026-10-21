@@ -3,8 +3,8 @@ title: GitHub Service
 description: Build and deploy Services from GitHub repositories with Docker.
 audience:
   - application-developer
-lastVerified: "2026-07-24"
-verificationBaseline: "2026-07-24-comprehensive-audit"
+lastVerified: "2026-10-21"
+verificationBaseline: "2026-10-21-build-cache-mode-released"
 contentProfile: asd-ste100
 tags:
   - schema
@@ -96,6 +96,8 @@ services:
         defaultTag: "main"
         builder:
           engine: "buildkit" # Options: buildkit, kaniko, ci
+          cache: # Optional - build cache behavior
+            mode: "max" # Options: max, min, off
           resources: # Optional - custom CPU/memory for the build job
             requests:
               cpu: "1"
@@ -180,6 +182,7 @@ Configuration for the Docker build operation.
 | Field                | Type                    | Description                                          |
 | -------------------- | ----------------------- | ---------------------------------------------------- |
 | `engine`             | string                  | Build engine: `buildkit`, `kaniko`, or `ci`          |
+| `cache.mode`         | string                  | Build cache mode: `max`, `min`, or `off`             |
 | `resources.requests` | object                  | Minimum CPU/memory guaranteed for the build job      |
 | `resources.limits`   | object                  | Maximum CPU/memory allowed for the build job         |
 | `podAnnotations`     | `Record<string,string>` | Custom annotations applied to the build pod template |
@@ -225,6 +228,42 @@ services:
           podAnnotations:
             my-org/team: "backend"
             my-org/cost-center: "engineering"
+        app:
+          dockerfilePath: "Dockerfile"
+```
+
+### docker.builder.cache
+
+The `cache.mode` field sets how BuildKit uses the build cache:
+
+- `max` - BuildKit exports the cache for all build steps.
+- `min` - BuildKit exports the cache only for the layers of the final image.
+- `off` - BuildKit does not export or import a cache.
+
+With `max` or `min`, BuildKit also imports the cache that it exported before.
+
+If you do not set `mode`, Lifecycle uses the installation default. This default
+is `max` if an administrator did not change it.
+
+If the image is large, BuildKit can be slow when it exports the cache for all
+build steps. If the next builds use only a small part of that cache, set `mode`
+to `min`. If the cache does not make builds faster, set `mode` to `off`.
+
+For the `kaniko` engine, only `off` has an effect. With `off`, Kaniko does not
+use a cache. The `ci` engine does not use `cache.mode`.
+
+```yaml filename="lifecycle.yaml"
+services:
+  - name: "api"
+    github:
+      repository: "myorg/api"
+      branchName: "main"
+      docker:
+        defaultTag: "main"
+        builder:
+          engine: "buildkit"
+          cache:
+            mode: "min" # Options: max, min, off
         app:
           dockerfilePath: "Dockerfile"
 ```
