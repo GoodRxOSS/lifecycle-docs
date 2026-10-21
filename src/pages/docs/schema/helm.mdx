@@ -3,8 +3,8 @@ title: Helm Service
 description: Deploy Services with local, OCI, or public Helm charts.
 audience:
   - application-developer
-lastVerified: "2026-07-24"
-verificationBaseline: "2026-07-24-comprehensive-audit"
+lastVerified: "2026-10-21"
+verificationBaseline: "2026-10-21-build-cache-mode-released"
 contentProfile: asd-ste100
 tags:
   - schema
@@ -245,10 +245,13 @@ The default Docker image tag, typically matching the branch name.
 Configuration for the Docker build operation. See [GitHub Service
 docker.builder](/docs/schema/github#dockerbuilder) for the full field list. That
 section includes the `resources` field and the `safe-to-evict` pod annotation.
+For the cache modes, see [GitHub Service
+docker.builder.cache](/docs/schema/github#dockerbuildercache).
 
 | Field                | Type                    | Description                                          |
 | -------------------- | ----------------------- | ---------------------------------------------------- |
 | `engine`             | string                  | Build engine: `buildkit`, `kaniko`, or `ci`          |
+| `cache.mode`         | string                  | Build cache mode: `max`, `min`, or `off`             |
 | `resources.requests` | object                  | Minimum CPU/memory guaranteed for the build job      |
 | `resources.limits`   | object                  | Maximum CPU/memory allowed for the build job         |
 | `podAnnotations`     | `Record<string,string>` | Custom annotations applied to the build pod template |
