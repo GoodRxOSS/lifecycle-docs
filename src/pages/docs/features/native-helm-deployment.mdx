@@ -4,8 +4,8 @@ description: Deploy Services with Helm directly in Kubernetes without an externa
 audience:
   - application-developer
   - platform-operator
-lastVerified: "2026-07-24"
-verificationBaseline: "2026-07-24-comprehensive-audit"
+lastVerified: "2026-11-16"
+verificationBaseline: "2026-11-16-native-helm-prebuilt-images"
 contentProfile: asd-ste100
 tags:
   - helm
@@ -99,26 +99,62 @@ services:
 Use paths relative to the checked-out repository. If the chart path or value
 file is missing, the deployment fails before Helm can apply the release.
 
+## Deploy a chart with prebuilt images
+
+For a local chart that specifies existing image references, set
+`helm.skipImageBuild` to `true`:
+
+```yaml filename="lifecycle.yaml"
+version: "1.0.0"
+
+services:
+  - name: "gateway"
+    helm:
+      repository: "docs-example/gateway-config"
+      branchName: "main"
+      deploymentMethod: "native"
+      skipImageBuild: true
+      chart:
+        name: "./charts/gateway"
+        valueFiles:
+          - "charts/gateway/values-preview.yaml"
+```
+
+Set `deploymentMethod` to `native` explicitly. The installation default does
+not satisfy this requirement. Do not include `helm.docker` for this Service.
+
+With this option, Lifecycle ignores inherited Docker settings for this
+Service. The chart or its values must supply the image references.
+
+Lifecycle still resolves the chart revision, checks out the repository, and
+deploys the chart. If Lifecycle cannot resolve a local chart revision, the
+deployment fails.
+
+To let Lifecycle build images again, remove `skipImageBuild` or set it to
+`false`. See [Image build control](/docs/schema/helm#image-build-control) for
+the option requirements and default behavior.
+
 ## Configuration reference
 
 These Service fields control a native Helm deployment:
 
-| Field                                | Purpose                                         |
-| ------------------------------------ | ----------------------------------------------- |
-| `helm.deploymentMethod`              | Select `native` or `ci` deployment              |
-| `helm.version`                       | Select the Helm version                         |
-| `helm.args`                          | Add Helm arguments for this Service             |
-| `helm.repository`                    | Select the chart source repository              |
-| `helm.branchName`                    | Select the chart source branch                  |
-| `helm.chart.name`                    | Set a chart name or relative chart path         |
-| `helm.chart.repoUrl`                 | Set the repository URL for a public chart       |
-| `helm.chart.version`                 | Select the chart version                        |
-| `helm.chart.values`                  | Add `key=value` settings                        |
-| `helm.chart.valueFiles`              | Add value files from the checked-out repository |
-| `helm.nativeHelm.image`              | Override the Helm runner image                  |
-| `helm.nativeHelm.postRenderer`       | Configure a post-renderer for this Service      |
-| `helm.nativeHelm.defaultArgs`        | Set fallback Helm arguments for this Service    |
-| `helm.nativeHelm.defaultHelmVersion` | Set a fallback Helm version for this Service    |
+| Field                                | Purpose                                           |
+| ------------------------------------ | ------------------------------------------------- |
+| `helm.deploymentMethod`              | Select `native` or `ci` deployment                |
+| `helm.skipImageBuild`                | Skip image builds for charts with prebuilt images |
+| `helm.version`                       | Select the Helm version                           |
+| `helm.args`                          | Add Helm arguments for this Service               |
+| `helm.repository`                    | Select the chart source repository                |
+| `helm.branchName`                    | Select the chart source branch                    |
+| `helm.chart.name`                    | Set a chart name or relative chart path           |
+| `helm.chart.repoUrl`                 | Set the repository URL for a public chart         |
+| `helm.chart.version`                 | Select the chart version                          |
+| `helm.chart.values`                  | Add `key=value` settings                          |
+| `helm.chart.valueFiles`              | Add value files from the checked-out repository   |
+| `helm.nativeHelm.image`              | Override the Helm runner image                    |
+| `helm.nativeHelm.postRenderer`       | Configure a post-renderer for this Service        |
+| `helm.nativeHelm.defaultArgs`        | Set fallback Helm arguments for this Service      |
+| `helm.nativeHelm.defaultHelmVersion` | Set a fallback Helm version for this Service      |
 
 Service configuration overrides matching installation defaults. If an operator
 manages a field centrally, get the approved value before you override it.

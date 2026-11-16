@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "updatedOn": "2026-10-12",
+  "updatedOn": "2026-11-16",
   "references": {
     "canonical": "ASD-STE100 Issue 9",
     "canonicalRules": [
@@ -183,8 +183,8 @@
     "/docs/features/native-helm-deployment": {
       "file": "src/pages/docs/features/native-helm-deployment.mdx",
       "profile": "asd-ste100",
-      "reviewedOn": "2026-07-25",
-      "sha256": "a58acbf6c95124f944ec8c910d4d4f25b79d14dd3923bc353182190d143e81fb"
+      "reviewedOn": "2026-11-16",
+      "sha256": "1944a7b41c78aac823b3b0364f7593839d8e86927c7cadcfa14cc700a274da7f"
     },
     "/docs/features/secrets": {
       "file": "src/pages/docs/features/secrets.mdx",
@@ -357,8 +357,8 @@
     "/docs/schema/helm": {
       "file": "src/pages/docs/schema/helm.mdx",
       "profile": "asd-ste100",
-      "reviewedOn": "2026-07-25",
-      "sha256": "8e15742511246d8df0a91df004ccbd5b376fa9add9ec5bf1f8123cf0832e9a1d"
+      "reviewedOn": "2026-11-16",
+      "sha256": "0a7eccf5dd844bcd09f9ac7f5b815ebac2d1d970ca9996885ac60c3a8a4aa7a4"
     },
     "/docs/schema/overview": {
       "file": "src/pages/docs/schema/overview.mdx",
