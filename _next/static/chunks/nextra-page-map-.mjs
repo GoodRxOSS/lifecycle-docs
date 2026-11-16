@@ -270,8 +270,8 @@ export const pageMap = [{
         "title": "Native Helm deployment",
         "description": "Deploy Services with Helm directly in Kubernetes without an external CI/CD deployment pipeline.",
         "audience": ["application-developer", "platform-operator"],
-        "lastVerified": "2026-07-24",
-        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "lastVerified": "2026-11-16",
+        "verificationBaseline": "2026-11-16-native-helm-prebuilt-images",
         "contentProfile": "asd-ste100",
         "tags": ["helm", "deployment", "kubernetes", "native"]
       }
@@ -660,8 +660,8 @@ export const pageMap = [{
         "title": "Helm Service",
         "description": "Deploy Services with local, OCI, or public Helm charts.",
         "audience": ["application-developer"],
-        "lastVerified": "2026-07-24",
-        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "lastVerified": "2026-11-16",
+        "verificationBaseline": "2026-11-16-native-helm-prebuilt-images",
         "contentProfile": "asd-ste100",
         "tags": ["schema", "helm", "kubernetes", "charts"]
       }

@@ -216,6 +216,27 @@ Array of Helm values in `key=value` format.
 
 Array of value file paths relative to the repository root.
 
+## Image build control
+
+### skipImageBuild
+
+Optional boolean. The default is `false`.
+
+When the chart uses prebuilt images, set `skipImageBuild` to `true`. This
+option requires explicit `deploymentMethod: native` and no Service-level
+`helm.docker` configuration. It ignores inherited Docker settings for that
+Service.
+
+The chart or its values must supply image references. Lifecycle still
+resolves the chart revision and deploys the chart. An unresolved local chart
+revision fails the deployment.
+
+Omitting `skipImageBuild` or setting it to `false` preserves the existing
+image build behavior for local and organization charts.
+
+See [Deploy a chart with prebuilt images](/docs/features/native-helm-deployment#deploy-a-chart-with-prebuilt-images)
+for a complete example.
+
 ## Docker configuration
 
 The optional `docker` section defines how to build a custom image. Its
@@ -270,6 +291,7 @@ init container has the fields from `docker.app`.
 | `args`                       | string  | No         | More Helm arguments                                            |
 | `version`                    | string  | No         | Helm CLI version                                               |
 | `deploymentMethod`           | string  | No         | `"native"` or `"ci"`                                           |
+| `skipImageBuild`             | boolean | No         | Skip native Helm image builds. Default: `false`                |
 | `envLens`                    | boolean | No         | Enable the Environment Lens ingress banner                     |
 | `grpc`                       | boolean | No         | Enable gRPC behavior for the Helm Service                      |
 | `disableIngressHost`         | boolean | No         | Disable Lifecycle's generated ingress host                     |
