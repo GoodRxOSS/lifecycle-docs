@@ -114,6 +114,12 @@
       },
       "notes": "All four Sites access-control implementing PRs merged to main and deployed to production. Live-verified end to end: owner-only private access, distinct denied-vs-missing responses on the management API, the CLI's visibility/create/list/get/update/extend/delete commands, the shared-apex opt-in, stable Site ID and content URL across visibility and content changes, and the intentional full downgrade path."
     },
+    "2026-11-16-native-helm-prebuilt-images": {
+      "verifiedOn": "2026-11-16",
+      "sources": {
+        "lifecycle": "af30aac8df5a0daf8d2cd3aa902a4abd3a02e23e"
+      }
+    },
     "2026-10-09-sites-restore-released": {
       "verifiedOn": "2026-10-09",
       "sources": {
