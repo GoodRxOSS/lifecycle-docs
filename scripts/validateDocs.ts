@@ -64,7 +64,6 @@ type ImageDimensions = {
 
 const SCREENSHOT_CATALOG =
   ".agents/skills/update-lifecycle-docs/references/screenshots.md";
-const RAW_MARKDOWN_SERVER_CONFIG = "default.conf";
 const RASTER_EXTENSIONS = new Set([".gif", ".jpeg", ".jpg", ".png", ".webp"]);
 const NON_SCREENSHOT_RASTERS = new Set(["/logo.png"]);
 const SCREENSHOT_STATUSES = new Set(["keep", "remove", "replace"]);
@@ -265,96 +264,6 @@ function context(rootDir: string): ValidationContext {
     rootDir: resolvedRoot,
     publicRoot: path.join(resolvedRoot, "public"),
   };
-}
-
-export async function validateRawMarkdownDelivery({
-  rootDir = process.cwd(),
-}: ValidationOptions = {}): Promise<ValidationIssue[]> {
-  const resolvedRoot = path.resolve(rootDir);
-  const configPath = path.join(resolvedRoot, RAW_MARKDOWN_SERVER_CONFIG);
-  let source: string;
-  try {
-    source = await fs.promises.readFile(configPath, "utf8");
-  } catch (error) {
-    return [
-      {
-        file: RAW_MARKDOWN_SERVER_CONFIG,
-        message: `raw Markdown server configuration is unavailable: ${
-          error instanceof Error ? error.message.split("\n")[0] : String(error)
-        }`,
-      },
-    ];
-  }
-
-  const location = source.match(
-    /location\s+~\s+\\\.md\$\s*\{([\s\S]*?)^\s*\}/m,
-  )?.[1];
-  if (!location) {
-    return [
-      {
-        file: RAW_MARKDOWN_SERVER_CONFIG,
-        message: "raw Markdown requires a dedicated .md location",
-      },
-    ];
-  }
-
-  const issues: ValidationIssue[] = [];
-  if (!/\btypes\s*\{\s*\}/.test(location)) {
-    issues.push({
-      file: RAW_MARKDOWN_SERVER_CONFIG,
-      message:
-        "raw Markdown must clear inherited MIME mappings before setting its UTF-8 media type",
-    });
-  }
-  if (
-    !/\bdefault_type\s+["']text\/markdown;\s*charset=utf-8["']\s*;/i.test(
-      location,
-    )
-  ) {
-    issues.push({
-      file: RAW_MARKDOWN_SERVER_CONFIG,
-      message:
-        'raw Markdown must use Content-Type "text/markdown; charset=utf-8"',
-    });
-  }
-  if (!/\btry_files\s+\$uri\s+=404\s*;/.test(location)) {
-    issues.push({
-      file: RAW_MARKDOWN_SERVER_CONFIG,
-      message:
-        "raw Markdown must return 404 for a missing file instead of the HTML fallback",
-    });
-  }
-  const retiredRouteLocations = [
-    /location\s*=\s*\/docs\/cm\s*\{\s*return\s+404\s*;\s*\}/,
-    /location\s*=\s*\/docs\/cm\.md\s*\{\s*return\s+404\s*;\s*\}/,
-    /location\s+\^~\s+\/docs\/cm\/\s*\{\s*return\s+404\s*;\s*\}/,
-  ];
-  if (retiredRouteLocations.some((pattern) => !pattern.test(source))) {
-    issues.push({
-      file: RAW_MARKDOWN_SERVER_CONFIG,
-      message: "retired /docs/cm routes must return 404",
-    });
-  }
-  if (!/\berror_page\s+404\s+\/404\.html\s*;/.test(source)) {
-    issues.push({
-      file: RAW_MARKDOWN_SERVER_CONFIG,
-      message: "404 responses must use the exported 404 page",
-    });
-  }
-  const htmlLocation = source.match(/location\s+\/\s*\{([\s\S]*?)^\s*\}/m)?.[1];
-  if (
-    !htmlLocation ||
-    !/\btry_files\s+\$uri\.html\s+\$uri(?:\s+\$uri\/)?\s+\/index\.html\s*;/.test(
-      htmlLocation,
-    )
-  ) {
-    issues.push({
-      file: RAW_MARKDOWN_SERVER_CONFIG,
-      message:
-        "HTML routes must prefer the exported .html file before a same-name asset directory",
-    });
-  }
-  return issues;
 }
 
 function routeFor(rootDir: string, file: string): string {
@@ -1166,7 +1075,6 @@ export async function validateDocs({
   }
 
   issues.push(...(await validatePortableGuidance({ rootDir })));
-  issues.push(...(await validateRawMarkdownDelivery({ rootDir })));
   return issues;
 }
 

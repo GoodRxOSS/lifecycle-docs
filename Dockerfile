@@ -12,25 +12,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Stage 1: Build the Nextra app with secrets injection
-FROM oven/bun:1.2.8 AS builder
+FROM oven/bun:1.4.4-alpine@sha256:4cf82f5686b196504fe119db3fcd9185b191f82ece82c40680e597228ec6070a AS builder
 WORKDIR /app
 
-# Copy dependency files
-COPY package*.json bun.lock* ./
-RUN bun install
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
 
 COPY . .
-
 RUN bun run build
 
-FROM nginx:1.31.7-alpine
-WORKDIR /usr/share/nginx/html
+FROM node:24.22.3-alpine3.24@sha256:116b800c3754b440ee0aa3ed2f20f5bf3d99a554bfd9adeea09ea8017f6e85f5
 
-COPY --from=builder /app/out /usr/share/nginx/html
+# The runtime only needs the node binary; npm and yarn ship with the base image and carry their own CVEs.
+RUN apk upgrade --no-cache \
+  && rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx \
+    /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg /opt/yarn-*
 
-COPY default.conf /etc/nginx/conf.d/default.conf
+WORKDIR /app
+COPY --chown=node:node server.mjs ./
+COPY --from=builder --chown=node:node /app/out ./public
 
-EXPOSE 80
+ENV NODE_ENV=production \
+  PORT=8080 \
+  STATIC_ROOT=/app/public
+USER node
+EXPOSE 8080
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["node", "server.mjs"]
