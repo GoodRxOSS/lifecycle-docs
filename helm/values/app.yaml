@@ -27,7 +27,7 @@ ports:
     protocol: TCP
     servicePort: 80
 
-    containerPort: 80
+    containerPort: 8080
 
 service:
   enabled: true
@@ -65,7 +65,7 @@ deployment:
     httpGet:
       scheme: HTTP
       path: /
-      port: 80
+      port: 8080
 
   readinessProbe:
     periodSeconds: 10
@@ -73,7 +73,7 @@ deployment:
     httpGet:
       scheme: HTTP
       path: /
-      port: 80
+      port: 8080
 
   livenessProbe:
     periodSeconds: 60
@@ -82,7 +82,7 @@ deployment:
     httpGet:
       scheme: HTTP
       path: /
-      port: 80
+      port: 8080
 
   # Slowly rollout new pods during a deployment to
   # prevent too many being unavailable at any given time

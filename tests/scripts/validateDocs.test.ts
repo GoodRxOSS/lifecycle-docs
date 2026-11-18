@@ -21,7 +21,6 @@ import path from "node:path";
 import {
   validateDocs,
   validatePortableGuidance,
-  validateRawMarkdownDelivery,
   validateScreenshots,
 } from "../../scripts/validateDocs";
 
@@ -54,25 +53,6 @@ async function temporaryRoot(): Promise<string> {
         },
       },
     }),
-  );
-  await write(
-    root,
-    "default.conf",
-    `server {
-  location = /docs/cm { return 404; }
-  location = /docs/cm.md { return 404; }
-  location ^~ /docs/cm/ { return 404; }
-  location ~ \\.md$ {
-    types {}
-    default_type "text/markdown; charset=utf-8";
-    try_files $uri =404;
-  }
-  location / {
-    try_files $uri.html $uri $uri/ /index.html;
-  }
-  error_page 404 /404.html;
-}
-`,
   );
   return root;
 }
@@ -348,124 +328,6 @@ process-local
     );
 
     expect(await validateDocs({ rootDir: root })).toEqual([]);
-  });
-
-  test("requires UTF-8 Markdown delivery and a fail-closed missing route", async () => {
-    const root = await temporaryRoot();
-    await write(
-      root,
-      "default.conf",
-      `server {
-  location = /docs/cm { return 404; }
-  location = /docs/cm.md { return 404; }
-  location ^~ /docs/cm/ { return 404; }
-  location ~ \\.md$ {
-    default_type text/markdown;
-    try_files $uri $uri.html /index.html;
-  }
-  location / {
-    try_files $uri.html $uri $uri/ /index.html;
-  }
-  error_page 404 /404.html;
-}
-`,
-    );
-
-    expect(
-      (await validateRawMarkdownDelivery({ rootDir: root })).map(
-        (issue) => issue.message,
-      ),
-    ).toEqual([
-      "raw Markdown must clear inherited MIME mappings before setting its UTF-8 media type",
-      'raw Markdown must use Content-Type "text/markdown; charset=utf-8"',
-      "raw Markdown must return 404 for a missing file instead of the HTML fallback",
-    ]);
-  });
-
-  test("requires explicit 404 responses for the retired /docs/cm routes", async () => {
-    const root = await temporaryRoot();
-    await write(
-      root,
-      "default.conf",
-      `server {
-  location ~ \\.md$ {
-    types {}
-    default_type "text/markdown; charset=utf-8";
-    try_files $uri =404;
-  }
-  location / {
-    try_files $uri.html $uri $uri/ /index.html;
-  }
-  error_page 404 /404.html;
-}
-`,
-    );
-
-    expect(
-      (await validateRawMarkdownDelivery({ rootDir: root })).map(
-        (issue) => issue.message,
-      ),
-    ).toEqual(["retired /docs/cm routes must return 404"]);
-  });
-
-  test("requires the exported 404 page for missing routes", async () => {
-    const root = await temporaryRoot();
-    await write(
-      root,
-      "default.conf",
-      `server {
-  location = /docs/cm { return 404; }
-  location = /docs/cm.md { return 404; }
-  location ^~ /docs/cm/ { return 404; }
-  location ~ \\.md$ {
-    types {}
-    default_type "text/markdown; charset=utf-8";
-    try_files $uri =404;
-  }
-  location / {
-    try_files $uri.html $uri $uri/ /index.html;
-  }
-  error_page 404 /index.html;
-}
-`,
-    );
-
-    expect(
-      (await validateRawMarkdownDelivery({ rootDir: root })).map(
-        (issue) => issue.message,
-      ),
-    ).toEqual(["404 responses must use the exported 404 page"]);
-  });
-
-  test("prefers an exported HTML page over a same-name asset directory", async () => {
-    const root = await temporaryRoot();
-    await write(
-      root,
-      "default.conf",
-      `server {
-  location = /docs/cm { return 404; }
-  location = /docs/cm.md { return 404; }
-  location ^~ /docs/cm/ { return 404; }
-  location ~ \\.md$ {
-    types {}
-    default_type "text/markdown; charset=utf-8";
-    try_files $uri =404;
-  }
-  location / {
-    try_files $uri $uri.html /index.html;
-  }
-  error_page 404 /404.html;
-}
-`,
-    );
-
-    expect(
-      (await validateRawMarkdownDelivery({ rootDir: root })).map(
-        (issue) => issue.message,
-      ),
-    ).toEqual([
-      "HTML routes must prefer the exported .html file before a same-name asset directory",
-    ]);
   });
 });
 

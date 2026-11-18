@@ -13,7 +13,7 @@ copy-page feature copies MDX source rather than a clean Markdown rendering.
 [Next.js static export](https://nextjs.org/docs/pages/guides/static-exports)
 does not support a runtime API route or rewrite for this purpose. A pre-build
 projection into `public/` gives local development, static export, GitHub Pages,
-and Nginx the same files.
+and the container server the same files.
 
 Re-evaluate this decision only during an intentional framework migration.
 Require the replacement to support clean Markdown, exact `.md` paths, static
@@ -96,10 +96,10 @@ edit `public/llms.txt` directly.
 ## Deployment
 
 Next.js copies generated files from `public/` to `out/`. GitHub Pages serves
-them from the static export. The repository Nginx configuration gives `.md`
-files the `text/markdown; charset=utf-8` media type and returns 404 for a
-missing `.md` path. Its HTML fallback checks `$uri.html` before `$uri`. This
-order prevents a page asset directory, such as `/docs/guide/`, from hiding the
+them from the static export. The container image serves `out/` with
+`server.mjs`. It gives `.md` files the `text/markdown; charset=utf-8` media
+type and returns 404 for a missing `.md` path. Its HTML fallback checks
+`<route>.html` before `<route>`. This order prevents a page asset directory, such as `/docs/guide/`, from hiding the
 exported `/docs/guide.html` page.
 
 After a deployment-path or asset-path change, use the production server
