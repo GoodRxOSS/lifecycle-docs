@@ -82,7 +82,14 @@ describe("static server", () => {
   });
 
   test("returns 404 for the retired /docs/cm routes", async () => {
-    for (const route of ["/docs/cm", "/docs/cm.md", "/docs/cm/old"]) {
+    for (const route of [
+      "/docs/cm",
+      "/docs/cm.md",
+      "/docs/cm/old",
+      "/docs/cm.md/",
+      "/docs/cm.html",
+      "/docs/cm.html/",
+    ]) {
       expect(await get(route)).toMatchObject({
         status: 404,
         body: "<p>not found</p>",

@@ -17,6 +17,7 @@
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import { createServer } from "node:http";
+import { pipeline } from "node:stream";
 import { extname, join, posix, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -71,7 +72,7 @@ const STATIC_ASSETS = new Set([
   ".map",
 ]);
 
-const RETIRED_ROUTE = /^\/docs\/cm(?:\.md|\/[\s\S]*)?$/;
+const RETIRED_ROUTE = /^\/docs\/cm(?:\.md|\.html)?(?:\/[\s\S]*)?$/;
 const SHUTDOWN_TIMEOUT_MS = 25_000;
 
 async function findFile(candidate) {
@@ -115,9 +116,8 @@ export async function resolveRequest(root, urlPath) {
     file: await findFile(join(root, "404.html")),
     status: 404,
   });
-  if (RETIRED_ROUTE.test(urlPath)) return notFound();
-
   const route = urlPath.replace(/\/+$/, "");
+  if (RETIRED_ROUTE.test(route)) return notFound();
   const base = join(root, route);
 
   const ext = extname(route);
@@ -148,53 +148,59 @@ function isNotModified(req, etag, mtime) {
   );
 }
 
+async function handle(root, req, res) {
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    res.writeHead(405, { Allow: "GET, HEAD" }).end();
+    return;
+  }
+
+  const urlPath = canonicalPath(req.url);
+  if (!urlPath) {
+    res.writeHead(400).end();
+    return;
+  }
+
+  const { file, status } = await resolveRequest(root, urlPath);
+  if (!file) {
+    res.writeHead(status).end();
+    return;
+  }
+
+  const { size, mtime } = file.info;
+  const ext = extname(file.path).toLowerCase();
+  const etag = `W/"${size.toString(16)}-${mtime.getTime().toString(16)}"`;
+  const headers = {
+    "Content-Type": CONTENT_TYPES[ext] ?? "application/octet-stream",
+    "Cache-Control":
+      status === 200 && STATIC_ASSETS.has(ext)
+        ? "public, max-age=15552000"
+        : "no-cache",
+    ETag: etag,
+    "Last-Modified": mtime.toUTCString(),
+    "X-Content-Type-Options": "nosniff",
+  };
+
+  if (status === 200 && isNotModified(req, etag, mtime)) {
+    res.writeHead(304, headers).end();
+    return;
+  }
+
+  res.writeHead(status, { ...headers, "Content-Length": size });
+  if (req.method === "HEAD") {
+    res.end();
+    return;
+  }
+  pipeline(createReadStream(file.path), res, () => {});
+}
+
 export function createStaticServer(rootDir) {
   const root = resolve(rootDir);
-  return createServer(async (req, res) => {
-    if (req.method !== "GET" && req.method !== "HEAD") {
-      res.writeHead(405, { Allow: "GET, HEAD" }).end();
-      return;
-    }
-
-    const urlPath = canonicalPath(req.url);
-    if (!urlPath) {
-      res.writeHead(400).end();
-      return;
-    }
-
-    const { file, status } = await resolveRequest(root, urlPath);
-    if (!file) {
-      res.writeHead(status).end();
-      return;
-    }
-
-    const { size, mtime } = file.info;
-    const ext = extname(file.path).toLowerCase();
-    const etag = `W/"${size.toString(16)}-${mtime.getTime().toString(16)}"`;
-    const headers = {
-      "Content-Type": CONTENT_TYPES[ext] ?? "application/octet-stream",
-      "Cache-Control":
-        status === 200 && STATIC_ASSETS.has(ext)
-          ? "public, max-age=15552000"
-          : "no-cache",
-      ETag: etag,
-      "Last-Modified": mtime.toUTCString(),
-      "X-Content-Type-Options": "nosniff",
-    };
-
-    if (status === 200 && isNotModified(req, etag, mtime)) {
-      res.writeHead(304, headers).end();
-      return;
-    }
-
-    res.writeHead(status, { ...headers, "Content-Length": size });
-    if (req.method === "HEAD") {
-      res.end();
-      return;
-    }
-    createReadStream(file.path)
-      .on("error", () => res.destroy())
-      .pipe(res);
+  return createServer((req, res) => {
+    handle(root, req, res).catch((error) => {
+      console.error(error);
+      if (res.headersSent) res.destroy();
+      else res.writeHead(500).end();
+    });
   });
 }
 
