@@ -37,3 +37,20 @@ jobs:
           bun-version: 1.4.4
       - run: bun install --frozen-lockfile
       - run: bun run verify
+
+  image:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t lifecycle-docs:ci .
+      - name: Smoke test image
+        run: scripts/smokeImage.sh lifecycle-docs:ci
+      # Fails only on High/Critical findings that already have a fixed release; unfixed upstream
+      # advisories are reported but do not block.
+      - name: Scan image for fixable vulnerabilities
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            anchore/grype:v0.121.0 docker:lifecycle-docs:ci \
+            --only-fixed --fail-on high

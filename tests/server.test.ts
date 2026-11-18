@@ -112,12 +112,68 @@ describe("static server", () => {
       status: 200,
       cache: "public, max-age=15552000",
     });
-    expect((await get("/_next/static/missing.js")).status).toBe(404);
+    expect(await get("/_next/static/missing.js")).toMatchObject({
+      status: 404,
+      cache: "no-cache",
+      body: "<p>not found</p>",
+    });
+  });
+
+  test("serves the root index without looking outside the root", async () => {
+    fs.writeFileSync(`${root}.html`, "outside");
+    try {
+      expect(await get("/")).toMatchObject({
+        status: 200,
+        body: "<p>shell</p>",
+      });
+    } finally {
+      fs.rmSync(`${root}.html`);
+    }
   });
 
   test("does not serve files outside the root", async () => {
-    const response = await get("/%2e%2e/%2e%2e/etc/passwd");
-    expect(response.body).not.toContain("root:");
+    fs.writeFileSync(`${root}-sibling.md`, "outside");
+    try {
+      for (const route of [
+        "/%2e%2e/%2e%2e/etc/passwd",
+        `/..%2f${path.basename(root)}-sibling.md`,
+      ]) {
+        const response = await get(route);
+        expect(response.body).not.toContain("root:");
+        expect(response.body).not.toBe("outside");
+      }
+    } finally {
+      fs.rmSync(`${root}-sibling.md`);
+    }
+  });
+
+  test("normalizes the path before applying the retired-route rule", async () => {
+    for (const route of [
+      "//docs/cm",
+      "/docs//cm",
+      "/docs/x/..%2fcm",
+      "/docs/cm/%0a%2f..%2f..%2fcm",
+    ]) {
+      expect((await get(route)).status).toBe(404);
+    }
+  });
+
+  test("rejects malformed and NUL-containing paths", async () => {
+    expect((await get("/%ff")).status).toBe(400);
+    expect((await get("/docs%00.md")).status).toBe(400);
+  });
+
+  test("answers HEAD without a body and revalidates with 304", async () => {
+    const head = await fetch(`${baseUrl}/docs/guide.md`, { method: "HEAD" });
+    expect(head.status).toBe(200);
+    expect(await head.text()).toBe("");
+
+    const etag = head.headers.get("etag") ?? "";
+    expect(etag).not.toBe("");
+    const revalidated = await fetch(`${baseUrl}/docs/guide.md`, {
+      headers: { "If-None-Match": etag },
+    });
+    expect(revalidated.status).toBe(304);
   });
 
   test("rejects methods other than GET and HEAD", async () => {

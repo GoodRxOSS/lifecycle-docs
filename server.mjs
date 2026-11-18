@@ -17,7 +17,7 @@
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import { createServer } from "node:http";
-import { extname, join, normalize, resolve, sep } from "node:path";
+import { extname, join, posix, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 const CONTENT_TYPES = {
@@ -47,6 +47,11 @@ const CONTENT_TYPES = {
   ".pdf": "application/pdf",
   ".mp4": "video/mp4",
   ".webm": "video/webm",
+  ".wasm": "application/wasm",
+  ".htm": "text/html; charset=utf-8",
+  ".csv": "text/csv; charset=utf-8",
+  ".rss": "application/rss+xml",
+  ".atom": "application/atom+xml",
 };
 
 const STATIC_ASSETS = new Set([
@@ -66,50 +71,81 @@ const STATIC_ASSETS = new Set([
   ".map",
 ]);
 
-const RETIRED_ROUTE = /^\/docs\/cm(?:\.md|\/.*)?$/;
+const RETIRED_ROUTE = /^\/docs\/cm(?:\.md|\/[\s\S]*)?$/;
+const SHUTDOWN_TIMEOUT_MS = 25_000;
 
 async function findFile(candidate) {
   try {
     const info = await stat(candidate);
-    return info.isFile() ? candidate : null;
+    return info.isFile() ? { path: candidate, info } : null;
   } catch {
     return null;
   }
 }
 
 /**
- * Maps a decoded URL path to the file to serve and its status.
+ * Turns a raw request target into a canonical absolute path, or null when it cannot be served.
+ *
+ * Slashes are collapsed and dot segments resolved before any routing rule runs, so `/docs//cm` or
+ * `/docs/x/..%2fcm` cannot slip past the retired-route check, and no path can climb above the root.
+ */
+export function canonicalPath(target) {
+  const raw = (target ?? "/").split(/[?#]/, 1)[0];
+  let decoded;
+  try {
+    decoded = decodeURIComponent(raw);
+  } catch {
+    return null;
+  }
+  if (decoded.includes("\0")) return null;
+  return posix.normalize(
+    `/${decoded.replace(/\\/g, "/")}`.replace(/\/+/g, "/"),
+  );
+}
+
+/**
+ * Maps a canonical URL path to the file to serve and its status.
  *
  * Raw Markdown and static assets fail closed with the exported 404 page instead of the HTML shell, so
  * agents fetching `.md` never receive HTML. HTML routes prefer `<route>.html` over a same-name asset
  * directory, then fall back to `index.html` for client-side routing.
  */
 export async function resolveRequest(root, urlPath) {
-  const notFound = {
+  const notFound = async () => ({
     file: await findFile(join(root, "404.html")),
     status: 404,
-  };
-  if (RETIRED_ROUTE.test(urlPath)) return notFound;
+  });
+  if (RETIRED_ROUTE.test(urlPath)) return notFound();
 
-  const base = join(root, normalize(urlPath).replace(/^[/\\]+/, ""));
-  if (base !== root && !base.startsWith(root + sep)) return notFound;
+  const route = urlPath.replace(/\/+$/, "");
+  const base = join(root, route);
 
-  const ext = extname(urlPath).toLowerCase();
-  if (ext === ".md" || STATIC_ASSETS.has(ext)) {
+  const ext = extname(route);
+  if (ext === ".md" || STATIC_ASSETS.has(ext.toLowerCase())) {
     const file = await findFile(base);
-    return file ? { file, status: 200 } : notFound;
+    return file ? { file, status: 200 } : notFound();
   }
 
-  for (const candidate of [
-    `${base}.html`,
-    base,
-    join(base, "index.html"),
-    join(root, "index.html"),
-  ]) {
+  const candidates = route
+    ? [`${base}.html`, base, join(base, "index.html")]
+    : [join(root, "index.html")];
+  for (const candidate of [...candidates, join(root, "index.html")]) {
     const file = await findFile(candidate);
     if (file) return { file, status: 200 };
   }
-  return notFound;
+  return notFound();
+}
+
+function isNotModified(req, etag, mtime) {
+  const ifNoneMatch = req.headers["if-none-match"];
+  if (ifNoneMatch) {
+    return ifNoneMatch.split(",").some((tag) => tag.trim() === etag);
+  }
+  const ifModifiedSince = Date.parse(req.headers["if-modified-since"] ?? "");
+  return (
+    !Number.isNaN(ifModifiedSince) &&
+    Math.floor(mtime.getTime() / 1000) <= Math.floor(ifModifiedSince / 1000)
+  );
 }
 
 export function createStaticServer(rootDir) {
@@ -120,12 +156,8 @@ export function createStaticServer(rootDir) {
       return;
     }
 
-    let urlPath;
-    try {
-      urlPath = decodeURIComponent(
-        new URL(req.url ?? "/", "http://localhost").pathname,
-      );
-    } catch {
+    const urlPath = canonicalPath(req.url);
+    if (!urlPath) {
       res.writeHead(400).end();
       return;
     }
@@ -136,23 +168,31 @@ export function createStaticServer(rootDir) {
       return;
     }
 
-    const { size } = await stat(file);
-    const ext = extname(file).toLowerCase();
-    res.writeHead(status, {
+    const { size, mtime } = file.info;
+    const ext = extname(file.path).toLowerCase();
+    const etag = `W/"${size.toString(16)}-${mtime.getTime().toString(16)}"`;
+    const headers = {
       "Content-Type": CONTENT_TYPES[ext] ?? "application/octet-stream",
-      "Content-Length": size,
       "Cache-Control":
         status === 200 && STATIC_ASSETS.has(ext)
           ? "public, max-age=15552000"
           : "no-cache",
+      ETag: etag,
+      "Last-Modified": mtime.toUTCString(),
       "X-Content-Type-Options": "nosniff",
-    });
+    };
 
+    if (status === 200 && isNotModified(req, etag, mtime)) {
+      res.writeHead(304, headers).end();
+      return;
+    }
+
+    res.writeHead(status, { ...headers, "Content-Length": size });
     if (req.method === "HEAD") {
       res.end();
       return;
     }
-    createReadStream(file)
+    createReadStream(file.path)
       .on("error", () => res.destroy())
       .pipe(res);
   });
@@ -169,6 +209,10 @@ if (
   server.listen(port, () => console.log(`serving ${root} on :${port}`));
 
   for (const signal of ["SIGTERM", "SIGINT"]) {
-    process.on(signal, () => server.close(() => process.exit(0)));
+    process.on(signal, () => {
+      server.close(() => process.exit(0));
+      server.closeIdleConnections();
+      setTimeout(() => process.exit(0), SHUTDOWN_TIMEOUT_MS).unref();
+    });
   }
 }
