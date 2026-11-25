@@ -58,6 +58,17 @@ supported lease-extension action before `expiresAt`.
 
 A pull-request label does not change an API lease.
 
+Lifecycle does not tear down a static API-created Environment when its lease
+ends. To pin the Environment, use this command:
+
+```sh
+lfc builds set <environment-id> --static
+```
+
+If you remove the static pin after `expiresAt`, Lifecycle tears down the
+Environment. To keep the Environment, extend its lease before you remove the
+static pin.
+
 ## Troubleshooting
 
 - **An environment expired while I was viewing it:** page views do not refresh

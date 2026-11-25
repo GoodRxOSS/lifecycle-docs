@@ -210,8 +210,8 @@ export const pageMap = [{
         "title": "Environment expiration and cleanup",
         "description": "Understand how Lifecycle cleans up pull-request environments and expires API-created environments.",
         "audience": ["application-developer", "platform-operator", "administrator"],
-        "lastVerified": "2026-07-24",
-        "verificationBaseline": "2026-07-24-comprehensive-audit",
+        "lastVerified": "2026-11-24",
+        "verificationBaseline": "2026-11-24-static-api-environment-lease",
         "contentProfile": "asd-ste100",
         "tags": ["environments", "cleanup", "ttl", "api"]
       }
