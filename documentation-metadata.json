@@ -120,6 +120,13 @@
         "lifecycle": "af30aac8df5a0daf8d2cd3aa902a4abd3a02e23e"
       }
     },
+    "2026-11-24-static-api-environment-lease": {
+      "verifiedOn": "2026-11-24",
+      "sources": {
+        "lifecycle": "9e4fd12e8b4e6b9b1a361a7654cd7fec74f543d6",
+        "lifecycle-cli": "6987416fc36ed33eff97658194a1a5a0ac59cbce"
+      }
+    },
     "2026-10-09-sites-restore-released": {
       "verifiedOn": "2026-10-09",
       "sources": {
