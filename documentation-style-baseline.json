@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "updatedOn": "2026-11-16",
+  "updatedOn": "2026-11-25",
   "references": {
     "canonical": "ASD-STE100 Issue 9",
     "canonicalRules": [
@@ -153,8 +153,8 @@
     "/docs/features/environment-ttl": {
       "file": "src/pages/docs/features/environment-ttl.mdx",
       "profile": "asd-ste100",
-      "reviewedOn": "2026-07-25",
-      "sha256": "6979cbee45db7f8b518a0e05d0b461b9b67e0787b215a4519e400d18a3201ca4"
+      "reviewedOn": "2026-11-25",
+      "sha256": "b21698338d26f60c41576be53b5237e2fb27d700833bb1bd7005631e564f9618"
     },
     "/docs/features/ignore-file-patterns": {
       "file": "src/pages/docs/features/ignore-file-patterns.mdx",

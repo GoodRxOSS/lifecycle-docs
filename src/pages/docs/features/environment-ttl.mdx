@@ -5,8 +5,8 @@ audience:
   - application-developer
   - platform-operator
   - administrator
-lastVerified: "2026-07-24"
-verificationBaseline: "2026-07-24-comprehensive-audit"
+lastVerified: "2026-11-24"
+verificationBaseline: "2026-11-24-static-api-environment-lease"
 contentProfile: asd-ste100
 tags:
   - environments
@@ -72,6 +72,17 @@ administrator and repository workflow. For an API-created Environment, use the
 supported lease-extension action before `expiresAt`.
 
 A pull-request label does not change an API lease.
+
+Lifecycle does not tear down a static API-created Environment when its lease
+ends. To pin the Environment, use this command:
+
+```sh
+lfc builds set <environment-id> --static
+```
+
+If you remove the static pin after `expiresAt`, Lifecycle tears down the
+Environment. To keep the Environment, extend its lease before you remove the
+static pin.
 
 ## Troubleshooting
 
